@@ -1,0 +1,23 @@
+{
+  "cards": [
+    {
+      "id": "chase-sapphire-preferred",
+      "name": "Chase Sapphire Preferred",
+      "issuer": "Chase",
+      "annualFee": 95,
+      "signupBonus": {
+        "amount": 60000,
+        "currency": "points",
+        "spendRequirement": 4000,
+        "timeframe": 3
+      },
+      "rewards": {
+        "baseRate": 1.0,
+        "bonusCategories": [
+          { "category": "dining", "rate": 2.0 },
+          { "category": "travel", "rate": 2.0 }
+        ]
+      }
+    }
+  ]
+}
