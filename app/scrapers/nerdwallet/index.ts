@@ -67,42 +67,20 @@ class NerdWalletScraper {
         // Each row represents each credit card
         const rows = creditCardTable.querySelectorAll("tr");
 
-        console.log(`Found ${rows.length} total rows in table`);
-
         rows.forEach((row, rowIndex) => {
           // Early validation: skip rows that don't have the expected number of columns
           const tableData = row.querySelectorAll("td");
-          if (tableData.length < 5) {
-            console.log(
-              `Row ${rowIndex}: Skipped - only ${tableData.length} columns`
-            );
-            return; // Skip rows without 5 columns
-          }
+          if (tableData.length < 5) return; // Skip rows without 5 columns
 
           // Early validation: check if this row has a card name in the first column
           const firstCol = tableData[0];
-          const hasCardName =
-            firstCol.querySelector(
-              '[data-testid*="summary-table-card-name"]'
-            ) ||
-            firstCol
-              .querySelector("a, span, div, h3, h4, h5, h6")
-              ?.textContent?.trim() ||
-            firstCol.textContent?.trim();
+          const hasCardName = firstCol.querySelector(
+            '[data-testid*="summary-table-card-name"]'
+          );
 
-          if (
-            !hasCardName ||
-            hasCardName === "ref: <Node>" ||
-            hasCardName.length < 3
-          ) {
-            console.log(
-              `Row ${rowIndex}: Skipped - no valid card name (found: "${hasCardName}")`
-            );
-            return; // Skip rows without valid card names
-          }
+          if (!hasCardName) return; // Skip rows without valid card names
 
           console.log(`Row ${rowIndex}: Processing card "${hasCardName}"`);
-
           const cardData = {};
 
           // Process each column for this validated row
@@ -115,20 +93,7 @@ class NerdWalletScraper {
               const nameElement = col.querySelector(
                 '[data-testid*="summary-table-card-name"]'
               );
-              let cardName = nameElement?.textContent?.trim();
-
-              // If that doesn't work, try other selectors
-              if (!cardName) {
-                const fallbackElement = col.querySelector(
-                  "a, span, div, h3, h4, h5, h6"
-                );
-                cardName = fallbackElement?.textContent?.trim();
-              }
-
-              // If still no name, use column text content
-              if (!cardName) {
-                cardName = col.textContent?.trim();
-              }
+              const cardName = nameElement?.textContent?.trim();
 
               if (cardName && cardName !== "ref: <Node>") {
                 cardData.name = cardName;
@@ -162,8 +127,63 @@ class NerdWalletScraper {
 
             // extract intro/bonus offers
             if (colIndex === 4) {
-              const introOffer = col.textContent?.trim();
-              if (introOffer) cardData.introOffer = introOffer;
+              const introOfferText = col.textContent?.trim();
+
+              if (introOfferText) {
+                // Inline parsing logic to avoid function definition issues
+                let parsedOffer = { amount: null, currency: null };
+
+                // Handle N/A case
+                if (/N\/?A/i.test(introOfferText)) {
+                  parsedOffer = { amount: null, currency: null };
+                }
+                // Handle special cases like "Cashback Match"
+                else if (/cashback\s*match/i.test(introOfferText)) {
+                  parsedOffer = { amount: "match", currency: "cashback" };
+                } else {
+                  // Remove noise phrases
+                  const cleaned = introOfferText
+                    .replace(/find out your offer/gi, "")
+                    .replace(/as high as/gi, "")
+                    .replace(/cashback match™?/gi, "")
+                    .trim();
+
+                  // Extract dollar amounts
+                  const dollarRegex = /\$(\d{1,3}(?:,\d{3})*(?:\.\d+)?)/g;
+                  const dollarMatches = [];
+                  let match;
+                  while ((match = dollarRegex.exec(cleaned)) !== null) {
+                    dollarMatches.push(parseFloat(match[1].replace(/,/g, "")));
+                  }
+
+                  // Extract points/miles
+                  const pointsRegex =
+                    /(\d{1,3}(?:,\d{3})*(?:\.\d+)?)\s*(miles|points)/gi;
+                  const pointsMatches = [];
+                  while ((match = pointsRegex.exec(cleaned)) !== null) {
+                    pointsMatches.push({
+                      amount: parseFloat(match[1].replace(/,/g, "")),
+                      currency: match[2].toLowerCase(),
+                    });
+                  }
+
+                  // Return results
+                  if (dollarMatches.length > 0) {
+                    const total = dollarMatches.reduce(
+                      (sum, amt) => sum + amt,
+                      0
+                    );
+                    parsedOffer = { amount: total, currency: "dollars" };
+                  } else if (pointsMatches.length > 0) {
+                    parsedOffer = {
+                      amount: pointsMatches[0].amount,
+                      currency: pointsMatches[0].currency,
+                    };
+                  }
+                }
+
+                cardData.introOffer = parsedOffer;
+              }
 
               // Check for intro offer tooltip button
               const introTooltipButton = col.querySelector("button");
@@ -208,16 +228,14 @@ class NerdWalletScraper {
       });
 
       // Extract detailed tooltip information for cards that have tooltips
-      console.log("🔍 Extracting tooltip information...");
       for (let i = 0; i < creditCards.length; i++) {
         const card = creditCards[i];
 
         // Extract rewards tooltip
         if (card.hasRewardsTooltip) {
-          console.log(`Extracting rewards tooltip for ${card.name}...`);
-
           try {
             const tooltipContent = await this.extractRewardsTooltip(i);
+
             if (tooltipContent) {
               // Save both raw and parsed data
               creditCards[i].detailedRewards = {
@@ -235,15 +253,12 @@ class NerdWalletScraper {
 
         // Extract intro offer tooltip
         if (card.hasIntroTooltip) {
-          console.log(`Extracting intro tooltip for ${card.name}...`);
-
           try {
             const introTooltipContent = await this.extractIntroTooltip(i);
             if (introTooltipContent) {
               // Save both raw and parsed data
               creditCards[i].detailedIntroOffer = {
                 raw: introTooltipContent,
-                parsed: this.parseIntroOffer(introTooltipContent),
               };
             }
           } catch (error) {
@@ -263,54 +278,12 @@ class NerdWalletScraper {
           .filter((text) => text && text.length > 0)
       );
 
-      //   const imageDownloadResults: any[] = [];
-
-      //   for (const card of creditCards) {
-      //     if (card.image && card.image.src) {
-      //       // Handle relative URLs
-      //       let imageUrl = card.image.src;
-      //       if (imageUrl.startsWith("//")) {
-      //         imageUrl = "https:" + imageUrl;
-      //       } else if (imageUrl.startsWith("/")) {
-      //         imageUrl = "https://www.nerdwallet.com" + imageUrl;
-      //       }
-
-      //       const downloadSuccess = await this.downloadImage(
-      //         imageUrl,
-      //         card.image.filename
-      //       );
-      //       imageDownloadResults.push({
-      //         cardName: card.name,
-      //         imageUrl: imageUrl,
-      //         filename: card.image.filename,
-      //         downloaded: downloadSuccess,
-      //       });
-      //     }
-      //   }
-
-      // Remove duplicates based on card name, annual fee, and rewards
-      const uniqueCards = creditCards.filter(
-        (card, index, self) =>
-          index ===
-          self.findIndex(
-            (c) =>
-              c.name === card.name &&
-              c.annualFee === card.annualFee &&
-              c.rewards === card.rewards
-          )
-      );
-
-      console.log(
-        `🔄 Removed ${creditCards.length - uniqueCards.length} duplicate cards`
-      );
-
       return {
         pageTitle,
         url: this.page.url(),
         headings,
-        creditCards: uniqueCards,
-        totalCardsFound: uniqueCards.length,
-        // imageDownloadResults,
+        creditCards,
+        totalCardsFound: creditCards?.length,
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
@@ -320,72 +293,6 @@ class NerdWalletScraper {
         errorMessage: error instanceof Error ? error.message : String(error),
         timestamp: new Date().toISOString(),
       };
-    }
-  }
-
-  async takeScreenshot(
-    filename: string = "nerdwallet-screenshot.png"
-  ): Promise<void> {
-    if (!this.page) {
-      throw new Error("Browser not initialized. Call initialize() first.");
-    }
-
-    await this.page.screenshot({ path: filename, fullPage: true });
-    console.log(`Screenshot saved as ${filename}`);
-  }
-
-  async downloadImage(imageUrl: string, filename: string): Promise<boolean> {
-    if (!this.page) {
-      throw new Error("Browser not initialized. Call initialize() first.");
-    }
-
-    try {
-      // Create images directory if it doesn't exist
-      const imagesDir = path.join(process.cwd(), "scraped-images");
-      if (!fs.existsSync(imagesDir)) {
-        fs.mkdirSync(imagesDir, { recursive: true });
-      }
-
-      const response = await this.page.request.get(imageUrl);
-      if (response.ok()) {
-        const buffer = await response.body();
-        const filePath = path.join(imagesDir, filename);
-        fs.writeFileSync(filePath, buffer);
-        console.log(`Image saved: ${filePath}`);
-        return true;
-      } else {
-        console.log(
-          `Failed to download image: ${imageUrl} (Status: ${response.status()})`
-        );
-        return false;
-      }
-    } catch (error) {
-      console.error(`Error downloading image ${imageUrl}:`, error);
-      return false;
-    }
-  }
-
-  async takeElementScreenshot(
-    selector: string,
-    filename: string
-  ): Promise<boolean> {
-    if (!this.page) {
-      throw new Error("Browser not initialized. Call initialize() first.");
-    }
-
-    try {
-      const element = await this.page.locator(selector).first();
-      if ((await element.count()) > 0) {
-        await element.screenshot({ path: filename });
-        console.log(`Element screenshot saved: ${filename}`);
-        return true;
-      } else {
-        console.log(`Element not found for screenshot: ${selector}`);
-        return false;
-      }
-    } catch (error) {
-      console.error(`Error taking element screenshot:`, error);
-      return false;
     }
   }
 
@@ -406,8 +313,6 @@ class NerdWalletScraper {
       let tooltipContent = null;
 
       if ((await trigger.count()) > 0) {
-        console.log(`Found tooltip trigger: button`);
-
         try {
           // Click the button to trigger tooltip
           await trigger.click();
@@ -451,8 +356,6 @@ class NerdWalletScraper {
       let tooltipContent = null;
 
       if ((await trigger.count()) > 0) {
-        console.log(`Found intro tooltip trigger: button`);
-
         try {
           // Click the button to trigger tooltip
           await trigger.click();
@@ -485,127 +388,7 @@ class NerdWalletScraper {
       categories: [],
     };
 
-    // Enhanced patterns for rewards extraction
-    const patterns = [
-      // Standard patterns
-      /(\d+(?:\.\d+)?%)\s+cash\s+back\s+(?:at|on)\s+([^,\n.]+?)(?:\s+(?:on\s+up\s+to|up\s+to|\(then|\sand)|\.|,|$)/gi,
-      /(\d+(?:\.\d+)?x)\s+(?:points?\s+)?on\s+([^,\n.]+?)(?:\s+(?:on\s+up\s+to|up\s+to|\(then|\sand)|\.|,|$)/gi,
-      /(\d+(?:\.\d+)?)\s+(?:miles?\s+)?(?:per\s+\$1\s+)?on\s+([^,\n.]+?)(?:\s+(?:on\s+up\s+to|up\s+to|\(then|\sand)|\.|,|$)/gi,
-
-      // Unlimited patterns
-      /earn\s+unlimited\s+(\d+(?:\.\d+)?%)\s+cash\s+back\s+(?:at|on)\s+([^,\n.]+?)(?:\s+(?:on\s+up\s+to|up\s+to|\(then|\sand)|\.|,|$)/gi,
-      /earn\s+unlimited\s+(\d+(?:\.\d+)?x)\s+(?:points?\s+)?on\s+([^,\n.]+?)(?:\s+(?:on\s+up\s+to|up\s+to|\(then|\sand)|\.|,|$)/gi,
-      /earn\s+unlimited\s+(\d+(?:\.\d+)?)\s+(?:miles?\s+)?on\s+([^,\n.]+?)(?:\s+(?:on\s+up\s+to|up\s+to|\(then|\sand)|\.|,|$)/gi,
-
-      // Special patterns for complex structures
-      /(\d+(?:\.\d+)?%)\s+cash\s+back\s+at\s+([^,\n.]+?)\s+on\s+up\s+to/gi,
-      /(\d+(?:\.\d+)?x)\s+(?:miles?\s+)?on\s+([^,\n.]+?)\s+booked\s+through/gi,
-    ];
-
-    for (const pattern of patterns) {
-      let match;
-      while ((match = pattern.exec(tooltipText)) !== null) {
-        const rate = match[1];
-        const rawCategory = match[2].trim();
-        const normalizedCategory = this.normalizeCategory(rawCategory);
-
-        rewards.categories.push({
-          rate: rate,
-          category: normalizedCategory.category,
-          platform: normalizedCategory.platform,
-          rawCategory: rawCategory,
-        });
-      }
-    }
-
     return rewards;
-  }
-
-  private parseIntroOffer(tooltipText: string): any {
-    const introOffer = {
-      bonusAmount: null,
-      spendRequirement: null,
-      timeLimit: null,
-      aprInfo: null,
-      additionalBenefits: [],
-    };
-
-    // Extract bonus amount patterns
-    const bonusPatterns = [
-      /\$(\d+(?:,\d+)*)\s+(?:cash\s+back|bonus)/gi,
-      /(\d+(?:,\d+)*)\s+(?:points?|miles?)\s+bonus/gi,
-      /earn\s+(?:up\s+to\s+)?(\d+(?:,\d+)*)\s+(?:points?|miles?)/gi,
-      /(\d+(?:,\d+)*)\s+(?:points?|miles?)/gi,
-    ];
-
-    for (const pattern of bonusPatterns) {
-      const match = pattern.exec(tooltipText);
-      if (match) {
-        introOffer.bonusAmount = match[1];
-        break;
-      }
-    }
-
-    // Extract spend requirement
-    const spendPatterns = [
-      /spend\s+\$(\d+(?:,\d+)*)/gi,
-      /after\s+you\s+spend\s+\$(\d+(?:,\d+)*)/gi,
-      /\$(\d+(?:,\d+)*)\s+in\s+purchases/gi,
-    ];
-
-    for (const pattern of spendPatterns) {
-      const match = pattern.exec(tooltipText);
-      if (match) {
-        introOffer.spendRequirement = match[1];
-        break;
-      }
-    }
-
-    // Extract time limit
-    const timePatterns = [
-      /within\s+(\d+)\s+months?/gi,
-      /in\s+the\s+first\s+(\d+)\s+months?/gi,
-      /(\d+)\s+months?\s+from\s+account\s+opening/gi,
-    ];
-
-    for (const pattern of timePatterns) {
-      const match = pattern.exec(tooltipText);
-      if (match) {
-        introOffer.timeLimit = `${match[1]} months`;
-        break;
-      }
-    }
-
-    // Extract APR information
-    const aprPatterns = [
-      /(\d+(?:\.\d+)?%)\s+(?:intro\s+)?apr/gi,
-      /0%\s+(?:intro\s+)?apr/gi,
-      /(\d+)\s+months?\s+(?:of\s+)?0%\s+apr/gi,
-    ];
-
-    for (const pattern of aprPatterns) {
-      const match = pattern.exec(tooltipText);
-      if (match) {
-        introOffer.aprInfo = match[0];
-        break;
-      }
-    }
-
-    // Extract additional benefits
-    const benefitKeywords = [
-      "no annual fee",
-      "no foreign transaction fees",
-      "free",
-      "credit",
-      "statement credit",
-    ];
-    for (const keyword of benefitKeywords) {
-      if (tooltipText.toLowerCase().includes(keyword)) {
-        introOffer.additionalBenefits.push(keyword);
-      }
-    }
-
-    return introOffer;
   }
 
   private normalizeCategory(rawCategory: string): {
@@ -749,7 +532,6 @@ export async function runBasicScraper(): Promise<void> {
     console.log("Credit Card Info:", JSON.stringify(creditCardInfo, null, 2));
 
     // Take a screenshot
-    await scraper.takeScreenshot("nerdwallet-excellent-credit-cards.png");
   } catch (error) {
     console.error("Scraping failed:", error);
   } finally {
