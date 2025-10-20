@@ -236,7 +236,11 @@ class NerdWalletScraper {
           try {
             const tooltipContent = await this.extractRewardsTooltip(i);
 
-            if (tooltipContent) {
+            if (
+              tooltipContent &&
+              typeof tooltipContent === "string" &&
+              tooltipContent.trim().length > 0
+            ) {
               // Save both raw and parsed data
               creditCards[i].detailedRewards = {
                 raw: tooltipContent,
@@ -321,7 +325,10 @@ class NerdWalletScraper {
           // Look for tooltip content that appeared
           const tooltip = this.page.locator(".MuiTooltip-tooltip").first();
           if ((await tooltip.count()) > 0 && (await tooltip.isVisible())) {
-            tooltipContent = await tooltip.textContent();
+            const rawTooltipContent = await tooltip.textContent();
+            tooltipContent = rawTooltipContent
+              ? rawTooltipContent.trim()
+              : null;
             // Close tooltip by pressing escape
             await this.page.keyboard.press("Escape");
           }
@@ -364,7 +371,10 @@ class NerdWalletScraper {
           // Look for tooltip content that appeared
           const tooltip = this.page.locator(".MuiTooltip-tooltip").first();
           if ((await tooltip.count()) > 0 && (await tooltip.isVisible())) {
-            tooltipContent = await tooltip.textContent();
+            const rawTooltipContent = await tooltip.textContent();
+            tooltipContent = rawTooltipContent
+              ? rawTooltipContent.trim()
+              : null;
             // Close tooltip by pressing escape
             await this.page.keyboard.press("Escape");
           }
@@ -388,6 +398,191 @@ class NerdWalletScraper {
       categories: [],
     };
 
+    // Guard against null/undefined input
+    if (!tooltipText || typeof tooltipText !== "string") {
+      return rewards;
+    }
+
+    // Enhanced patterns for rewards extraction
+    const patterns = [
+      // Cash back patterns with better U.S. handling
+      /(\d+(?:\.\d+)?%)\s+cash\s+back\s+(?:at|on)\s+(?:select\s+|eligible\s+)?(u\.s\.\s+)?([^,\n.]+?)(?:\s+(?:on\s+up\s+to|up\s+to|\(then|\sand)|\.|,|$)/gi,
+      /earn\s+unlimited\s+(\d+(?:\.\d+)?%)\s+cash\s+(?:back\s+|rewards\s+)(?:at|on)\s+(?:select\s+|eligible\s+)?(u\.s\.\s+)?([^,\n.]+?)(?:\s+(?:on\s+up\s+to|up\s+to|\(then|\sand)|\.|,|$)/gi,
+      /earn\s+(\d+(?:\.\d+)?%)\s+cash\s+back\s+(?:at|on)\s+(?:select\s+|eligible\s+)?(u\.s\.\s+)?([^,\n.]+?)(?:\s+(?:on\s+up\s+to|up\s+to|\(then|\sand)|\.|,|$)/gi,
+
+      // Points/Miles patterns with better handling
+      /(\d+(?:\.\d+)?x)\s+(?:membership\s+rewards®?\s+points?|points?|miles?)\s+on\s+((?:all\s+)?[^,\n.]+?)(?:\s+(?:on\s+up\s+to|up\s+to|\(then|\sand)|\.|,|$)/gi,
+      /earn\s+unlimited\s+(\d+(?:\.\d+)?x)\s+(?:points?\s+|miles?\s+)?on\s+((?:all\s+)?[^,\n.]+?)(?:\s+(?:on\s+up\s+to|up\s+to|\(then|\sand)|\.|,|$)/gi,
+      /earn\s+(\d+(?:\.\d+)?x)\s+(?:points?\s+|miles?\s+)?on\s+((?:all\s+)?[^,\n.]+?)(?:\s+(?:on\s+up\s+to|up\s+to|\(then|\sand)|\.|,|$)/gi,
+
+      // Short format patterns like "5x on travel, 3x on dining"
+      /(\d+(?:\.\d+)?x)\s+on\s+([^,\n.]+?)(?:\s+purchased\s+through\s+([^,\n.]+?))?(?:\s*,|\s*\.|$)/gi,
+
+      // Special patterns for complex structures
+      /(\d+(?:\.\d+)?%)\s+cash\s+back\s+at\s+((?:u\.s\.\s+)?[^,\n.]+?)\s+on\s+up\s+to/gi,
+      /(\d+(?:\.\d+)?x)\s+(?:miles?\s+)?on\s+([^,\n.]+?)\s+booked\s+through/gi,
+      /(\d+(?:\.\d+)?%)\s+(?:total\s+)?cash\s+back\s+on\s+([^.]+?)\s+booked\s+with\s+([^,.]+)/gi, // For "booked with Citi Travel"
+
+      // Specific patterns for common formats
+      /(\d+(?:\.\d+)?%)\s+cash\s+back\s+on\s+select\s+(u\.s\.\s+[^,\n.]+?)(?:\.|,|$)/gi,
+      /(\d+(?:\.\d+)?%)\s+cash\s+back\s+at\s+eligible\s+(u\.s\.\s+gas\s+stations)(?:\s+and\s+on|\.|,|$)/gi,
+      /(\d+(?:\.\d+)?%)\s+cash\s+back\s+(?:at\s+eligible\s+u\.s\.\s+gas\s+stations\s+)?and\s+on\s+([^,\n.]+?)(?:\s+\(|\.|,|$)/gi,
+      /(\d+(?:\.\d+)?%)\s+cash\s+back\s+(?:at|on)\s+(u\.s\.\s+[^,\n.]+?)(?:\s+on\s+up\s+to|\.|,|$)/gi,
+      /(\d+(?:\.\d+)?%)\s+(?:total\s+)?cash\s+back\s+on\s+((?:u\.s\.\s+)?[^,\n.]+?)(?:\.|,|$)/gi,
+
+      // General patterns
+      /(\d+(?:\.\d+)?%)\s+(?:cash\s+back|cash\s+rewards)\s+on\s+((?:u\.s\.\s+)?[^,\n.]+?)(?:\.|,|$)/gi,
+      /(\d+(?:\.\d+)?x)\s+(?:points?|miles?)\s+on\s+((?:all\s+)?[^,\n.]+?)(?:\.|,|$)/gi,
+    ];
+
+    for (const pattern of patterns) {
+      let match;
+      while ((match = pattern.exec(tooltipText)) !== null) {
+        const rate = match[1];
+        let rawCategory = "";
+        let platform = null;
+
+        // Check if this is a pattern with platform information
+        if (
+          match[4] &&
+          (match[4].includes("Travel") || match[4].includes("Citi"))
+        ) {
+          // This is a 4-group match like "5x on travel purchased through Chase Travel"
+          rawCategory = match[2].trim();
+          platform = match[4].trim();
+        } else if (
+          match[3] &&
+          (match[3].includes("Travel") || match[3].includes("Citi"))
+        ) {
+          // This is a 3-group match like "5% cash back on hotel booked with Citi Travel"
+          rawCategory = match[2].trim();
+          platform = match[3].trim();
+        } else {
+          // Standard pattern - use the last capture group as the category
+          rawCategory = match[match.length - 1].trim();
+        }
+
+        const normalizedCategory = this.normalizeCategory(rawCategory);
+
+        // Avoid duplicates
+        const exists = rewards.categories.some(
+          (cat) =>
+            cat.category === normalizedCategory.category && cat.rate === rate
+        );
+
+        if (!exists) {
+          rewards.categories.push({
+            rate: rate,
+            category: normalizedCategory.category,
+            platform: platform || normalizedCategory.platform,
+            rawCategory: rawCategory,
+          });
+        }
+      }
+    }
+
+    // Handle "all other purchases" or general spending patterns
+    const generalPatterns = [
+      /(\d+(?:\.\d+)?%)\s+(?:cash\s+back\s+)?on\s+(?:all\s+)?other\s+purchases/gi,
+      /(\d+(?:\.\d+)?%)\s+(?:cash\s+back\s+)?on\s+(?:all\s+)?purchases/gi,
+      /(\d+(?:\.\d+)?%)\s+on\s+every\s+purchase/gi, // Added for "2% on every purchase"
+      /(\d+(?:\.\d+)?x)\s+(?:points?\s+|miles?\s+)?on\s+(?:all\s+)?other\s+purchases/gi,
+      /unlimited\s+(\d+(?:\.\d+)?%)\s+cash\s+(?:back\s+|rewards\s+)on\s+purchases/gi,
+      /unlimited\s+(\d+(?:\.\d+)?x)\s+(?:points?\s+|miles?\s+)on\s+(?:every\s+purchase|all\s+purchases)/gi,
+    ];
+
+    for (const pattern of generalPatterns) {
+      let match;
+      while ((match = pattern.exec(tooltipText)) !== null) {
+        const rate = match[1];
+
+        // Avoid duplicates
+        const exists = rewards.categories.some(
+          (cat) => cat.category === "general" && cat.rate === rate
+        );
+
+        if (!exists) {
+          rewards.categories.push({
+            rate: rate,
+            category: "general",
+            platform: null,
+            rawCategory: "all purchases",
+          });
+        }
+      }
+    }
+
+    // Handle comma-separated categories like "3x on dining, select streaming services and online groceries"
+    const commaSeparatedPattern =
+      /(\d+(?:\.\d+)?x)\s+on\s+([^.]+?)(?:\s+purchased\s+through\s+([^,.]+?))?(?:\.|$)/gi;
+    let match;
+    while ((match = commaSeparatedPattern.exec(tooltipText)) !== null) {
+      const rate = match[1];
+      const categoriesText = match[2];
+      const platform = match[3] ? match[3].trim() : null;
+
+      // Split by comma and "and"
+      const categoryList = categoriesText.split(/,\s*|\s+and\s+/);
+
+      for (const categoryText of categoryList) {
+        const trimmedCategory = categoryText.trim();
+        if (trimmedCategory && trimmedCategory.length > 2) {
+          const normalizedCategory = this.normalizeCategory(trimmedCategory);
+
+          // Avoid duplicates
+          const exists = rewards.categories.some(
+            (cat) =>
+              cat.category === normalizedCategory.category && cat.rate === rate
+          );
+
+          if (!exists) {
+            rewards.categories.push({
+              rate: rate,
+              category: normalizedCategory.category,
+              platform: platform || normalizedCategory.platform,
+              rawCategory: trimmedCategory,
+            });
+          }
+        }
+      }
+    }
+
+    // Handle "booked through" patterns specifically for travel
+    const bookedThroughPattern =
+      /(\d+(?:\.\d+)?x)\s+(?:miles?\s+)?on\s+([^,]+(?:,\s*[^,]+)*)\s+booked\s+through\s+([^,.]+)/gi;
+    while ((match = bookedThroughPattern.exec(tooltipText)) !== null) {
+      const rate = match[1];
+      const categoriesText = match[2];
+      const platform = match[3].trim();
+
+      // Split by comma and "and"
+      const categoryList = categoriesText.split(/,\s*|\s+and\s+/);
+
+      for (const categoryText of categoryList) {
+        const trimmedCategory = categoryText.trim();
+        if (trimmedCategory && trimmedCategory.length > 2) {
+          const normalizedCategory = this.normalizeCategory(trimmedCategory);
+
+          // Avoid duplicates
+          const exists = rewards.categories.some(
+            (cat) =>
+              cat.category === normalizedCategory.category &&
+              cat.rate === rate &&
+              cat.platform === platform
+          );
+
+          if (!exists) {
+            rewards.categories.push({
+              rate: rate,
+              category: normalizedCategory.category,
+              platform: platform,
+              rawCategory: trimmedCategory,
+            });
+          }
+        }
+      }
+    }
+
     return rewards;
   }
 
@@ -404,12 +599,15 @@ class NerdWalletScraper {
       restaurants: "restaurants",
       "dining at restaurants": "restaurants",
       restaurant: "restaurants",
+      takeout: "restaurants",
+      "eligible delivery service": "restaurants",
 
       // Groceries
       "grocery stores": "groceries",
       groceries: "groceries",
       supermarkets: "groceries",
       "u.s. supermarkets": "groceries",
+      "online groceries": "groceries",
 
       // Gas
       "gas stations": "gas",
@@ -426,19 +624,34 @@ class NerdWalletScraper {
       streaming: "streaming",
       "select streaming services": "streaming",
       "u.s. streaming subscriptions": "streaming",
+      "select u.s. streaming subscriptions": "streaming",
 
       // Transit
       transit: "transit",
       transportation: "transit",
       "taxis/rideshare": "transit",
+      rideshare: "transit",
       parking: "transit",
       tolls: "transit",
+      trains: "transit",
+      buses: "transit",
+
+      // Entertainment
+      entertainment: "entertainment",
+      "popular streaming services": "streaming",
+
+      // Online retail
+      "online retail purchases": "online-retail",
+      "u.s. online retail purchases": "online-retail",
 
       // General
       "all other purchases": "general",
       "other purchases": "general",
       "everything else": "general",
       "all purchases": "general",
+      "every purchase": "general",
+      "everyday purchases": "general",
+      "every day": "general",
     };
 
     // Handle travel separately due to platform complexity
@@ -451,6 +664,14 @@ class NerdWalletScraper {
       if (category.includes(key)) {
         return { category: value };
       }
+    }
+
+    // Special handling for quarterly categories (Discover-style)
+    if (
+      category.includes("quarterly") ||
+      category.includes("different places")
+    ) {
+      return { category: "rotating-categories" };
     }
 
     // If no match found, return cleaned version of original
@@ -466,9 +687,15 @@ class NerdWalletScraper {
     const travelKeywords = [
       "travel",
       "flight",
+      "flights",
       "hotel",
+      "hotels",
       "rental car",
+      "car rental",
       "vacation rental",
+      "vacation rentals",
+      "prepaid hotel",
+      "prepaid air",
     ];
     return travelKeywords.some((keyword) => category.includes(keyword));
   }
@@ -492,17 +719,41 @@ class NerdWalletScraper {
     }
 
     // Specific travel subcategories
-    if (category.includes("hotel")) {
+    if (category.includes("hotel") || category.includes("prepaid hotel")) {
       return { category: "hotels" };
     }
-    if (category.includes("flight")) {
+    if (category.includes("flight") || category.includes("prepaid air")) {
       return { category: "flights" };
     }
-    if (category.includes("rental car")) {
+    if (category.includes("rental car") || category.includes("car rental")) {
       return { category: "rental-cars" };
     }
     if (category.includes("vacation rental")) {
       return { category: "vacation-rentals" };
+    }
+
+    // Check for booked through patterns
+    if (category.includes("booked through")) {
+      const platformMatch = category.match(/booked through ([^,\n.]+)/i);
+      if (platformMatch) {
+        return { category: "travel", platform: platformMatch[1].trim() };
+      }
+    }
+
+    // Check for booked with patterns
+    if (category.includes("booked with")) {
+      const platformMatch = category.match(/booked with ([^,\n.]+)/i);
+      if (platformMatch) {
+        return { category: "travel", platform: platformMatch[1].trim() };
+      }
+    }
+
+    // Check for purchased through patterns
+    if (category.includes("purchased through")) {
+      const platformMatch = category.match(/purchased through ([^,\n.]+)/i);
+      if (platformMatch) {
+        return { category: "travel", platform: platformMatch[1].trim() };
+      }
     }
 
     // Default travel
