@@ -1,23 +1,585 @@
 {
-  "cards": [
+  "url": "https://www.nerdwallet.com/m/credit-cards/excellent-credit-cards",
+  "creditCards": [
     {
-      "id": "chase-sapphire-preferred",
-      "name": "Chase Sapphire Preferred",
-      "issuer": "Chase",
-      "annualFee": 95,
-      "signupBonus": {
-        "amount": 60000,
-        "currency": "points",
-        "spendRequirement": 4000,
-        "timeframe": 3
+      "name": "Wells Fargo Active Cash® Card",
+      "rating": "5.0",
+      "annualFee": "0",
+      "rewards": "2%Cashback",
+      "hasRewardsTooltip": true,
+      "introOffer": {
+        "amount": 200,
+        "currency": "dollars"
       },
-      "rewards": {
-        "baseRate": 1.0,
-        "bonusCategories": [
-          { "category": "dining", "rate": 2.0 },
-          { "category": "travel", "rate": 2.0 }
-        ]
+      "hasIntroTooltip": true,
+      "image": {
+        "src": "https://www.nerdwallet.com/cdn-cgi/image/width=300,quality=100/cdn/images/marketplace/credit_cards/b954a46c-caec-11eb-abf1-efb90fc6e740/403a0deae03eaff0d1ca2c7ab1175fcc45ebc9a9551d0c8104e758b3d82771d1.jpg",
+        "alt": "Wells Fargo Active Cash® Card Image",
+        "filename": "wells_fargo_active_cash__card.jpg"
+      },
+      "detailedRewards": {
+        "raw": "Earn unlimited 2% cash rewards on purchases",
+        "parsed": {
+          "categories": [
+            {
+              "category": "general",
+              "rate": "2",
+              "currency": "cashback",
+              "platform": null
+            }
+          ]
+        }
+      },
+      "detailedIntroOffer": {
+        "raw": "Earn a $200 cash rewards bonus after spending $500 in purchases in the first 3 months."
+      }
+    },
+    {
+      "name": "Chase Freedom Unlimited®",
+      "rating": "5.0",
+      "annualFee": "0",
+      "rewards": "1.5%-5%Cashback",
+      "hasRewardsTooltip": true,
+      "introOffer": {
+        "amount": 200,
+        "currency": "dollars"
+      },
+      "hasIntroTooltip": true,
+      "image": {
+        "src": "https://www.nerdwallet.com/cdn-cgi/image/width=300,quality=100/cdn/images/marketplace/credit_cards/84e1494c-bae2-4b0d-ac8d-e8c095ceb2fe/3a0cac78e497688cdc58fb030fd6c59eea6a6275256e6a523d7999e1827ffd06.jpg",
+        "alt": "Chase Freedom Unlimited® Image",
+        "filename": "chase_freedom_unlimited_.jpg"
+      },
+      "detailedRewards": {
+        "raw": "Enjoy 5% cash back on travel purchased through Chase Travel℠, 3% cash back on drugstore purchases and dining at restaurants, including takeout and eligible delivery service, and unlimited 1.5% cash back on all other purchases.",
+        "parsed": {
+          "categories": [
+            {
+              "category": "travel",
+              "rate": "5",
+              "currency": "cashback",
+              "platform": "Chase Travel"
+            },
+            {
+              "category": "online-retail",
+              "rate": "3",
+              "currency": "cashback",
+              "platform": null
+            },
+            {
+              "category": "dining",
+              "rate": "3",
+              "currency": "cashback",
+              "platform": null
+            },
+            {
+              "category": "general",
+              "rate": "1.5",
+              "currency": "cashback",
+              "platform": null
+            }
+          ]
+        }
+      },
+      "detailedIntroOffer": {
+        "raw": "Intro Offer: Earn a $200 Bonus after you spend $500 on purchases in your first 3 months from account opening."
+      }
+    },
+    {
+      "name": "Discover it® Cash Back",
+      "rating": "4.9",
+      "annualFee": "0",
+      "rewards": "1%-5%Cashback",
+      "hasRewardsTooltip": true,
+      "introOffer": {
+        "amount": "match",
+        "currency": "cashback"
+      },
+      "hasIntroTooltip": true,
+      "image": {
+        "src": "https://www.nerdwallet.com/cdn-cgi/image/width=300,quality=100/cdn/images/marketplace/credit_cards/a4a36a73-0294-4ca1-b36b-3eef5cee53ca/a1de1f5a52d4ab48b729c2ea25588d40b1b0382c84ddac318b584f1d62aa37bd.jpg",
+        "alt": "Discover it® Cash Back Image",
+        "filename": "discover_it__cash_back.jpg"
+      },
+      "detailedRewards": {
+        "raw": "Earn 5% cash back on everyday purchases at different places you shop each quarter like grocery stores, restaurants, gas stations, and more, up to the quarterly maximum when you activate. Plus, earn unlimited 1% cash back on all other purchases.",
+        "parsed": {
+          "categories": [
+            {
+              "category": "groceries",
+              "rate": "5",
+              "currency": "cashback",
+              "platform": null
+            },
+            {
+              "category": "dining",
+              "rate": "5",
+              "currency": "cashback",
+              "platform": null
+            },
+            {
+              "category": "gas",
+              "rate": "5",
+              "currency": "cashback",
+              "platform": null
+            },
+            {
+              "category": "general",
+              "rate": "1",
+              "currency": "cashback",
+              "platform": null
+            }
+          ]
+        }
+      },
+      "detailedIntroOffer": {
+        "raw": "INTRO OFFER: Unlimited Cashback Match for all new cardmembers – only from Discover. Discover will automatically match all the cash back you’ve earned at the end of your first year! There’s no minimum spending or maximum rewards. You could turn $150 cash back into $300."
+      }
+    },
+    {
+      "name": "Capital One Venture X Rewards Credit Card",
+      "rating": "4.9",
+      "annualFee": "395",
+      "rewards": "2x-10xMiles",
+      "hasRewardsTooltip": true,
+      "introOffer": {
+        "amount": 75000,
+        "currency": "miles"
+      },
+      "hasIntroTooltip": true,
+      "image": {
+        "src": "https://www.nerdwallet.com/cdn-cgi/image/width=300,quality=100/cdn/images/marketplace/credit_cards/39cdfd80-3372-11ec-ba1e-0bd72314c41b/212d04e17da168e0519eff57f944fede1f66f4cb08bc9643a04cb8c48f0e5a25.jpg",
+        "alt": "Capital One Venture X Rewards Credit Card Image",
+        "filename": "capital_one_venture_x_rewards_credit_card.jpg"
+      },
+      "detailedRewards": {
+        "raw": "Earn unlimited 10X miles on hotels and rental cars booked through Capital One Travel and 5X miles on flights and vacation rentals booked through Capital One Travel, Earn unlimited 2X miles on all other purchases.",
+        "parsed": {
+          "categories": [
+            {
+              "category": "travel",
+              "rate": "10",
+              "currency": "miles",
+              "platform": "Capital One Travel"
+            },
+            {
+              "category": "travel",
+              "rate": "5",
+              "currency": "miles",
+              "platform": "Capital One Travel"
+            },
+            {
+              "category": "general",
+              "rate": "2",
+              "currency": "miles",
+              "platform": null
+            }
+          ]
+        }
+      },
+      "detailedIntroOffer": {
+        "raw": "Earn 75,000 bonus miles when you spend $4,000 on purchases in the first 3 months from account opening, equal to $750 in travel."
+      }
+    },
+    {
+      "name": "U.S. Bank Shield™ Visa® Card",
+      "rating": "4.6",
+      "annualFee": "0",
+      "rewards": "4%Cashback",
+      "hasRewardsTooltip": true,
+      "introOffer": {
+        "amount": null,
+        "currency": null
+      },
+      "image": {
+        "src": "https://www.nerdwallet.com/cdn-cgi/image/width=300,quality=100/cdn/images/marketplace/credit_cards/ad44596c-0907-11f0-8f88-7fb9121e6e3f/188c165b6fc4796433a66657d3d62a38895f07576a9c99846fa6c5c4e43818e9.jpg",
+        "alt": "U.S. Bank Shield™ Visa® Card Image",
+        "filename": "u_s__bank_shield__visa__card.jpg"
+      },
+      "detailedRewards": {
+        "raw": "4% cash back on prepaid air, hotel and car reservations booked directly in the Rewards Center when you use your card.",
+        "parsed": {
+          "categories": [
+            {
+              "category": "travel",
+              "rate": "4",
+              "currency": "cashback",
+              "platform": null
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Capital One Savor Cash Rewards Credit Card",
+      "rating": "5.0",
+      "annualFee": "0",
+      "rewards": "1%-8%Cashback",
+      "hasRewardsTooltip": true,
+      "introOffer": {
+        "amount": 300,
+        "currency": "dollars"
+      },
+      "hasIntroTooltip": true,
+      "image": {
+        "src": "https://www.nerdwallet.com/cdn-cgi/image/width=300,quality=100/cdn/images/marketplace/credit_cards/cfeca922-52db-4b18-be5e-8e4fe1448448/889224ee9be7cb993cf4d219c6577f9ddfe617afde0cd37404e6928f1dcfae3f.jpg",
+        "alt": "Capital One Savor Cash Rewards Credit Card Image",
+        "filename": "capital_one_savor_cash_rewards_credit_card.jpg"
+      },
+      "detailedRewards": {
+        "raw": "Earn unlimited 3% cash back at grocery stores (excluding superstores like Walmart® and Target®), on dining, entertainment and popular streaming services, plus 1% on all other purchases. Earn 8% cash back on Capital One Entertainment purchases. Earn unlimited 5% cash back on hotels, vacation rentals and rental cars booked through Capital One Travel.",
+        "parsed": {
+          "categories": [
+            {
+              "category": "groceries",
+              "rate": "3",
+              "currency": "cashback",
+              "platform": null
+            },
+            {
+              "category": "dining",
+              "rate": "3",
+              "currency": "cashback",
+              "platform": null
+            },
+            {
+              "category": "streaming",
+              "rate": "3",
+              "currency": "cashback",
+              "platform": null
+            },
+            {
+              "category": "general",
+              "rate": "1",
+              "currency": "cashback",
+              "platform": null
+            },
+            {
+              "category": "travel",
+              "rate": "5",
+              "currency": "cashback",
+              "platform": "Capital One Travel"
+            }
+          ]
+        }
+      },
+      "detailedIntroOffer": {
+        "raw": "LIMITED-TIME OFFER: Earn $300 in welcome bonuses. Enjoy a $100 credit to use towards flights, stays and rental cars booked through Capital One Travel during your first cardholder year. Plus, earn a $200 cash bonus once you spend $500 on purchases within the first 3 months from account opening."
+      }
+    },
+    {
+      "name": "Blue Cash Everyday® Card from American Express",
+      "rating": "4.9",
+      "annualFee": "0",
+      "rewards": "1%-3%Cashback",
+      "hasRewardsTooltip": true,
+      "introOffer": {
+        "amount": 200,
+        "currency": "dollars"
+      },
+      "hasIntroTooltip": true,
+      "image": {
+        "src": "https://www.nerdwallet.com/cdn-cgi/image/width=300,quality=100/cdn/images/marketplace/credit_cards/5ed2eb69-5e8c-4014-b8b7-23c4d600591c/bfccadb4c5dc3dc5a88464e70bf2c7339280bf494e9c8fad0ee4e5230c465dc4.jpg",
+        "alt": "Blue Cash Everyday® Card from American Express Image",
+        "filename": "blue_cash_everyday__card_from_american_express.jpg"
+      },
+      "detailedRewards": {
+        "raw": "Earn 3% cash back at U.S. supermarkets, 3% cash back on U.S. online retail purchases, 3% cash back at U.S. gas stations, on eligible purchases for each category on up to $6,000 per year in purchases (then 1%). 1% Cash Back on other purchases. Terms and limitations apply.",
+        "parsed": {
+          "categories": [
+            {
+              "category": "online-retail",
+              "rate": "3",
+              "currency": "cashback",
+              "platform": null
+            },
+            {
+              "category": "groceries",
+              "rate": "3",
+              "currency": "cashback",
+              "platform": null
+            },
+            {
+              "category": "gas",
+              "rate": "3",
+              "currency": "cashback",
+              "platform": null
+            },
+            {
+              "category": "general",
+              "rate": "1",
+              "currency": "cashback",
+              "platform": null
+            }
+          ]
+        }
+      },
+      "detailedIntroOffer": {
+        "raw": "Earn a $200 statement credit after you spend $2,000 in purchases on your new Card within the first 6 months. Terms Apply."
+      }
+    },
+    {
+      "name": "Wells Fargo Reflect® Card",
+      "rating": "4.5",
+      "annualFee": "0",
+      "rewards": "N/A",
+      "introOffer": {
+        "amount": null,
+        "currency": null
+      },
+      "image": {
+        "src": "https://www.nerdwallet.com/cdn-cgi/image/width=300,quality=100/cdn/images/marketplace/credit_cards/855541f2-09c7-11ec-b9f9-9b7d4865316d/d8c6ebbd39dad1e66d6e8a2fac345f051fdd29b593cf707a9a2b7efa6a95cb03.jpg",
+        "alt": "Wells Fargo Reflect® Card Image",
+        "filename": "wells_fargo_reflect__card.jpg"
+      }
+    },
+    {
+      "name": "American Express Platinum Card®",
+      "rating": "5.0",
+      "annualFee": "895",
+      "rewards": "1x-5xPoints",
+      "hasRewardsTooltip": true,
+      "introOffer": {
+        "amount": 175000,
+        "currency": "points"
+      },
+      "hasIntroTooltip": true,
+      "image": {
+        "src": "https://www.nerdwallet.com/cdn-cgi/image/width=300,quality=100/cdn/images/marketplace/credit_cards/fd24850b-46ce-4ea8-9314-3594fe77944f/ef4003770aeed9c41fd5e172aaf2224611a39cde217bc4f9d10f8c75e9bb31b6.jpg",
+        "alt": "American Express Platinum Card® Image",
+        "filename": "american_express_platinum_card_.jpg"
+      },
+      "detailedRewards": {
+        "raw": "Get more for your travels with 5X Membership Rewards® points on all flights and prepaid hotel bookings through American Express Travel®, including Fine Hotels + Resorts® and The Hotel Collection bookings. You earn 5X points on flights purchased directly from airlines or through American Express Travel® on up to $500,000 on these purchases per calendar year. 1X Membership Rewards® Points on other purchases. Terms Apply.",
+        "parsed": {
+          "categories": [
+            {
+              "category": "travel",
+              "rate": "5",
+              "currency": "points",
+              "platform": "American Express Travel"
+            },
+            {
+              "category": "general",
+              "rate": "1",
+              "currency": "points",
+              "platform": null
+            }
+          ]
+        }
+      },
+      "detailedIntroOffer": {
+        "raw": "You may be eligible for as high as 175,000 Membership Rewards® Points after you spend $8,000 in eligible purchases on your new Card in your first 6 months of Card Membership. Welcome offers vary and you may not be eligible for an offer. Apply to know if you’re approved and find out your exact welcome offer amount – all with no credit score impact. If you’re approved and choose to accept the Card, your score may be impacted."
+      }
+    },
+    {
+      "name": "Citi Simplicity® Card",
+      "rating": "4.5",
+      "annualFee": "0",
+      "rewards": "N/A",
+      "introOffer": {
+        "amount": null,
+        "currency": null
+      },
+      "image": {
+        "src": "https://www.nerdwallet.com/cdn-cgi/image/width=300,quality=100/cdn/images/marketplace/credit_cards/697cec98-8d25-45e2-b5d4-24f76d6860c2/9a8fc498f6c06c50e9a8024d58f24ea2f2d931a939311290b69e1ba15ba6e069.jpg",
+        "alt": "Citi Simplicity® Card Image",
+        "filename": "citi_simplicity__card.jpg"
+      }
+    },
+    {
+      "name": "Citi Double Cash® Card",
+      "rating": "4.9",
+      "annualFee": "0",
+      "rewards": "2%-5%Cashback",
+      "hasRewardsTooltip": true,
+      "introOffer": {
+        "amount": 200,
+        "currency": "dollars"
+      },
+      "hasIntroTooltip": true,
+      "image": {
+        "src": "https://www.nerdwallet.com/cdn-cgi/image/width=300,quality=100/cdn/images/marketplace/credit_cards/2a5d5681-8a3b-4e4c-9509-7476a4d3290d/e336c70dca87c32aab9a7bb224023d69a2e3920fa2ed2acce940f2f4f4a6956e.jpg",
+        "alt": "Citi Double Cash® Card Image",
+        "filename": "citi_double_cash__card.jpg"
+      },
+      "detailedRewards": {
+        "raw": "Earn 2% on every purchase with unlimited 1% cash back when you buy, plus an additional 1% as you pay for those purchases. To earn cash back, pay at least the minimum due on time. Plus, earn 5% total cash back on hotel, car rentals and attractions booked with Citi Travel.",
+        "parsed": {
+          "categories": [
+            {
+              "category": "general",
+              "rate": "2",
+              "currency": "cashback",
+              "platform": null
+            },
+            {
+              "category": "travel",
+              "rate": "6",
+              "currency": "cashback",
+              "platform": "Citi Travel"
+            }
+          ]
+        }
+      },
+      "detailedIntroOffer": {
+        "raw": "Earn $200 cash back after you spend $1,500 on purchases in the first 6 months of account opening. This bonus offer will be fulfilled as 20,000 ThankYou® Points, which can be redeemed for $200 cash back."
+      }
+    },
+    {
+      "name": "Blue Cash Preferred® Card from American Express",
+      "rating": "5.0",
+      "annualFee": "0 intro annual fee for the first year, then $95.",
+      "rewards": "1%-6%Cashback",
+      "hasRewardsTooltip": true,
+      "introOffer": {
+        "amount": 250,
+        "currency": "dollars"
+      },
+      "hasIntroTooltip": true,
+      "image": {
+        "src": "https://www.nerdwallet.com/cdn-cgi/image/width=300,quality=100/cdn/images/marketplace/credit_cards/2681330d-450d-4f71-af38-3cb16f592c02/596f22094df609999878f43629debc8d416e18334ea8f5e68f9d92a72dd0b912.jpg",
+        "alt": "Blue Cash Preferred® Card from American Express Image",
+        "filename": "blue_cash_preferred__card_from_american_express.jpg"
+      },
+      "detailedRewards": {
+        "raw": "Earn 6% cash back at U.S. supermarkets on up to $6,000 per year in eligible purchases (then 1%), 6% cash back on select U.S. streaming subscriptions, 3% cash back at eligible U.S. gas stations and on transit (including taxis/rideshare, parking, tolls, trains, buses and more) purchases and 1% cash back on other purchases. Terms Apply.",
+        "parsed": {
+          "categories": [
+            {
+              "category": "online-groceries",
+              "rate": "6",
+              "currency": "cashback",
+              "platform": null
+            },
+            {
+              "category": "general",
+              "rate": "1",
+              "currency": "cashback",
+              "platform": null
+            },
+            {
+              "category": "streaming",
+              "rate": "6",
+              "currency": "cashback",
+              "platform": null
+            },
+            {
+              "category": "gas",
+              "rate": "3",
+              "currency": "cashback",
+              "platform": null
+            },
+            {
+              "category": "transit",
+              "rate": "3",
+              "currency": "cashback",
+              "platform": null
+            }
+          ]
+        }
+      },
+      "detailedIntroOffer": {
+        "raw": "Earn a $250 statement credit after you spend $3,000 in purchases on your new Card within the first 6 months. Terms Apply."
+      }
+    },
+    {
+      "name": "Chase Sapphire Preferred® Card",
+      "rating": "4.7",
+      "annualFee": "95",
+      "rewards": "1x-5xPoints",
+      "hasRewardsTooltip": true,
+      "introOffer": {
+        "amount": 75000,
+        "currency": "points"
+      },
+      "hasIntroTooltip": true,
+      "image": {
+        "src": "https://www.nerdwallet.com/cdn-cgi/image/width=300,quality=100/cdn/images/marketplace/credit_cards/7dce19da-5d96-4502-9fd2-70ff9655f13a/3f8b79d90932c89dcb16ddad07861bbc7d0c804366870949527ae9b89e1df384.png",
+        "alt": "Chase Sapphire Preferred® Card Image",
+        "filename": "chase_sapphire_preferred__card.jpg"
+      },
+      "detailedRewards": {
+        "raw": "5x on travel purchased through Chase Travel℠, 3x on dining, select streaming services and online groceries, 2x on all other travel purchases, 1x on all other purchases.",
+        "parsed": {
+          "categories": [
+            {
+              "category": "travel",
+              "rate": "5",
+              "currency": "points",
+              "platform": "Chase Travel"
+            },
+            {
+              "category": "dining",
+              "rate": "3",
+              "currency": "points",
+              "platform": null
+            },
+            {
+              "category": "online-groceries",
+              "rate": "3",
+              "currency": "points",
+              "platform": null
+            },
+            {
+              "category": "travel",
+              "rate": "2",
+              "currency": "points",
+              "platform": null
+            },
+            {
+              "category": "general",
+              "rate": "1",
+              "currency": "points",
+              "platform": null
+            }
+          ]
+        }
+      },
+      "detailedIntroOffer": {
+        "raw": "Earn 75,000 bonus points after you spend $5,000 on purchases in the first 3 months from account opening."
+      }
+    },
+    {
+      "name": "Capital One Venture Rewards Credit Card",
+      "rating": "4.7",
+      "annualFee": "95",
+      "rewards": "2x-5xMiles",
+      "hasRewardsTooltip": true,
+      "introOffer": {
+        "amount": 75000,
+        "currency": "miles"
+      },
+      "hasIntroTooltip": true,
+      "image": {
+        "src": "https://www.nerdwallet.com/cdn-cgi/image/width=300,quality=100/cdn/images/marketplace/credit_cards/1fc99a80-1508-4e14-83d7-eb5d5da65d97/1c02e12156eb0f625fadd3dc2c5319b30e24fdbaa35977525aa595a477520cbd.jpg",
+        "alt": "Capital One Venture Rewards Credit Card Image",
+        "filename": "capital_one_venture_rewards_credit_card.jpg"
+      },
+      "detailedRewards": {
+        "raw": "Earn unlimited 2X miles on every purchase, every day. Earn 5X miles on hotels, vacation rentals and rental cars booked through Capital One Travel.",
+        "parsed": {
+          "categories": [
+            {
+              "category": "groceries",
+              "rate": "5",
+              "currency": "miles",
+              "platform": null
+            },
+            {
+              "category": "general",
+              "rate": "2",
+              "currency": "miles",
+              "platform": null
+            }
+          ]
+        }
+      },
+      "detailedIntroOffer": {
+        "raw": "Enjoy a one-time bonus of 75,000 miles once you spend $4,000 on purchases within 3 months from account opening, equal to $750 in travel."
       }
     }
-  ]
+  ],
+  "totalCardsFound": 14,
+  "timestamp": "2025-10-21T17:17:38.209Z"
 }

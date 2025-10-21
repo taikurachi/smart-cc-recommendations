@@ -1,16 +1,16 @@
 import { chromium, Browser, Page } from "playwright";
+import { Ollama } from "ollama";
 import * as fs from "fs";
 import * as path from "path";
-
-interface ScrapedData {
-  title: string;
-  url: string;
-  timestamp: string;
-}
 
 class NerdWalletScraper {
   private browser: Browser | null = null;
   private page: Page | null = null;
+  private ollama: Ollama;
+
+  constructor() {
+    this.ollama = new Ollama({ host: "http://localhost:11434" });
+  }
 
   async initialize(): Promise<void> {
     this.browser = await chromium.launch({
@@ -53,9 +53,6 @@ class NerdWalletScraper {
 
     // Try to extract credit card information
     try {
-      const pageTitle = await this.page.title();
-      console.log(`Scraping page: ${pageTitle}`);
-
       // Extract credit card information from the table/list structure
       const creditCards = await this.page.evaluate(() => {
         const cards: any[] = [];
@@ -80,7 +77,9 @@ class NerdWalletScraper {
 
           if (!hasCardName) return; // Skip rows without valid card names
 
-          console.log(`Row ${rowIndex}: Processing card "${hasCardName}"`);
+          console.log(
+            `Row ${rowIndex}: Processing card "${hasCardName.textContent}"`
+          );
           const cardData = {};
 
           // Process each column for this validated row
@@ -244,7 +243,7 @@ class NerdWalletScraper {
               // Save both raw and parsed data
               creditCards[i].detailedRewards = {
                 raw: tooltipContent,
-                parsed: this.parseRewardsTooltip(tooltipContent),
+                parsed: await this.parseRewardsTooltip(tooltipContent),
               };
             }
           } catch (error) {
@@ -275,17 +274,9 @@ class NerdWalletScraper {
       }
 
       // Also get some general page info
-      const headings = await this.page.$$eval("h1, h2, h3", (elements) =>
-        elements
-          .slice(0, 5)
-          .map((el) => el.textContent?.trim())
-          .filter((text) => text && text.length > 0)
-      );
 
       return {
-        pageTitle,
         url: this.page.url(),
-        headings,
         creditCards,
         totalCardsFound: creditCards?.length,
         timestamp: new Date().toISOString(),
@@ -393,7 +384,7 @@ class NerdWalletScraper {
     }
   }
 
-  private parseRewardsTooltip(tooltipText: string): any {
+  private async parseRewardsTooltip(tooltipText: string): Promise<any> {
     const rewards = {
       categories: [],
     };
@@ -403,361 +394,93 @@ class NerdWalletScraper {
       return rewards;
     }
 
-    // Enhanced patterns for rewards extraction
-    const patterns = [
-      // Cash back patterns with better U.S. handling
-      /(\d+(?:\.\d+)?%)\s+cash\s+back\s+(?:at|on)\s+(?:select\s+|eligible\s+)?(u\.s\.\s+)?([^,\n.]+?)(?:\s+(?:on\s+up\s+to|up\s+to|\(then|\sand)|\.|,|$)/gi,
-      /earn\s+unlimited\s+(\d+(?:\.\d+)?%)\s+cash\s+(?:back\s+|rewards\s+)(?:at|on)\s+(?:select\s+|eligible\s+)?(u\.s\.\s+)?([^,\n.]+?)(?:\s+(?:on\s+up\s+to|up\s+to|\(then|\sand)|\.|,|$)/gi,
-      /earn\s+(\d+(?:\.\d+)?%)\s+cash\s+back\s+(?:at|on)\s+(?:select\s+|eligible\s+)?(u\.s\.\s+)?([^,\n.]+?)(?:\s+(?:on\s+up\s+to|up\s+to|\(then|\sand)|\.|,|$)/gi,
+    try {
+      const prompt = `
+Parse the following credit card rewards text and extract structured reward information. 
+Return ONLY a valid JSON object with this exact structure:
 
-      // Points/Miles patterns with better handling
-      /(\d+(?:\.\d+)?x)\s+(?:membership\s+rewards®?\s+points?|points?|miles?)\s+on\s+((?:all\s+)?[^,\n.]+?)(?:\s+(?:on\s+up\s+to|up\s+to|\(then|\sand)|\.|,|$)/gi,
-      /earn\s+unlimited\s+(\d+(?:\.\d+)?x)\s+(?:points?\s+|miles?\s+)?on\s+((?:all\s+)?[^,\n.]+?)(?:\s+(?:on\s+up\s+to|up\s+to|\(then|\sand)|\.|,|$)/gi,
-      /earn\s+(\d+(?:\.\d+)?x)\s+(?:points?\s+|miles?\s+)?on\s+((?:all\s+)?[^,\n.]+?)(?:\s+(?:on\s+up\s+to|up\s+to|\(then|\sand)|\.|,|$)/gi,
-
-      // Short format patterns like "5x on travel, 3x on dining"
-      /(\d+(?:\.\d+)?x)\s+on\s+([^,\n.]+?)(?:\s+purchased\s+through\s+([^,\n.]+?))?(?:\s*,|\s*\.|$)/gi,
-
-      // Special patterns for complex structures
-      /(\d+(?:\.\d+)?%)\s+cash\s+back\s+at\s+((?:u\.s\.\s+)?[^,\n.]+?)\s+on\s+up\s+to/gi,
-      /(\d+(?:\.\d+)?x)\s+(?:miles?\s+)?on\s+([^,\n.]+?)\s+booked\s+through/gi,
-      /(\d+(?:\.\d+)?%)\s+(?:total\s+)?cash\s+back\s+on\s+([^.]+?)\s+booked\s+with\s+([^,.]+)/gi, // For "booked with Citi Travel"
-
-      // Specific patterns for common formats
-      /(\d+(?:\.\d+)?%)\s+cash\s+back\s+on\s+select\s+(u\.s\.\s+[^,\n.]+?)(?:\.|,|$)/gi,
-      /(\d+(?:\.\d+)?%)\s+cash\s+back\s+at\s+eligible\s+(u\.s\.\s+gas\s+stations)(?:\s+and\s+on|\.|,|$)/gi,
-      /(\d+(?:\.\d+)?%)\s+cash\s+back\s+(?:at\s+eligible\s+u\.s\.\s+gas\s+stations\s+)?and\s+on\s+([^,\n.]+?)(?:\s+\(|\.|,|$)/gi,
-      /(\d+(?:\.\d+)?%)\s+cash\s+back\s+(?:at|on)\s+(u\.s\.\s+[^,\n.]+?)(?:\s+on\s+up\s+to|\.|,|$)/gi,
-      /(\d+(?:\.\d+)?%)\s+(?:total\s+)?cash\s+back\s+on\s+((?:u\.s\.\s+)?[^,\n.]+?)(?:\.|,|$)/gi,
-
-      // General patterns
-      /(\d+(?:\.\d+)?%)\s+(?:cash\s+back|cash\s+rewards)\s+on\s+((?:u\.s\.\s+)?[^,\n.]+?)(?:\.|,|$)/gi,
-      /(\d+(?:\.\d+)?x)\s+(?:points?|miles?)\s+on\s+((?:all\s+)?[^,\n.]+?)(?:\.|,|$)/gi,
-    ];
-
-    for (const pattern of patterns) {
-      let match;
-      while ((match = pattern.exec(tooltipText)) !== null) {
-        const rate = match[1];
-        let rawCategory = "";
-        let platform = null;
-
-        // Check if this is a pattern with platform information
-        if (
-          match[4] &&
-          (match[4].includes("Travel") || match[4].includes("Citi"))
-        ) {
-          // This is a 4-group match like "5x on travel purchased through Chase Travel"
-          rawCategory = match[2].trim();
-          platform = match[4].trim();
-        } else if (
-          match[3] &&
-          (match[3].includes("Travel") || match[3].includes("Citi"))
-        ) {
-          // This is a 3-group match like "5% cash back on hotel booked with Citi Travel"
-          rawCategory = match[2].trim();
-          platform = match[3].trim();
-        } else {
-          // Standard pattern - use the last capture group as the category
-          rawCategory = match[match.length - 1].trim();
-        }
-
-        const normalizedCategory = this.normalizeCategory(rawCategory);
-
-        // Avoid duplicates
-        const exists = rewards.categories.some(
-          (cat) =>
-            cat.category === normalizedCategory.category && cat.rate === rate
-        );
-
-        if (!exists) {
-          rewards.categories.push({
-            rate: rate,
-            category: normalizedCategory.category,
-            platform: platform || normalizedCategory.platform,
-            rawCategory: rawCategory,
-          });
-        }
-      }
+{
+  "categories": [
+    {
+      "category": "groceries",
+      "rate": "5",
+      "currency: "points" | "miles" | "cashback",
+      "platform": string | null
     }
+  ]
+}
 
-    // Handle "all other purchases" or general spending patterns
-    const generalPatterns = [
-      /(\d+(?:\.\d+)?%)\s+(?:cash\s+back\s+)?on\s+(?:all\s+)?other\s+purchases/gi,
-      /(\d+(?:\.\d+)?%)\s+(?:cash\s+back\s+)?on\s+(?:all\s+)?purchases/gi,
-      /(\d+(?:\.\d+)?%)\s+on\s+every\s+purchase/gi, // Added for "2% on every purchase"
-      /(\d+(?:\.\d+)?x)\s+(?:points?\s+|miles?\s+)?on\s+(?:all\s+)?other\s+purchases/gi,
-      /unlimited\s+(\d+(?:\.\d+)?%)\s+cash\s+(?:back\s+|rewards\s+)on\s+purchases/gi,
-      /unlimited\s+(\d+(?:\.\d+)?x)\s+(?:points?\s+|miles?\s+)on\s+(?:every\s+purchase|all\s+purchases)/gi,
-    ];
+Rules:
+- Extract ALL reward categories mentioned
+- Categories should be (general, dining, transit, streaming, online-retail, online-groceries, groceries, gas, travel)
+- Use lowercase for category names
+- Keep rate as digit (e.g., "5")
+- For platform names, use proper capitalization (e.g., "Chase Travel", not "chase travel")
+- Remove special characters like ℠, ™, ® from platform names
+- Set platform to null if not specified
+- For "all other purchases" use category: "general"
 
-    for (const pattern of generalPatterns) {
-      let match;
-      while ((match = pattern.exec(tooltipText)) !== null) {
-        const rate = match[1];
+Credit card rewards text:
+"${tooltipText}"
+`;
 
-        // Avoid duplicates
-        const exists = rewards.categories.some(
-          (cat) => cat.category === "general" && cat.rate === rate
-        );
+      const response = await this.ollama.chat({
+        model: "qwen2.5:7b",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a data extraction expert. Extract credit card rewards information and return ONLY valid JSON.",
+          },
+          { role: "user", content: prompt },
+        ],
+        stream: false,
+      });
 
-        if (!exists) {
-          rewards.categories.push({
-            rate: rate,
-            category: "general",
-            platform: null,
-            rawCategory: "all purchases",
-          });
-        }
+      // Parse the AI response
+      const aiResponse = response.message.content.trim();
+
+      // Try to extract JSON from the response
+      let jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        console.log("No JSON found in AI response:", aiResponse);
+        return rewards;
       }
-    }
 
-    // Handle comma-separated categories like "3x on dining, select streaming services and online groceries"
-    const commaSeparatedPattern =
-      /(\d+(?:\.\d+)?x)\s+on\s+([^.]+?)(?:\s+purchased\s+through\s+([^,.]+?))?(?:\.|$)/gi;
-    let match;
-    while ((match = commaSeparatedPattern.exec(tooltipText)) !== null) {
-      const rate = match[1];
-      const categoriesText = match[2];
-      const platform = match[3] ? match[3].trim() : null;
+      const parsedRewards = JSON.parse(jsonMatch[0]);
 
-      // Split by comma and "and"
-      const categoryList = categoriesText.split(/,\s*|\s+and\s+/);
-
-      for (const categoryText of categoryList) {
-        const trimmedCategory = categoryText.trim();
-        if (trimmedCategory && trimmedCategory.length > 2) {
-          const normalizedCategory = this.normalizeCategory(trimmedCategory);
-
-          // Avoid duplicates
-          const exists = rewards.categories.some(
-            (cat) =>
-              cat.category === normalizedCategory.category && cat.rate === rate
-          );
-
-          if (!exists) {
-            rewards.categories.push({
-              rate: rate,
-              category: normalizedCategory.category,
-              platform: platform || normalizedCategory.platform,
-              rawCategory: trimmedCategory,
-            });
-          }
-        }
+      // Validate the structure
+      if (parsedRewards.categories && Array.isArray(parsedRewards.categories)) {
+        return parsedRewards;
+      } else {
+        console.log("Invalid AI response structure:", parsedRewards);
+        return rewards;
       }
+    } catch (error) {
+      console.error("Error parsing rewards with Ollama:", error);
+      // Fallback to empty rewards
+      return rewards;
     }
-
-    // Handle "booked through" patterns specifically for travel
-    const bookedThroughPattern =
-      /(\d+(?:\.\d+)?x)\s+(?:miles?\s+)?on\s+([^,]+(?:,\s*[^,]+)*)\s+booked\s+through\s+([^,.]+)/gi;
-    while ((match = bookedThroughPattern.exec(tooltipText)) !== null) {
-      const rate = match[1];
-      const categoriesText = match[2];
-      const platform = match[3].trim();
-
-      // Split by comma and "and"
-      const categoryList = categoriesText.split(/,\s*|\s+and\s+/);
-
-      for (const categoryText of categoryList) {
-        const trimmedCategory = categoryText.trim();
-        if (trimmedCategory && trimmedCategory.length > 2) {
-          const normalizedCategory = this.normalizeCategory(trimmedCategory);
-
-          // Avoid duplicates
-          const exists = rewards.categories.some(
-            (cat) =>
-              cat.category === normalizedCategory.category &&
-              cat.rate === rate &&
-              cat.platform === platform
-          );
-
-          if (!exists) {
-            rewards.categories.push({
-              rate: rate,
-              category: normalizedCategory.category,
-              platform: platform,
-              rawCategory: trimmedCategory,
-            });
-          }
-        }
-      }
-    }
-
-    return rewards;
   }
 
-  private normalizeCategory(rawCategory: string): {
-    category: string;
-    platform?: string;
-  } {
-    const category = rawCategory.toLowerCase();
+  async saveToFile(data: any, filename: string = "cc.json"): Promise<void> {
+    try {
+      const dataDir = path.join(process.cwd(), "data");
 
-    // Category mapping with platform detection
-    const categoryMappings = {
-      // Dining
-      dining: "restaurants",
-      restaurants: "restaurants",
-      "dining at restaurants": "restaurants",
-      restaurant: "restaurants",
-      takeout: "restaurants",
-      "eligible delivery service": "restaurants",
-
-      // Groceries
-      "grocery stores": "groceries",
-      groceries: "groceries",
-      supermarkets: "groceries",
-      "u.s. supermarkets": "groceries",
-      "online groceries": "groceries",
-
-      // Gas
-      "gas stations": "gas",
-      gas: "gas",
-      "u.s. gas stations": "gas",
-
-      // Drugstore
-      "drugstore purchases": "drugstore",
-      drugstore: "drugstore",
-      pharmacy: "drugstore",
-
-      // Streaming
-      "streaming services": "streaming",
-      streaming: "streaming",
-      "select streaming services": "streaming",
-      "u.s. streaming subscriptions": "streaming",
-      "select u.s. streaming subscriptions": "streaming",
-
-      // Transit
-      transit: "transit",
-      transportation: "transit",
-      "taxis/rideshare": "transit",
-      rideshare: "transit",
-      parking: "transit",
-      tolls: "transit",
-      trains: "transit",
-      buses: "transit",
-
-      // Entertainment
-      entertainment: "entertainment",
-      "popular streaming services": "streaming",
-
-      // Online retail
-      "online retail purchases": "online-retail",
-      "u.s. online retail purchases": "online-retail",
-
-      // General
-      "all other purchases": "general",
-      "other purchases": "general",
-      "everything else": "general",
-      "all purchases": "general",
-      "every purchase": "general",
-      "everyday purchases": "general",
-      "every day": "general",
-    };
-
-    // Handle travel separately due to platform complexity
-    if (this.isTravelCategory(category)) {
-      return this.extractTravelPlatform(category);
-    }
-
-    // Check for exact matches first
-    for (const [key, value] of Object.entries(categoryMappings)) {
-      if (category.includes(key)) {
-        return { category: value };
+      // Create data directory if it doesn't exist
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
       }
-    }
 
-    // Special handling for quarterly categories (Discover-style)
-    if (
-      category.includes("quarterly") ||
-      category.includes("different places")
-    ) {
-      return { category: "rotating-categories" };
-    }
+      const filePath = path.join(dataDir, filename);
+      const jsonData = JSON.stringify(data, null, 2);
 
-    // If no match found, return cleaned version of original
-    return {
-      category: category
-        .replace(/purchases?/g, "")
-        .replace(/\s+/g, " ")
-        .trim(),
-    };
-  }
-
-  private isTravelCategory(category: string): boolean {
-    const travelKeywords = [
-      "travel",
-      "flight",
-      "flights",
-      "hotel",
-      "hotels",
-      "rental car",
-      "car rental",
-      "vacation rental",
-      "vacation rentals",
-      "prepaid hotel",
-      "prepaid air",
-    ];
-    return travelKeywords.some((keyword) => category.includes(keyword));
-  }
-
-  private extractTravelPlatform(category: string): {
-    category: string;
-    platform?: string;
-  } {
-    // Platform-specific travel detection
-    if (category.includes("chase travel")) {
-      return { category: "travel", platform: "Chase Travel" };
+      fs.writeFileSync(filePath, jsonData, "utf8");
+      console.log(`✅ Data saved to ${filePath}`);
+      console.log(`📊 Total cards saved: ${data.creditCards?.length || 0}`);
+    } catch (error) {
+      console.error("❌ Error saving data to file:", error);
     }
-    if (category.includes("capital one travel")) {
-      return { category: "travel", platform: "Capital One Travel" };
-    }
-    if (category.includes("american express travel")) {
-      return { category: "travel", platform: "American Express Travel" };
-    }
-    if (category.includes("citi travel")) {
-      return { category: "travel", platform: "Citi Travel" };
-    }
-
-    // Specific travel subcategories
-    if (category.includes("hotel") || category.includes("prepaid hotel")) {
-      return { category: "hotels" };
-    }
-    if (category.includes("flight") || category.includes("prepaid air")) {
-      return { category: "flights" };
-    }
-    if (category.includes("rental car") || category.includes("car rental")) {
-      return { category: "rental-cars" };
-    }
-    if (category.includes("vacation rental")) {
-      return { category: "vacation-rentals" };
-    }
-
-    // Check for booked through patterns
-    if (category.includes("booked through")) {
-      const platformMatch = category.match(/booked through ([^,\n.]+)/i);
-      if (platformMatch) {
-        return { category: "travel", platform: platformMatch[1].trim() };
-      }
-    }
-
-    // Check for booked with patterns
-    if (category.includes("booked with")) {
-      const platformMatch = category.match(/booked with ([^,\n.]+)/i);
-      if (platformMatch) {
-        return { category: "travel", platform: platformMatch[1].trim() };
-      }
-    }
-
-    // Check for purchased through patterns
-    if (category.includes("purchased through")) {
-      const platformMatch = category.match(/purchased through ([^,\n.]+)/i);
-      if (platformMatch) {
-        return { category: "travel", platform: platformMatch[1].trim() };
-      }
-    }
-
-    // Default travel
-    return { category: "travel" };
   }
 
   async close(): Promise<void> {
@@ -775,16 +498,18 @@ export async function runBasicScraper(): Promise<void> {
   try {
     await scraper.initialize();
 
-    // Skip homepage and go directly to credit card section
-    console.log("Skipping homepage, going directly to credit cards...");
-
     // Scrape credit card section
     const creditCardInfo = await scraper.scrapeCreditCardSection();
-    console.log("Credit Card Info:", JSON.stringify(creditCardInfo, null, 2));
 
-    // Take a screenshot
+    // Save to file
+    await scraper.saveToFile(creditCardInfo);
+
+    console.log("✅ Scraping completed successfully!");
+    console.log(
+      `📋 Summary: ${creditCardInfo.creditCards?.length || 0} cards scraped`
+    );
   } catch (error) {
-    console.error("Scraping failed:", error);
+    console.error("❌ Scraping failed:", error);
   } finally {
     await scraper.close();
   }
