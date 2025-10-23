@@ -2,6 +2,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { usePlaidLink } from "react-plaid-link";
+import Link from "next/link";
 
 interface User {
   id: string;
@@ -127,7 +128,9 @@ export default function Home() {
         }
 
         const data = await response.json();
-        setMessage(`✅ ${data.message} Connected to ${data.institution_name}`);
+        setMessage(
+          `✅ ${data.message} Connected to ${data.institution_name}! You can now view your spending analysis.`
+        );
 
         // Reload user data to show new connection
         await loadUserData();
@@ -337,6 +340,29 @@ export default function Home() {
       {message && (
         <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-6">
           <p className="text-blue-800">{message}</p>
+          {message.includes("Connected to") && (
+            <div className="mt-3">
+              <Link
+                href="/analysis"
+                className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium"
+              >
+                📊 View Spending Analysis
+                <svg
+                  className="w-4 h-4 ml-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </Link>
+            </div>
+          )}
         </div>
       )}
 
