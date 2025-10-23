@@ -39,3 +39,22 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Data files - NEVER commit sensitive data!
+/data/
+data/
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!next.config.ts
+!eslint.config.mjs
+!postcss.config.mjs
+
+# Scraped images and data
+/scraped-images/
+scraped-images/
+
+# Backup files
+backup-*.json
+*.backup
