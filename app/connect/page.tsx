@@ -3,33 +3,20 @@
 import { useState, useEffect, useRef } from "react";
 import { usePlaidLink } from "react-plaid-link";
 import Link from "next/link";
-
-interface User {
-  id: string;
-  email?: string;
-  created_at: string;
-}
-
-interface Connection {
-  id: string;
-  item_id: string;
-  institution_name?: string;
-  accounts: Array<{
-    account_id: string;
-    name: string;
-    type: string;
-    subtype: string;
-    mask?: string;
-  }>;
-  created_at: string;
-  last_synced?: string;
-}
+import {
+  createLinkToken,
+  exchangePublicToken,
+  fetchTransactions,
+} from "@/lib/plaidOperations";
+import { processCsvFile, validateCsvFile } from "@/lib/csvOperations";
+import { loadUserData } from "@/lib/userOperations";
+import { User, Connection, Transaction } from "@/lib/types";
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [linkToken, setLinkToken] = useState("");
-  const [transactions, setTransactions] = useState([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [connectionMethod, setConnectionMethod] = useState<
@@ -41,68 +28,26 @@ export default function Home() {
 
   // Load existing user data on component mount
   useEffect(() => {
-    loadUserData();
+    loadData();
   }, []);
 
-  const loadUserData = async () => {
-    try {
-      // For demo purposes, we'll use a hardcoded user ID
-      // In a real app, this would come from authentication
-      const userId = localStorage.getItem("userId");
-
-      if (userId) {
-        const response = await fetch(`/api/users?userId=${userId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setUser(data.user);
-          setConnections(data.connections || []);
-        }
-      }
-    } catch (error) {
-      console.error("Error loading user data:", error);
-    }
+  const loadData = async () => {
+    const data = await loadUserData();
+    setUser(data.user);
+    setConnections(data.connections);
   };
 
   // 1. Create link token
-  const createLinkToken = async () => {
+  const handleCreateLinkToken = async () => {
     setLoading(true);
     setMessage("");
 
-    try {
-      let currentUserId = user?.id;
-
-      // Create user if doesn't exist
-      if (!currentUserId) {
-        const userResponse = await fetch("/api/users", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: `user-${Date.now()}@example.com` }),
-        });
-        const userData = await userResponse.json();
-        setUser(userData.user);
-        currentUserId = userData.user.id;
-        localStorage.setItem("userId", currentUserId);
-      }
-
-      const response = await fetch("/api/plaid/link-token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: currentUserId }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create link token");
-      }
-
-      const { link_token } = await response.json();
-      setLinkToken(link_token);
-      setMessage("✅ Link token created! Now click 'Connect Bank Account'");
-    } catch (error) {
-      console.error("Error creating link token:", error);
-      setMessage("❌ Failed to create link token");
-    } finally {
-      setLoading(false);
+    const token = await createLinkToken(user, setUser, setMessage);
+    if (token) {
+      setLinkToken(token);
     }
+
+    setLoading(false);
   };
 
   // 2. Plaid Link component
@@ -112,34 +57,9 @@ export default function Home() {
       setLoading(true);
       setMessage("🔄 Connecting your bank account...");
 
-      try {
-        // Exchange public token for access token and store connection
-        const response = await fetch("/api/plaid/exchange", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            publicToken: public_token,
-            userId: user?.id,
-          }),
-        });
+      await exchangePublicToken(public_token, user?.id, setMessage, loadData);
 
-        if (!response.ok) {
-          throw new Error("Failed to connect bank account");
-        }
-
-        const data = await response.json();
-        setMessage(
-          `✅ ${data.message} Connected to ${data.institution_name}! You can now view your spending analysis.`
-        );
-
-        // Reload user data to show new connection
-        await loadUserData();
-      } catch (error) {
-        console.error("Error connecting bank:", error);
-        setMessage("❌ Failed to connect bank account");
-      } finally {
-        setLoading(false);
-      }
+      setLoading(false);
     },
     onExit: (err) => {
       if (err) {
@@ -150,37 +70,17 @@ export default function Home() {
   });
 
   // 3. Get transactions
-  const getTransactions = async (connectionId?: string) => {
+  const handleGetTransactions = async (connectionId?: string) => {
     setLoading(true);
-    setMessage("🔄 Fetching transactions...");
 
-    try {
-      const response = await fetch("/api/plaid/transactions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user?.id,
-          itemId: connectionId,
-          months: 6, // Get last 6 months
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch transactions");
-      }
-
-      const data = await response.json();
-      setTransactions(data.transactions || []);
-      setMessage(`✅ Loaded ${data.transactions?.length || 0} transactions`);
-
-      // Reload connections to update last_synced
-      await loadUserData();
-    } catch (error) {
-      console.error("Error fetching transactions:", error);
-      setMessage("❌ Failed to fetch transactions");
-    } finally {
-      setLoading(false);
-    }
+    const txns = await fetchTransactions(
+      user?.id,
+      connectionId,
+      setMessage,
+      loadData
+    );
+    setTransactions(txns);
+    setLoading(false);
   };
 
   // CSV Upload handlers
@@ -199,10 +99,7 @@ export default function Home() {
     setIsDragOver(false);
 
     const files = Array.from(e.dataTransfer.files);
-    const csvFile = files.find(
-      (file) =>
-        file.type === "text/csv" || file.name.toLowerCase().endsWith(".csv")
-    );
+    const csvFile = files.find((file) => validateCsvFile(file));
 
     if (csvFile) {
       setUploadedFile(csvFile);
@@ -220,93 +117,26 @@ export default function Home() {
     }
   };
 
-  const processCsvFile = async () => {
+  const handleProcessCsvFile = async () => {
     if (!uploadedFile) {
       setMessage("❌ Please select a CSV file first");
       return;
     }
-
     setLoading(true);
-    setMessage("🔄 Processing CSV file...");
 
-    try {
-      // Ensure user exists
-      let currentUserId = user?.id;
-      if (!currentUserId) {
-        const userResponse = await fetch("/api/users", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: `csv-user-${Date.now()}@example.com` }),
-        });
-        const userData = await userResponse.json();
-        setUser(userData.user);
-        currentUserId = userData.user.id;
-        localStorage.setItem("userId", currentUserId);
-      }
+    const result = await processCsvFile(
+      uploadedFile,
+      user,
+      setUser,
+      setMessage
+    );
 
-      // Read and parse CSV file
-      const text = await uploadedFile.text();
-      const lines = text.split("\n").filter((line) => line.trim());
-
-      if (lines.length < 2) {
-        throw new Error(
-          "CSV file must have at least a header and one data row"
-        );
-      }
-
-      // Parse CSV (basic implementation - you might want to use a proper CSV parser)
-      const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
-      const transactions = [];
-
-      for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(",");
-        if (values.length >= headers.length) {
-          const transaction: any = {};
-          headers.forEach((header, index) => {
-            transaction[header] = values[index]?.trim() || "";
-          });
-
-          // Add some metadata
-          transaction.transaction_id = `csv_${i}_${Date.now()}`;
-          transaction.account_id = "csv_upload";
-
-          transactions.push(transaction);
-        }
-      }
-
-      setTransactions(transactions);
-      setMessage(
-        `✅ Successfully processed ${transactions.length} transactions from CSV`
-      );
-
-      // Create a mock connection for CSV data
-      const mockConnection: Connection = {
-        id: `csv_${Date.now()}`,
-        item_id: `csv_${uploadedFile.name}`,
-        institution_name: `CSV Upload (${uploadedFile.name})`,
-        accounts: [
-          {
-            account_id: "csv_upload",
-            name: "CSV Import",
-            type: "depository",
-            subtype: "checking",
-          },
-        ],
-        created_at: new Date().toISOString(),
-        last_synced: new Date().toISOString(),
-      };
-
-      setConnections((prev) => [...prev, mockConnection]);
-    } catch (error) {
-      console.error("CSV processing error:", error);
-      setMessage(
-        `❌ Error processing CSV: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }`
-      );
-    } finally {
-      setLoading(false);
+    if (result) {
+      setTransactions(result.transactions);
+      setConnections((prev) => [...prev, result.connection]);
     }
+
+    setLoading(false);
   };
 
   const resetConnectionMethod = () => {
@@ -321,7 +151,7 @@ export default function Home() {
 
       {/* User Info */}
       {user && (
-        <div className="bg-gray-100 p-4 rounded-lg mb-6">
+        <div className="bg-gray-100 p-4 rounded-lg mb-6 text-black">
           <h2 className="text-lg font-semibold mb-2">👤 User Info</h2>
           <p>
             <strong>ID:</strong> {user.id}
@@ -398,7 +228,7 @@ export default function Home() {
                   🏦 Connect via Plaid
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  Securely connect your bank account using Plaid's
+                  Securely connect your bank account using Plaid&apos;s
                   industry-standard API. Real-time transaction data with
                   bank-level security.
                 </p>
@@ -482,7 +312,7 @@ export default function Home() {
 
           <div className="flex flex-wrap gap-4">
             <button
-              onClick={createLinkToken}
+              onClick={handleCreateLinkToken}
               disabled={loading}
               className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-medium"
             >
@@ -490,7 +320,7 @@ export default function Home() {
             </button>
 
             <button
-              onClick={open}
+              onClick={() => open()}
               disabled={!ready || !linkToken || loading}
               className="bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-medium"
             >
@@ -498,7 +328,7 @@ export default function Home() {
             </button>
 
             <button
-              onClick={() => getTransactions()}
+              onClick={() => handleGetTransactions()}
               disabled={connections.length === 0 || loading}
               className="bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-medium"
             >
@@ -611,7 +441,7 @@ export default function Home() {
           {uploadedFile && (
             <div className="mt-4 flex justify-center">
               <button
-                onClick={processCsvFile}
+                onClick={handleProcessCsvFile}
                 disabled={loading}
                 className="bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-8 py-3 rounded-lg font-medium"
               >
@@ -653,7 +483,7 @@ export default function Home() {
                     {conn.institution_name || "Unknown Bank"}
                   </h3>
                   <button
-                    onClick={() => getTransactions(conn.item_id)}
+                    onClick={() => handleGetTransactions(conn.item_id)}
                     disabled={loading}
                     className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-3 py-1 rounded text-sm"
                   >
@@ -711,7 +541,7 @@ export default function Home() {
                 </tr>
               </thead>
               <tbody>
-                {transactions.slice(0, 20).map((t: any) => (
+                {transactions.slice(0, 20).map((t) => (
                   <tr
                     key={t.transaction_id}
                     className="border-b hover:bg-gray-50"
@@ -753,9 +583,16 @@ export default function Home() {
         <div className="bg-yellow-50 border border-yellow-200 p-6 rounded-lg">
           <h3 className="text-lg font-semibold mb-2">🚀 Getting Started</h3>
           <ol className="list-decimal list-inside space-y-2 text-gray-700">
-            <li>Click "Create Link Token" to initialize the connection</li>
-            <li>Click "Connect Bank Account" to link your bank via Plaid</li>
-            <li>Click "Get Transactions" to analyze your spending patterns</li>
+            <li>
+              Click &quot;Create Link Token&quot; to initialize the connection
+            </li>
+            <li>
+              Click &quot;Connect Bank Account&quot; to link your bank via Plaid
+            </li>
+            <li>
+              Click &quot;Get Transactions&quot; to analyze your spending
+              patterns
+            </li>
           </ol>
         </div>
       )}
