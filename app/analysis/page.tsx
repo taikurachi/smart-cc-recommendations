@@ -53,14 +53,53 @@ interface SpendingAnalysis {
   recentTransactions: Transaction[];
 }
 
+interface CreditCard {
+  account_id: string;
+  name: string;
+  official_name: string;
+  type: string;
+  subtype: string;
+  mask?: string;
+  institution_name?: string;
+  credit_limit?: number;
+  current_balance?: number;
+  available_credit?: number;
+}
+
 export default function AnalysisPage() {
   const [user, setUser] = useState<User | null>(null);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [analysis, setAnalysis] = useState<SpendingAnalysis | null>(null);
+  const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    if (transactions.length === 0) return;
+
+    const fetchAccountsData = async () => {
+      try {
+        const userId = localStorage.getItem("userId");
+        if (!userId) return;
+
+        const response = await fetch(`/api/plaid/accounts?userId=${userId}`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch accounts");
+        }
+
+        const data = await response.json();
+        setCreditCards(data.creditCards || []);
+
+        console.log("All accounts:", data.accounts);
+        console.log("Credit cards found:", data.creditCards);
+      } catch (error) {
+        console.error("Error fetching accounts:", error);
+      }
+    };
+
+    fetchAccountsData();
+  }, [transactions]);
   useEffect(() => {
     loadUserDataAndAnalysis();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -310,6 +349,99 @@ export default function AnalysisPage() {
           </Link>
         </div>
       </div>
+
+      {/* Credit Cards Section */}
+      {creditCards.length > 0 && (
+        <div className="bg-white border rounded-xl p-6 mb-8">
+          <h2 className="text-xl font-semibold mb-4 flex items-center">
+            💳 Your Credit Cards
+            <span className="ml-2 text-sm font-normal text-gray-500">
+              ({creditCards.length} found)
+            </span>
+          </h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {creditCards.map((card) => (
+              <div
+                key={card.account_id}
+                className="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 className="font-semibold text-gray-900">
+                      {card.official_name}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {card.institution_name}
+                    </p>
+                  </div>
+                  {card.mask && (
+                    <span className="text-xs bg-gray-100 px-2 py-1 rounded font-mono">
+                      •••• {card.mask}
+                    </span>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  {card.credit_limit && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Credit Limit:</span>
+                      <span className="font-semibold">
+                        {formatCurrency(card.credit_limit)}
+                      </span>
+                    </div>
+                  )}
+                  {card.current_balance !== undefined && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Current Balance:</span>
+                      <span className="font-semibold text-red-600">
+                        {formatCurrency(card.current_balance)}
+                      </span>
+                    </div>
+                  )}
+                  {card.available_credit !== undefined && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Available Credit:</span>
+                      <span className="font-semibold text-green-600">
+                        {formatCurrency(card.available_credit)}
+                      </span>
+                    </div>
+                  )}
+                  {card.credit_limit && card.current_balance !== undefined && (
+                    <div className="mt-3">
+                      <div className="flex justify-between text-xs text-gray-600 mb-1">
+                        <span>Utilization</span>
+                        <span>
+                          {(
+                            (card.current_balance / card.credit_limit) *
+                            100
+                          ).toFixed(1)}
+                          %
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className={`h-2 rounded-full transition-all ${
+                            (card.current_balance / card.credit_limit) * 100 >
+                            30
+                              ? "bg-red-500"
+                              : "bg-green-500"
+                          }`}
+                          style={{
+                            width: `${Math.min(
+                              (card.current_balance / card.credit_limit) * 100,
+                              100
+                            )}%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {analysis && (
         <>
