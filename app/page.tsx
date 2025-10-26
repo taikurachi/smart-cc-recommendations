@@ -6,7 +6,7 @@ export default function Home() {
       <div className="max-w-6xl mx-auto px-8 py-16">
         {/* Hero Section */}
         <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
+          <h1 className="text-5xl tracking-tight font-semibold text-gray-900 mb-6">
             Smart Credit Card
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
               {" "}

@@ -8,8 +8,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-raleway);
+  --font-numbers: var(--font-outfit);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,5 +22,31 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-raleway), system-ui, sans-serif;
+}
+
+/* Use Outfit font for all numbers */
+body {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Target all numeric content to use Outfit font */
+@supports (font-variant-numeric: tabular-nums) {
+  :where(body) {
+    --font-numeric: var(--font-outfit);
+  }
+}
+
+/* Apply Outfit to elements that are likely to contain numbers */
+[class*="price"],
+[class*="amount"],
+[class*="total"],
+[class*="value"],
+[class*="number"],
+input[type="number"],
+.numeric,
+time,
+data {
+  font-family: var(--font-outfit), system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
 }
