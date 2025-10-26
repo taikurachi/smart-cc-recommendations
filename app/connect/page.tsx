@@ -2,21 +2,18 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { usePlaidLink } from "react-plaid-link";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  createLinkToken,
-  exchangePublicToken,
-  fetchTransactions,
-} from "@/lib/plaidOperations";
+import { createLinkToken, exchangePublicToken } from "@/lib/plaidOperations";
 import { processCsvFile, validateCsvFile } from "@/lib/csvOperations";
 import { loadUserData } from "@/lib/userOperations";
-import { User, Connection, Transaction } from "@/lib/types";
+import { User, Connection } from "@/lib/types";
 
 export default function Home() {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [linkToken, setLinkToken] = useState("");
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [connectionMethod, setConnectionMethod] = useState<
@@ -60,6 +57,11 @@ export default function Home() {
       await exchangePublicToken(public_token, user?.id, setMessage, loadData);
 
       setLoading(false);
+
+      // Redirect to analysis page after successful connection
+      setTimeout(() => {
+        router.push("/analysis");
+      }, 1500); // Small delay to show success message
     },
     onExit: (err) => {
       if (err) {
@@ -68,20 +70,6 @@ export default function Home() {
       }
     },
   });
-
-  // 3. Get transactions
-  const handleGetTransactions = async (connectionId?: string) => {
-    setLoading(true);
-
-    const txns = await fetchTransactions(
-      user?.id,
-      connectionId,
-      setMessage,
-      loadData
-    );
-    setTransactions(txns);
-    setLoading(false);
-  };
 
   // CSV Upload handlers
   const handleDragOver = (e: React.DragEvent) => {
@@ -132,8 +120,12 @@ export default function Home() {
     );
 
     if (result) {
-      setTransactions(result.transactions);
       setConnections((prev) => [...prev, result.connection]);
+
+      // Redirect to analysis page after successful CSV processing
+      setTimeout(() => {
+        router.push("/analysis");
+      }, 1500); // Small delay to show success message
     }
 
     setLoading(false);
@@ -148,7 +140,6 @@ export default function Home() {
   return (
     <div className="p-8 max-w-6xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">🏦 Credit Card Analyzer</h1>
-
       {/* User Info */}
       {user && (
         <div className="bg-gray-100 p-4 rounded-lg mb-6 text-black">
@@ -165,7 +156,6 @@ export default function Home() {
           </p>
         </div>
       )}
-
       {/* Status Message */}
       {message && (
         <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-6">
@@ -195,7 +185,6 @@ export default function Home() {
           )}
         </div>
       )}
-
       {/* Connection Method Selection */}
       {!connectionMethod && (
         <div className="mb-8">
@@ -296,7 +285,6 @@ export default function Home() {
           </div>
         </div>
       )}
-
       {/* Plaid Connection Flow */}
       {connectionMethod === "plaid" && (
         <div className="bg-white border rounded-xl p-6 mb-6">
@@ -326,18 +314,9 @@ export default function Home() {
             >
               🏦 Connect Bank Account
             </button>
-
-            <button
-              onClick={() => handleGetTransactions()}
-              disabled={connections.length === 0 || loading}
-              className="bg-purple-500 hover:bg-purple-600 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-medium"
-            >
-              📊 Get Transactions
-            </button>
           </div>
         </div>
       )}
-
       {/* CSV Upload Flow */}
       {connectionMethod === "csv" && (
         <div className="bg-white border rounded-xl p-6 mb-6">
@@ -468,7 +447,6 @@ export default function Home() {
           </div>
         </div>
       )}
-
       {/* Connected Banks */}
       {connections.length > 0 && (
         <div className="bg-white border rounded-lg p-6 mb-6">
@@ -478,18 +456,9 @@ export default function Home() {
           <div className="grid gap-4 md:grid-cols-2">
             {connections.map((conn) => (
               <div key={conn.id} className="border rounded-lg p-4">
-                <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-lg">
-                    {conn.institution_name || "Unknown Bank"}
-                  </h3>
-                  <button
-                    onClick={() => handleGetTransactions(conn.item_id)}
-                    disabled={loading}
-                    className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-3 py-1 rounded text-sm"
-                  >
-                    Sync
-                  </button>
-                </div>
+                <h3 className="font-semibold text-lg mb-2">
+                  {conn.institution_name || "Unknown Bank"}
+                </h3>
                 <p className="text-sm text-gray-600 mb-2">
                   Connected: {new Date(conn.created_at).toLocaleDateString()}
                 </p>
@@ -522,62 +491,6 @@ export default function Home() {
           </div>
         </div>
       )}
-
-      {/* Transactions */}
-      {transactions.length > 0 && (
-        <div className="bg-white border rounded-lg p-6">
-          <h2 className="text-xl font-semibold mb-4">
-            💳 Recent Transactions ({transactions.length})
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-2">Date</th>
-                  <th className="text-left p-2">Merchant</th>
-                  <th className="text-left p-2">Category</th>
-                  <th className="text-right p-2">Amount</th>
-                  <th className="text-left p-2">Account</th>
-                </tr>
-              </thead>
-              <tbody>
-                {transactions.slice(0, 20).map((t) => (
-                  <tr
-                    key={t.transaction_id}
-                    className="border-b hover:bg-gray-50"
-                  >
-                    <td className="p-2">{t.date}</td>
-                    <td className="p-2 font-medium">{t.name}</td>
-                    <td className="p-2">
-                      <span className="bg-gray-100 px-2 py-1 rounded text-xs">
-                        {t.category?.[0] || "Other"}
-                      </span>
-                    </td>
-                    <td className="p-2 text-right font-mono">
-                      <span
-                        className={
-                          t.amount > 0 ? "text-red-600" : "text-green-600"
-                        }
-                      >
-                        ${Math.abs(t.amount).toFixed(2)}
-                      </span>
-                    </td>
-                    <td className="p-2 text-gray-600">
-                      {t.account_id.slice(-4)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {transactions.length > 20 && (
-            <p className="text-sm text-gray-500 mt-4 text-center">
-              Showing first 20 of {transactions.length} transactions
-            </p>
-          )}
-        </div>
-      )}
-
       {/* Getting Started */}
       {connections.length === 0 && !loading && (
         <div className="bg-yellow-50 border border-yellow-200 p-6 rounded-lg">
