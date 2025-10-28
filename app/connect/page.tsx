@@ -8,6 +8,9 @@ import { createLinkToken, exchangePublicToken } from "@/lib/plaidOperations";
 import { processCsvFile, validateCsvFile } from "@/lib/csvOperations";
 import { loadUserData } from "@/lib/userOperations";
 import { User, Connection } from "@/lib/types";
+import Image from "next/image";
+import Icon from "../components/Icon";
+import Button from "../components/Button";
 
 export default function Home() {
   const router = useRouter();
@@ -139,23 +142,6 @@ export default function Home() {
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6">🏦 Credit Card Analyzer</h1>
-      {/* User Info */}
-      {user && (
-        <div className="bg-gray-100 p-4 rounded-lg mb-6 text-black">
-          <h2 className="text-lg font-semibold mb-2">👤 User Info</h2>
-          <p>
-            <strong>ID:</strong> {user.id}
-          </p>
-          <p>
-            <strong>Email:</strong> {user.email || "Not set"}
-          </p>
-          <p>
-            <strong>Created:</strong>{" "}
-            {new Date(user.created_at).toLocaleString()}
-          </p>
-        </div>
-      )}
       {/* Status Message */}
       {message && (
         <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-6">
@@ -188,53 +174,47 @@ export default function Home() {
       {/* Connection Method Selection */}
       {!connectionMethod && (
         <div className="mb-8">
-          <h2 className="text-2xl font-semibold mb-6 text-center">
-            Choose Your Connection Method
-          </h2>
           <div className="grid md:grid-cols-2 gap-6">
             {/* Plaid API Option */}
-            <div
-              onClick={() => setConnectionMethod("plaid")}
-              className="bg-white border-2 border-gray-200 hover:border-blue-400 rounded-xl p-8 cursor-pointer transition-all duration-200 hover:shadow-lg group"
-            >
-              <div className="text-center">
-                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-200 transition-colors">
-                  <svg
-                    className="w-8 h-8 text-blue-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                    />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-bold mb-3 text-gray-800">
-                  🏦 Connect via Plaid
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  Securely connect your bank account using Plaid&apos;s
-                  industry-standard API. Real-time transaction data with
-                  bank-level security.
-                </p>
-                <div className="text-sm text-gray-500 space-y-1">
-                  <div className="flex items-center justify-center">
-                    <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
-                    Automatic transaction sync
+            <div className="bg-white border-2 border-gray-200 hover:border-blue-400 rounded-xl p-8 cursor-pointer transition-all duration-200 hover:shadow-lg group">
+              <div className="flex flex-col gap-4">
+                <Image
+                  src="/plaid-logo.svg"
+                  height={100}
+                  width={100}
+                  alt="Plaid logo"
+                />
+                <h3 className="text-xl font-bold">Connect via Plaid</h3>
+
+                <div className="text-sm space-y-1">
+                  <div className="flex">
+                    <Icon name="check" size={15} color="green" />
+                    <span className="font-semibold ml-2">Automatic sync</span> -
+                    Real-time transaction updates
                   </div>
-                  <div className="flex items-center justify-center">
-                    <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
-                    Bank-level encryption
+                  <div className="flex">
+                    <Icon name="check" size={15} color="green" />
+                    <span className="font-semibold ml-2">
+                      Bank-level security
+                    </span>{" "}
+                    - 256-bit encryption
                   </div>
-                  <div className="flex items-center justify-center">
-                    <span className="w-2 h-2 bg-green-400 rounded-full mr-2"></span>
-                    Real-time updates
+                  <div className="flex">
+                    <Icon name="check" size={15} color="green" />
+                    <span className="font-semibold ml-2">
+                      Always up-to-date
+                    </span>{" "}
+                    - No manual imports needed
+                  </div>
+                  <div className="flex">
+                    <Icon name="check" size={15} color="green" />
+                    <span className="font-semibold ml-2">Fast setup</span> -
+                    Connect in under 60 seconds
                   </div>
                 </div>
+                <Button onClick={() => setConnectionMethod("plaid")}>
+                  Connect
+                </Button>
               </div>
             </div>
 
