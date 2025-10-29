@@ -15,15 +15,12 @@ import Button from "../components/Button";
 export default function Home() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [connections, setConnections] = useState<Connection[]>([]);
   const [linkToken, setLinkToken] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [connectionMethod, setConnectionMethod] = useState<
-    "plaid" | "csv" | null
-  >(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [connections, setConnections] = useState(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load existing user data on component mount
@@ -34,7 +31,6 @@ export default function Home() {
   const loadData = async () => {
     const data = await loadUserData();
     setUser(data.user);
-    setConnections(data.connections);
   };
 
   // 1. Create link token
@@ -135,7 +131,6 @@ export default function Home() {
   };
 
   const resetConnectionMethod = () => {
-    setConnectionMethod(null);
     setUploadedFile(null);
     setMessage("");
   };
@@ -171,160 +166,67 @@ export default function Home() {
           )}
         </div>
       )}
+
+      <h1 className="font-semibold text-3xl text-center mb-2">
+        Connect Your Financial Accounts
+      </h1>
+      <p className="text-center mb-8">
+        Connect your bank through Plaid or upload transaction data
+      </p>
       {/* Connection Method Selection */}
-      {!connectionMethod && (
-        <div className="mb-8">
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* Plaid API Option */}
-            <div className="bg-white border-2 border-gray-200 hover:border-blue-400 rounded-xl p-8 cursor-pointer transition-all duration-200 hover:shadow-lg group">
-              <div className="flex flex-col gap-4">
-                <Image
-                  src="/plaid-logo.svg"
-                  height={100}
-                  width={100}
-                  alt="Plaid logo"
-                />
-                <h3 className="text-xl font-bold">Connect via Plaid</h3>
-
-                <div className="text-sm space-y-1">
-                  <div className="flex">
-                    <Icon name="check" size={15} color="green" />
-                    <span className="font-semibold ml-2">Automatic sync</span> -
-                    Real-time transaction updates
-                  </div>
-                  <div className="flex">
-                    <Icon name="check" size={15} color="green" />
-                    <span className="font-semibold ml-2">
-                      Bank-level security
-                    </span>{" "}
-                    - 256-bit encryption
-                  </div>
-                  <div className="flex">
-                    <Icon name="check" size={15} color="green" />
-                    <span className="font-semibold ml-2">
-                      Always up-to-date
-                    </span>{" "}
-                    - No manual imports needed
-                  </div>
-                  <div className="flex">
-                    <Icon name="check" size={15} color="green" />
-                    <span className="font-semibold ml-2">Fast setup</span> -
-                    Connect in under 60 seconds
-                  </div>
+      <div className="mb-8">
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Plaid API Option */}
+          <div className="bg-white border-2 border-gray-200 hover:border-blue-400 rounded-xl p-8 cursor-pointer transition-all duration-200 hover:shadow-lg group">
+            <div className="flex flex-col gap-6">
+              <Image
+                src="/plaid-logo.svg"
+                height={100}
+                width={100}
+                alt="Plaid logo"
+              />
+              <h3 className="text-xl font-bold">Connect via Plaid</h3>
+              <div className="text-sm space-y-2">
+                <div className="flex">
+                  <Icon name="check" size={15} color="green" />
+                  <span className="font-semibold ml-2">Automatic sync</span> -
+                  Real-time transaction updates
                 </div>
-                <Button onClick={() => setConnectionMethod("plaid")}>
-                  Connect
-                </Button>
-              </div>
-            </div>
-
-            {/* CSV Upload Option */}
-            <div
-              onClick={() => setConnectionMethod("csv")}
-              className="bg-white border-2 border-gray-200 hover:border-green-400 rounded-xl p-8 cursor-pointer transition-all duration-200 hover:shadow-lg group"
-            >
-              <div className="text-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-green-200 transition-colors">
-                  <svg
-                    className="w-8 h-8 text-green-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"
-                    />
-                  </svg>
+                <div className="flex">
+                  <Icon name="check" size={15} color="green" />
+                  <span className="font-semibold ml-2">
+                    Bank-level security
+                  </span>{" "}
+                  - 256-bit encryption
                 </div>
-                <h3 className="text-xl font-bold mb-3 text-gray-800">
-                  📄 Upload CSV File
-                </h3>
-                <p className="text-gray-600 mb-4">
-                  Upload your transaction data from a CSV file exported from
-                  your bank or credit card company.
-                </p>
-                <div className="text-sm text-gray-500 space-y-1">
-                  <div className="flex items-center justify-center">
-                    <span className="w-2 h-2 bg-blue-400 rounded-full mr-2"></span>
-                    Manual data import
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <span className="w-2 h-2 bg-blue-400 rounded-full mr-2"></span>
-                    No bank connection required
-                  </div>
-                  <div className="flex items-center justify-center">
-                    <span className="w-2 h-2 bg-blue-400 rounded-full mr-2"></span>
-                    Historical data analysis
-                  </div>
+                <div className="flex">
+                  <Icon name="check" size={15} color="green" />
+                  <span className="font-semibold ml-2">
+                    Always up-to-date
+                  </span>{" "}
+                  - No manual imports needed
+                </div>
+                <div className="flex">
+                  <Icon name="check" size={15} color="green" />
+                  <span className="font-semibold ml-2">Fast setup</span> -
+                  Connect in under 60 seconds
                 </div>
               </div>
+              <Button className="mt-6">Connect</Button>
             </div>
           </div>
-        </div>
-      )}
-      {/* Plaid Connection Flow */}
-      {connectionMethod === "plaid" && (
-        <div className="bg-white border rounded-xl p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">🏦 Plaid Bank Connection</h2>
-            <button
-              onClick={resetConnectionMethod}
-              className="text-gray-500 hover:text-gray-700 text-sm"
-            >
-              ← Back to options
-            </button>
-          </div>
 
-          <div className="flex flex-wrap gap-4">
-            <button
-              onClick={handleCreateLinkToken}
-              disabled={loading}
-              className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-medium"
-            >
-              {loading ? "⏳ Loading..." : "🔗 Create Link Token"}
-            </button>
-
-            <button
-              onClick={() => open()}
-              disabled={!ready || !linkToken || loading}
-              className="bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-medium"
-            >
-              🏦 Connect Bank Account
-            </button>
-          </div>
-        </div>
-      )}
-      {/* CSV Upload Flow */}
-      {connectionMethod === "csv" && (
-        <div className="bg-white border rounded-xl p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">📄 CSV File Upload</h2>
-            <button
-              onClick={resetConnectionMethod}
-              className="text-gray-500 hover:text-gray-700 text-sm"
-            >
-              ← Back to options
-            </button>
-          </div>
-
-          {/* File Upload Area */}
+          {/* CSV Upload Option */}
           <div
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            className={`
-              border-2 border-dashed rounded-xl p-12 text-center transition-all duration-200
-              ${
-                isDragOver
-                  ? "border-green bg-green/5"
-                  : uploadedFile
-                  ? "border-green bg-green/5"
-                  : "border-gray-300 hover:border-gray-400"
-              }
-            `}
+            className={`${
+              uploadedFile ? "bg-green-300" : "bg-white"
+            } rounded-xl p-12 cursor-pointer transition-all duration-200 group relative`}
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%23333' stroke-width='2' stroke-dasharray='12%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e")`,
+            }}
           >
             <input
               ref={fileInputRef}
@@ -333,55 +235,17 @@ export default function Home() {
               onChange={handleFileSelect}
               className="hidden"
             />
+            <div className="flex flex-col items-center justify-center gap-6 h-full">
+              <Icon name={uploadedFile ? "circlecheck" : "upload"} size={50} />
+              <p className="text-gray-700">
+                {uploadedFile
+                  ? uploadedFile.name
+                  : "Drag and drop your CSV file here, or"}
+              </p>
 
-            {uploadedFile ? (
-              <div className="space-y-4">
-                <svg
-                  className="w-16 h-16 mx-auto text-green"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <div>
-                  <p className="text-base font-medium text-gray-700 mb-1">
-                    {uploadedFile.name}
-                  </p>
-                  <p className="text-sm text-gray-500">File ready to upload</p>
-                </div>
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="text-sm text-purple hover:text-purple-dark font-medium"
-                >
-                  Choose Different File
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                <svg
-                  className="w-16 h-16 mx-auto text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                  />
-                </svg>
-                <div>
-                  <p className="text-base text-gray-700 mb-1">
-                    Drag and drop your CSV file here, or
-                  </p>
-                </div>
+              {uploadedFile ? (
+                <Button onClick={handleProcessCsvFile}>Process CSV File</Button>
+              ) : (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -391,103 +255,11 @@ export default function Home() {
                 >
                   Browse Files
                 </button>
-              </div>
-            )}
-          </div>
-
-          {/* Process Button */}
-          {uploadedFile && (
-            <div className="mt-4 flex justify-center">
-              <button
-                onClick={handleProcessCsvFile}
-                disabled={loading}
-                className="bg-green-500 hover:bg-green-600 disabled:bg-gray-400 text-white px-8 py-3 rounded-lg font-medium"
-              >
-                {loading ? "⏳ Processing..." : "🚀 Process CSV File"}
-              </button>
+              )}
             </div>
-          )}
-
-          {/* CSV Format Help */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <h3 className="font-medium text-gray-800 mb-2">
-              📋 Expected CSV Format
-            </h3>
-            <p className="text-sm text-gray-600 mb-2">
-              Your CSV should include columns like:
-            </p>
-            <div className="text-xs text-gray-500 font-mono bg-white p-2 rounded border">
-              date, description, amount, category, account
-            </div>
-            <p className="text-xs text-gray-500 mt-2">
-              The first row should contain column headers. Common formats from
-              banks are supported.
-            </p>
           </div>
         </div>
-      )}
-      {/* Connected Banks */}
-      {connections.length > 0 && (
-        <div className="bg-white border rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">
-            🏦 Connected Banks ({connections.length})
-          </h2>
-          <div className="grid gap-4 md:grid-cols-2">
-            {connections.map((conn) => (
-              <div key={conn.id} className="border rounded-lg p-4">
-                <h3 className="font-semibold text-lg mb-2">
-                  {conn.institution_name || "Unknown Bank"}
-                </h3>
-                <p className="text-sm text-gray-600 mb-2">
-                  Connected: {new Date(conn.created_at).toLocaleDateString()}
-                </p>
-                {conn.last_synced && (
-                  <p className="text-sm text-gray-600 mb-2">
-                    Last synced: {new Date(conn.last_synced).toLocaleString()}
-                  </p>
-                )}
-                <div className="mt-3">
-                  <p className="text-sm font-medium mb-1">
-                    Accounts ({conn.accounts.length}):
-                  </p>
-                  {conn.accounts.map((account) => (
-                    <div
-                      key={account.account_id}
-                      className="text-sm text-gray-700 ml-2"
-                    >
-                      • {account.name} ({account.type}/{account.subtype})
-                      {account.mask && (
-                        <span className="text-gray-500">
-                          {" "}
-                          ****{account.mask}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-      {/* Getting Started */}
-      {connections.length === 0 && !loading && (
-        <div className="bg-yellow-50 border border-yellow-200 p-6 rounded-lg">
-          <h3 className="text-lg font-semibold mb-2">🚀 Getting Started</h3>
-          <ol className="list-decimal list-inside space-y-2 text-gray-700">
-            <li>
-              Click &quot;Create Link Token&quot; to initialize the connection
-            </li>
-            <li>
-              Click &quot;Connect Bank Account&quot; to link your bank via Plaid
-            </li>
-            <li>
-              Click &quot;Get Transactions&quot; to analyze your spending
-              patterns
-            </li>
-          </ol>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
