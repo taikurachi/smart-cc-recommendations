@@ -4,18 +4,42 @@
   --background: #ffffff;
   --foreground: #171717;
 
-  /* App Colors */
+  /* Design System Colors */
+  /* Purple - Primary Brand Color */
   --color-purple: #8b5cf6;
   --color-purple-dark: #7c3aed;
   --color-purple-light: #a78bfa;
+  --color-purple-lighter: #ddd6fe;
 
+  /* Green - Success & Positive Actions */
   --color-green: #10b981;
   --color-green-dark: #059669;
   --color-green-light: #34d399;
+  --color-green-lighter: #d1fae5;
 
+  /* Light Green - Alternative Success State */
+  --color-light-green: #84cc16;
+  --color-light-green-dark: #65a30d;
+  --color-light-green-light: #a3e635;
+  --color-light-green-lighter: #ecfccb;
+
+  /* Blue - Information & Links */
   --color-blue: #3b82f6;
   --color-blue-dark: #2563eb;
   --color-blue-light: #60a5fa;
+  --color-blue-lighter: #dbeafe;
+
+  /* Neutral Colors */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
 }
 
 @theme inline {
@@ -24,18 +48,38 @@
   --font-sans: var(--font-raleway);
   --font-numbers: var(--font-outfit);
 
-  /* Custom color tokens */
+  /* Design System Color Tokens */
   --color-purple: var(--color-purple);
   --color-purple-dark: var(--color-purple-dark);
   --color-purple-light: var(--color-purple-light);
+  --color-purple-lighter: var(--color-purple-lighter);
 
   --color-green: var(--color-green);
   --color-green-dark: var(--color-green-dark);
   --color-green-light: var(--color-green-light);
+  --color-green-lighter: var(--color-green-lighter);
+
+  --color-light-green: var(--color-light-green);
+  --color-light-green-dark: var(--color-light-green-dark);
+  --color-light-green-light: var(--color-light-green-light);
+  --color-light-green-lighter: var(--color-light-green-lighter);
 
   --color-blue: var(--color-blue);
   --color-blue-dark: var(--color-blue-dark);
   --color-blue-light: var(--color-blue-light);
+  --color-blue-lighter: var(--color-blue-lighter);
+
+  /* Neutral Grays */
+  --color-gray-50: var(--color-gray-50);
+  --color-gray-100: var(--color-gray-100);
+  --color-gray-200: var(--color-gray-200);
+  --color-gray-300: var(--color-gray-300);
+  --color-gray-400: var(--color-gray-400);
+  --color-gray-500: var(--color-gray-500);
+  --color-gray-600: var(--color-gray-600);
+  --color-gray-700: var(--color-gray-700);
+  --color-gray-800: var(--color-gray-800);
+  --color-gray-900: var(--color-gray-900);
 }
 
 /* Dark mode disabled - always use white background */

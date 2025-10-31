@@ -90,9 +90,6 @@ export default function Home() {
 
     if (csvFile) {
       setUploadedFile(csvFile);
-      setMessage(`📄 CSV file "${csvFile.name}" ready to process`);
-    } else {
-      setMessage("❌ Please upload a CSV file");
     }
   };
 
@@ -100,15 +97,14 @@ export default function Home() {
     const file = e.target.files?.[0];
     if (file) {
       setUploadedFile(file);
-      setMessage(`📄 CSV file "${file.name}" ready to process`);
     }
   };
-
+  const handleFileDelete = () => {
+    setUploadedFile(null);
+  };
   const handleProcessCsvFile = async () => {
-    if (!uploadedFile) {
-      setMessage("❌ Please select a CSV file first");
-      return;
-    }
+    if (!uploadedFile) return;
+
     setLoading(true);
 
     const result = await processCsvFile(
@@ -228,6 +224,14 @@ export default function Home() {
               backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%23333' stroke-width='2' stroke-dasharray='12%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e")`,
             }}
           >
+            {uploadedFile && (
+              <div
+                className="right-[8%] absolute top-[8%]"
+                onClick={handleFileDelete}
+              >
+                <Icon name="close" size={20} />
+              </div>
+            )}
             <input
               ref={fileInputRef}
               type="file"
