@@ -10,6 +10,7 @@
     "test-scraper": "npx tsx test-scraper.ts"
   },
   "dependencies": {
+    "motion": "^12.23.24",
     "next": "15.5.2",
     "ollama": "^0.6.0",
     "plaid": "^38.1.0",

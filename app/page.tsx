@@ -44,8 +44,8 @@ export default function Home() {
               Secure Bank Connection
             </h3>
             <p className="text-gray-600">
-              Connect your bank account securely using Plaid's industry-standard
-              API. Your credentials are never stored.
+              Connect your bank account securely using Plaid&apos;s
+              industry-standard API. Your credentials are never stored.
             </p>
           </div>
 
