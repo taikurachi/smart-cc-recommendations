@@ -109,6 +109,8 @@ export default function Home() {
               setButtonStateIndex((prev) => prev + 2);
             }
 
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+
             setPlaidStateIndex((prev) => prev + 1);
           }}
           color={buttonStates[buttonStateIndex].bgColor}
@@ -176,7 +178,7 @@ export default function Home() {
       </p>
       {/* Connection Method Selection */}
       <div className="mb-8">
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 gap-6 sm:h-[400px] h-full">
           {/* Plaid API Option */}
           <div className="bg-white border-2 border-gray-200 hover:border-blue-400 rounded-xl p-8 transition-all duration-200 hover:shadow-lg group">
             <div className="flex flex-col gap-6">
@@ -193,7 +195,7 @@ export default function Home() {
                   initial={{ filter: "blur(10px)", opacity: 0 }}
                   animate={{ filter: "blur(0px)", opacity: 1 }}
                   exit={{ filter: "blur(10px)", opacity: 0 }}
-                  transition={{ duration: 1 }}
+                  transition={{ duration: 0.3 }}
                 >
                   {plaidStates[plaidStateIndex].title}
                 </motion.h3>
@@ -205,13 +207,24 @@ export default function Home() {
                   initial={{ filter: "blur(10px)", opacity: 0 }}
                   animate={{ filter: "blur(0px)", opacity: 1 }}
                   exit={{ filter: "blur(10px)", opacity: 0 }}
-                  transition={{ duration: 1 }}
+                  transition={{ duration: 0.4 }}
                 >
                   {plaidStates[plaidStateIndex].description}
                 </motion.div>
               </AnimatePresence>
 
-              {plaidStates[plaidStateIndex].action}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  className="mb-auto"
+                  key={`description-${plaidStateIndex}`}
+                  initial={{ filter: "blur(10px)", opacity: 0 }}
+                  animate={{ filter: "blur(0px)", opacity: 1 }}
+                  exit={{ filter: "blur(10px)", opacity: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  {plaidStates[plaidStateIndex].action}
+                </motion.div>
+              </AnimatePresence>
             </div>
           </div>
 
