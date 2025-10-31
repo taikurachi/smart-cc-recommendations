@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 
 export default function Navigation() {
   const pathname = usePathname();
@@ -60,9 +61,28 @@ export default function Navigation() {
 }
 
 function UserStatus() {
-  const userId =
-    typeof window !== "undefined" ? localStorage.getItem("userId") : null;
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
 
+  useEffect(() => {
+    // Mark that we're on the client
+    setIsClient(true);
+    // Read from localStorage only on client
+    const storedUserId = localStorage.getItem("userId");
+    setUserId(storedUserId);
+  }, []);
+
+  // During SSR and initial render, show a neutral state
+  if (!isClient) {
+    return (
+      <div className="flex items-center space-x-2">
+        <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+        <span className="text-xs">Not Connected</span>
+      </div>
+    );
+  }
+
+  // After hydration, show the actual state
   if (userId) {
     return (
       <div className="flex items-center space-x-2">

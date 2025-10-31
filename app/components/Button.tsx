@@ -4,7 +4,7 @@ import { ButtonHTMLAttributes, ReactNode } from "react";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
-  color?: "purple" | "green" | "light-green" | "blue";
+  color: string;
   variant?: "solid" | "outline";
   size?: "sm" | "md" | "lg";
   showArrow?: boolean;
@@ -15,7 +15,6 @@ export default function Button({
   color = "purple",
   variant = "solid",
   size = "sm",
-  showArrow = true,
   className = "",
   ...props
 }: ButtonProps) {
@@ -31,6 +30,8 @@ export default function Button({
     "light-green":
       "bg-light-green text-white hover:bg-light-green-dark active:scale-[0.98] shadow-sm hover:shadow-md",
     blue: "bg-blue text-white hover:bg-blue-dark active:scale-[0.98] shadow-sm hover:shadow-md",
+    gray: "bg-gray",
+    red: "bg-red",
   };
 
   // Outline button styles
@@ -42,6 +43,8 @@ export default function Button({
     "light-green":
       "border-2 border-light-green text-light-green hover:bg-light-green hover:text-white active:scale-[0.98]",
     blue: "border-2 border-blue text-blue hover:bg-blue hover:text-white active:scale-[0.98]",
+    gray: "border-2 border-gray",
+    red: "border-2 border-red",
   };
 
   const sizeStyles = {
@@ -58,23 +61,7 @@ export default function Button({
 
   return (
     <button className={combinedClassName} {...props}>
-      <span>{children}</span>
-      {showArrow && (
-        <svg
-          className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 5l7 7-7 7"
-          />
-        </svg>
-      )}
+      {children}
     </button>
   );
 }

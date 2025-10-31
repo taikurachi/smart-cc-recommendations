@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import { loadUserData } from "@/lib/userOperations";
 import { User, Connection } from "@/lib/types";
 import Image from "next/image";
-import Icon from "../components/Icon";
 import Button from "../components/Button";
 import { AnimatePresence, motion } from "motion/react";
+import { Check, X, Upload, CheckCircle, Loader } from "lucide-react";
 import {
   handleDragLeave,
   handleDragOver,
@@ -23,6 +23,17 @@ import {
   handlePlaidExit,
 } from "@/lib/plaidHandlers";
 
+const buttonStates = [
+  { title: "Connect", icon: null, bgColor: "purple" },
+  {
+    title: "Creating Token",
+    icon: <Loader size={15} className="animate-spin" />,
+    bgColor: "gray",
+  },
+  { title: "Success", icon: <Check size={15} />, bgColor: "green" },
+  { title: "Failed", icon: <X size={15} />, bgColor: "red" },
+];
+
 export default function Home() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -34,30 +45,47 @@ export default function Home() {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [fileIndex, setFileIndex] = useState(0);
   const [plaidStateIndex, setPlaidStateIndex] = useState(0);
+  const [buttonStateIndex, setButtonStateIndex] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const { open, ready } = usePlaidLink({
+    token: linkToken,
+    onSuccess: async (public_token) => {
+      await handlePlaidSuccess(
+        public_token,
+        user?.id,
+        setMessage,
+        setLoading,
+        loadData,
+        router
+      );
+    },
+    onExit: (err) => {
+      handlePlaidExit(err, setMessage);
+    },
+  });
   const plaidStates = [
     {
       title: "Connect with Plaid",
       description: (
         <div className="text-sm space-y-2">
           <div className="flex">
-            <Icon name="check" size={15} color="green" />
+            <Check size={15} className="text-green-600" />
             <span className="font-semibold ml-2">Automatic sync</span> -
             Real-time transaction updates
           </div>
           <div className="flex">
-            <Icon name="check" size={15} color="green" />
+            <Check size={15} className="text-green-600" />
             <span className="font-semibold ml-2">Bank-level security</span> -
             256-bit encryption
           </div>
           <div className="flex">
-            <Icon name="check" size={15} color="green" />
+            <Check size={15} className="text-green-600" />
             <span className="font-semibold ml-2">Always up-to-date</span> - No
             manual imports needed
           </div>
           <div className="flex">
-            <Icon name="check" size={15} color="green" />
+            <Check size={15} className="text-green-600" />
             <span className="font-semibold ml-2">Fast setup</span> - Connect in
             under 60 seconds
           </div>
@@ -65,18 +93,39 @@ export default function Home() {
       ),
       action: (
         <Button
-          onClick={() =>
-            handleCreateLinkToken(
+          onClick={async () => {
+            setButtonStateIndex((prev) => prev + 1);
+            const token = await handleCreateLinkToken(
               user,
               setUser,
-              setMessage,
-              setLoading,
-              setLinkToken
-            )
-          }
-          color="purple"
+              setMessage
+            );
+
+            if (token) {
+              setLinkToken(token);
+              setButtonStateIndex((prev) => prev + 1);
+            } else {
+              // Skip the 3rd state
+              setButtonStateIndex((prev) => prev + 2);
+            }
+
+            setPlaidStateIndex((prev) => prev + 1);
+          }}
+          color={buttonStates[buttonStateIndex].bgColor}
+          className="overflow-hidden"
         >
-          Connect
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={buttonStateIndex}
+              className="flex gap-2 items-center"
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -30, opacity: 0 }}
+              transition={{ duration: 0.1, ease: "easeInOut" }}
+            >
+              {buttonStates[buttonStateIndex].title}{" "}
+              {buttonStates[buttonStateIndex].icon}
+            </motion.div>
+          </AnimatePresence>
         </Button>
       ),
     },
@@ -84,13 +133,13 @@ export default function Home() {
       title: "Connect Bank Account",
       description:
         "Click the button below to open Plaid's secure connection window. You'll select your bank and log in with your credentials.",
-      action: "Connect Bank Account",
+      action: <Button onClick={open}>Connect Bank Account</Button>,
     },
     {
       title: "Success!🎉",
       description:
-        "You've successfully connected your bank account! We’re redirecting you to our dashboard now.",
-      action: "connect",
+        "You've successfully connected your bank account! We're redirecting you to our dashboard now.",
+      action: "plaid image",
     },
   ];
   // Load user data function
@@ -115,24 +164,6 @@ export default function Home() {
     return () => clearInterval(intervalId);
   }, [uploadedFiles]);
 
-  // Plaid Link component
-  const { open, ready } = usePlaidLink({
-    token: linkToken,
-    onSuccess: async (public_token) => {
-      await handlePlaidSuccess(
-        public_token,
-        user?.id,
-        setMessage,
-        setLoading,
-        loadData,
-        router
-      );
-    },
-    onExit: (err) => {
-      handlePlaidExit(err, setMessage);
-    },
-  });
-
   // CSV Upload handlers
 
   return (
@@ -155,24 +186,32 @@ export default function Home() {
                 width={100}
                 alt="Plaid logo"
               />
-              <h3 className="text-xl font-bold">
-                {plaidStates[plaidStateIndex].title}
-              </h3>
-              {plaidStates[plaidStateIndex].description}
-              <Button
-                onClick={() =>
-                  handleCreateLinkToken(
-                    user,
-                    setUser,
-                    setMessage,
-                    setLoading,
-                    setLinkToken
-                  )
-                }
-                className="mt-6"
-              >
-                Connect
-              </Button>
+              <AnimatePresence mode="wait">
+                <motion.h3
+                  key={`title-${plaidStateIndex}`}
+                  className="text-xl font-bold"
+                  initial={{ filter: "blur(10px)", opacity: 0 }}
+                  animate={{ filter: "blur(0px)", opacity: 1 }}
+                  exit={{ filter: "blur(10px)", opacity: 0 }}
+                  transition={{ duration: 1 }}
+                >
+                  {plaidStates[plaidStateIndex].title}
+                </motion.h3>
+              </AnimatePresence>
+
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={`description-${plaidStateIndex}`}
+                  initial={{ filter: "blur(10px)", opacity: 0 }}
+                  animate={{ filter: "blur(0px)", opacity: 1 }}
+                  exit={{ filter: "blur(10px)", opacity: 0 }}
+                  transition={{ duration: 1 }}
+                >
+                  {plaidStates[plaidStateIndex].description}
+                </motion.div>
+              </AnimatePresence>
+
+              {plaidStates[plaidStateIndex].action}
             </div>
           </div>
 
@@ -195,7 +234,7 @@ export default function Home() {
                 className="right-[8%] absolute top-[8%] hover:scale-105 cursor-pointer"
                 onClick={() => handleFileDelete(setUploadedFiles)}
               >
-                <Icon name="close" size={20} />
+                <X size={20} />
               </div>
             )}
             <input
@@ -212,10 +251,11 @@ export default function Home() {
               {uploadedFiles.length > 0 && (
                 <p className="relative">{`${uploadedFiles.length} files selected`}</p>
               )}
-              <Icon
-                name={uploadedFiles.length > 0 ? "circlecheck" : "upload"}
-                size={50}
-              />
+              {uploadedFiles.length > 0 ? (
+                <CheckCircle size={50} className="text-green-600" />
+              ) : (
+                <Upload size={50} className="text-gray-400" />
+              )}
               <p className="text-gray-700">
                 {uploadedFiles.length > 0 ? (
                   <AnimatePresence mode="wait">
@@ -224,7 +264,7 @@ export default function Home() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      transition={{ duration: 0.3 }}
+                      transition={{ duration: 0.1 }}
                     >
                       {uploadedFiles[fileIndex].name}
                     </motion.span>
@@ -233,7 +273,6 @@ export default function Home() {
                   "Drag and drop your CSV file here, or"
                 )}
               </p>
-
               {uploadedFiles.length > 0 ? (
                 <Button
                   color="green"

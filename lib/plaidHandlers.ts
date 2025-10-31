@@ -7,19 +7,10 @@ import { User } from "./types";
 export const handleCreateLinkToken = async (
   user: User | null,
   setUser: React.Dispatch<React.SetStateAction<User | null>>,
-  setMessage: (message: string) => void,
-  setLoading: (loading: boolean) => void,
-  setLinkToken: (token: string) => void
+  setMessage: (message: string) => void
 ) => {
-  setLoading(true);
-  setMessage("Creating Link Token ");
-
   const token = await createPlaidLinkToken(user, setUser, setMessage);
-  if (token) {
-    setLinkToken(token);
-  }
-
-  setLoading(false);
+  return token;
 };
 
 export const handlePlaidSuccess = async (
