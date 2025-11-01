@@ -18,8 +18,7 @@ export const handlePlaidSuccess = async (
   userId: string | undefined,
   setMessage: (message: string) => void,
   setLoading: (loading: boolean) => void,
-  loadData: () => Promise<void>,
-  router: { push: (path: string) => void }
+  loadData: () => Promise<void>
 ) => {
   setLoading(true);
   setMessage("🔄 Connecting your bank account...");
@@ -27,11 +26,6 @@ export const handlePlaidSuccess = async (
   await exchangePlaidPublicToken(public_token, userId, setMessage, loadData);
 
   setLoading(false);
-
-  // Redirect to analysis page after successful connection
-  setTimeout(() => {
-    router.push("/analysis");
-  }, 1500); // Small delay to show success message
 };
 
 export const handlePlaidExit = (

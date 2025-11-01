@@ -8,7 +8,7 @@ import { User, Connection } from "@/lib/types";
 import Image from "next/image";
 import Button from "../components/Button";
 import { AnimatePresence, motion } from "motion/react";
-import { Check, X, Upload, CheckCircle, Loader } from "lucide-react";
+import { Check, X, Upload, CheckCircle, Loader, Info } from "lucide-react";
 import {
   handleDragLeave,
   handleDragOver,
@@ -46,6 +46,7 @@ export default function Home() {
   const [fileIndex, setFileIndex] = useState(0);
   const [plaidStateIndex, setPlaidStateIndex] = useState(0);
   const [buttonStateIndex, setButtonStateIndex] = useState(0);
+  const [infoModalOpen, setInfoModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { open, ready } = usePlaidLink({
@@ -56,14 +57,19 @@ export default function Home() {
         user?.id,
         setMessage,
         setLoading,
-        loadData,
-        router
+        loadData
       );
+
+      setPlaidStateIndex((prev) => prev + 1);
+
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      router.push("/analysis");
     },
     onExit: (err) => {
       handlePlaidExit(err, setMessage);
     },
   });
+
   const plaidStates = [
     {
       title: "Connect with Plaid",
@@ -141,7 +147,14 @@ export default function Home() {
       title: "Success!🎉",
       description:
         "You've successfully connected your bank account! We're redirecting you to our dashboard now.",
-      action: "plaid image",
+      action: (
+        <Image
+          src={"/plaid-graphic.webp"}
+          alt="plaid graphic image"
+          width={180}
+          height={180}
+        />
+      ),
     },
   ];
   // Load user data function
@@ -181,7 +194,7 @@ export default function Home() {
         <div className="grid md:grid-cols-2 gap-6 sm:h-[400px] h-full">
           {/* Plaid API Option */}
           <div className="bg-white border-2 border-gray-200 hover:border-blue-400 rounded-xl p-8 transition-all duration-200 hover:shadow-lg group">
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-6 h-full">
               <Image
                 src="/plaid-logo.svg"
                 height={100}
@@ -215,7 +228,7 @@ export default function Home() {
 
               <AnimatePresence mode="wait">
                 <motion.div
-                  className="mb-auto"
+                  className="mt-auto"
                   key={`description-${plaidStateIndex}`}
                   initial={{ filter: "blur(10px)", opacity: 0 }}
                   animate={{ filter: "blur(0px)", opacity: 1 }}
@@ -242,14 +255,17 @@ export default function Home() {
               backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%23333' stroke-width='2' stroke-dasharray='12%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e")`,
             }}
           >
-            {uploadedFiles.length > 0 && (
-              <div
-                className="right-[8%] absolute top-[8%] hover:scale-105 cursor-pointer"
-                onClick={() => handleFileDelete(setUploadedFiles)}
-              >
-                <X size={20} />
-              </div>
-            )}
+            <div className="right-[8%] absolute top-[8%] hover:scale-110 cursor-pointer">
+              {uploadedFiles.length > 0 ? (
+                <X
+                  size={25}
+                  onClick={() => handleFileDelete(setUploadedFiles)}
+                />
+              ) : (
+                <Info size={25} onClick={() => setInfoModalOpen(true)} />
+              )}
+            </div>
+
             <input
               multiple
               ref={fileInputRef}
