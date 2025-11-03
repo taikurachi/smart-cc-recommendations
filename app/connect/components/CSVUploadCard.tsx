@@ -3,16 +3,18 @@ import { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { X, Upload, CheckCircle, Info } from "lucide-react";
 import Button from "@/app/components/Button";
-import { User, Connection } from "@/lib/types";
+import { User, Connection, Transaction } from "@/lib/types";
 import {
   handleDragLeave,
   handleDragOver,
   handleDrop,
   handleFileDelete,
   handleFileSelect,
-  handleProcessCsvFile,
+  handleParseCsvFile,
+  handleConfirmTransactions,
 } from "@/lib/csvHandlers";
 import InfoModal from "./InfoModal";
+import TransactionReviewModal from "./TransactionReviewModal";
 
 interface CSVUploadCardProps {
   user: User | null;
@@ -35,6 +37,11 @@ export default function CSVUploadCard({
   const [fileIndex, setFileIndex] = useState(0);
   const [isDragOver, setIsDragOver] = useState(false);
   const [infoModalOpen, setInfoModalOpen] = useState(false);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [parsedTransactions, setParsedTransactions] = useState<Transaction[]>(
+    []
+  );
+  const [parsedConnections, setParsedConnections] = useState<Connection[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Create interval animation for multiple uploaded files
@@ -118,19 +125,23 @@ export default function CSVUploadCard({
         {uploadedFiles.length > 0 ? (
           <Button
             color="green"
-            onClick={() =>
-              handleProcessCsvFile(
+            onClick={async () => {
+              const result = await handleParseCsvFile(
                 uploadedFiles,
                 user,
                 setUser,
                 setMessage,
-                setLoading,
-                setConnections,
-                router
-              )
-            }
+                setLoading
+              );
+
+              if (result) {
+                setParsedTransactions(result.transactions);
+                setParsedConnections(result.connections);
+                setReviewModalOpen(true);
+              }
+            }}
           >
-            {`Process CSV File${uploadedFiles.length > 1 ? "s" : ""}`}
+            {`Parse CSV File${uploadedFiles.length > 1 ? "s" : ""}`}
           </Button>
         ) : (
           <button
@@ -144,6 +155,29 @@ export default function CSVUploadCard({
           </button>
         )}
       </div>
+
+      {/* Transaction Review Modal */}
+      <TransactionReviewModal
+        isOpen={reviewModalOpen}
+        transactions={parsedTransactions}
+        onConfirm={() => {
+          handleConfirmTransactions(
+            parsedTransactions,
+            parsedConnections,
+            setConnections,
+            router
+          );
+          setReviewModalOpen(false);
+          setUploadedFiles([]);
+        }}
+        onEdit={() => {
+          // TODO: Implement edit functionality
+          alert("Edit functionality coming soon!");
+        }}
+        onClose={() => {
+          setReviewModalOpen(false);
+        }}
+      />
     </div>
   );
 }

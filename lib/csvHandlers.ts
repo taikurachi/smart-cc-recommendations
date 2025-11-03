@@ -1,5 +1,5 @@
 import { processCsvFile, validateCsvFile } from "./csvOperations";
-import { User, Connection } from "./types";
+import { User, Connection, Transaction } from "./types";
 
 export const handleDragOver = (
   e: React.DragEvent,
@@ -60,32 +60,69 @@ export const handleFileDelete = (
   setUploadedFiles([]);
 };
 
-export const handleProcessCsvFile = async (
+// Parse CSV file and return transactions for review
+export const handleParseCsvFile = async (
   uploadedFiles: File[],
   user: User | null,
   setUser: React.Dispatch<React.SetStateAction<User | null>>,
   setMessage: (message: string) => void,
-  setLoading: (loading: boolean) => void,
-  setConnections: React.Dispatch<React.SetStateAction<Connection[]>>,
-  router: { push: (path: string) => void }
-) => {
-  if (uploadedFiles.length === 0) return;
+  setLoading: (loading: boolean) => void
+): Promise<{
+  transactions: Transaction[];
+  connections: Connection[];
+} | null> => {
+  if (uploadedFiles.length === 0) return null;
 
   setLoading(true);
 
-  // Process all uploaded files
-  for (const file of uploadedFiles) {
-    const result = await processCsvFile(file, user, setUser, setMessage);
+  const allTransactions: Transaction[] = [];
+  const allConnections: Connection[] = [];
 
-    if (result) {
-      setConnections((prev) => [...prev, result.connection]);
+  try {
+    // Process all uploaded files
+    for (const file of uploadedFiles) {
+      const result = await processCsvFile(file, user, setUser, setMessage);
+
+      if (result) {
+        allTransactions.push(...result.transactions);
+        allConnections.push(result.connection);
+      }
     }
-  }
 
-  // Redirect to analysis page after successful CSV processing
+    setLoading(false);
+
+    if (allTransactions.length === 0) {
+      setMessage("❌ No transactions found in the uploaded files");
+      return null;
+    }
+
+    return {
+      transactions: allTransactions,
+      connections: allConnections,
+    };
+  } catch (error) {
+    setLoading(false);
+    setMessage(
+      `❌ ${error instanceof Error ? error.message : "Failed to parse CSV"}`
+    );
+    return null;
+  }
+};
+
+// Confirm and save parsed transactions
+export const handleConfirmTransactions = async (
+  transactions: Transaction[],
+  connections: Connection[],
+  setConnections: React.Dispatch<React.SetStateAction<Connection[]>>,
+  router: { push: (path: string) => void }
+) => {
+  // Add connections to state
+  connections.forEach((connection) => {
+    setConnections((prev) => [...prev, connection]);
+  });
+
+  // Redirect to analysis page
   setTimeout(() => {
     router.push("/analysis");
-  }, 1500); // Small delay to show success message
-
-  setLoading(false);
+  }, 500);
 };

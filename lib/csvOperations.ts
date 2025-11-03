@@ -113,8 +113,24 @@ export async function processCsvFile(
       }
     }
 
+    // Validate that we have the required fields
+    if (transactions.length === 0) {
+      throw new Error("No valid transactions found in CSV file");
+    }
+
+    // Check if critical fields are missing
+    const hasValidData = transactions.some(
+      (t) => t.date && t.name && t.amount !== 0
+    );
+
+    if (!hasValidData) {
+      throw new Error(
+        "CSV file appears to be missing required transaction data. Please ensure your CSV contains date, merchant/payee name, and amount columns."
+      );
+    }
+
     setMessage(
-      `✅ Successfully processed ${transactions.length} transactions from CSV`
+      `✅ Successfully parsed ${transactions.length} transactions from CSV`
     );
 
     // Create a mock connection for CSV data
