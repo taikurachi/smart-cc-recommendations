@@ -4,7 +4,7 @@ import { ButtonHTMLAttributes, ReactNode } from "react";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
-  color: string;
+  color?: string;
   variant?: "solid" | "outline";
   size?: "sm" | "md" | "lg";
   showArrow?: boolean;
