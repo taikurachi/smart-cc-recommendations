@@ -9,6 +9,7 @@ import Image from "next/image";
 import Button from "../components/Button";
 import { AnimatePresence, motion } from "motion/react";
 import { Check, X, Upload, CheckCircle, Loader, Info } from "lucide-react";
+import confetti from "canvas-confetti";
 import {
   handleDragLeave,
   handleDragOver,
@@ -48,6 +49,7 @@ export default function Home() {
   const [buttonStateIndex, setButtonStateIndex] = useState(0);
   const [infoModalOpen, setInfoModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const confettiCanvasRef = useRef<HTMLCanvasElement>(null);
 
   const { open, ready } = usePlaidLink({
     token: linkToken,
@@ -62,7 +64,42 @@ export default function Home() {
 
       setPlaidStateIndex((prev) => prev + 1);
 
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      // Fire confetti celebration within the container
+      if (confettiCanvasRef.current) {
+        const myConfetti = confetti.create(confettiCanvasRef.current, {
+          resize: true,
+          useWorker: true,
+        });
+
+        const duration = 3000;
+        const animationEnd = Date.now() + duration;
+
+        const interval = setInterval(() => {
+          const timeLeft = animationEnd - Date.now();
+
+          if (timeLeft <= 0) {
+            clearInterval(interval);
+            return;
+          }
+
+          const particleCount = 50 * (timeLeft / duration);
+
+          // Left side confetti
+          myConfetti({
+            particleCount,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0, y: 0.6 },
+            colors: ["#8b5cf6", "#10b981", "#3b82f6", "#f59e0b"],
+          });
+        }, 250);
+
+        await new Promise((resolve) => setTimeout(resolve, 4000));
+        clearInterval(interval);
+      } else {
+        await new Promise((resolve) => setTimeout(resolve, 4000));
+      }
+
       router.push("/analysis");
     },
     onExit: (err) => {
@@ -193,8 +230,12 @@ export default function Home() {
       <div className="mb-8">
         <div className="grid md:grid-cols-2 gap-6 sm:h-[400px] h-full">
           {/* Plaid API Option */}
-          <div className="bg-white border-2 border-gray-200 hover:border-blue-400 rounded-xl p-8 transition-all duration-200 hover:shadow-lg group">
-            <div className="flex flex-col gap-6 h-full">
+          <div className="bg-white border-2 border-gray-200 hover:border-blue-400 rounded-xl p-8 transition-all duration-200 hover:shadow-lg group relative overflow-hidden">
+            <canvas
+              ref={confettiCanvasRef}
+              className="absolute inset-0 w-full h-full pointer-events-none"
+            />
+            <div className="flex flex-col gap-6 h-full relative z-10">
               <Image
                 src="/plaid-logo.svg"
                 height={100}
