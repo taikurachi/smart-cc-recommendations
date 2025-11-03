@@ -74,28 +74,28 @@ export default function Home() {
     {
       title: "Connect with Plaid",
       description: (
-        <div className="text-sm space-y-2">
-          <div className="flex">
+        <ul className="space-y-2">
+          <li className="flex items-center">
             <Check size={15} className="text-green-600" />
             <span className="font-semibold ml-2">Automatic sync</span> -
             Real-time transaction updates
-          </div>
-          <div className="flex">
+          </li>
+          <li className="flex items-center">
             <Check size={15} className="text-green-600" />
             <span className="font-semibold ml-2">Bank-level security</span> -
             256-bit encryption
-          </div>
-          <div className="flex">
+          </li>
+          <li className="flex items-center">
             <Check size={15} className="text-green-600" />
             <span className="font-semibold ml-2">Always up-to-date</span> - No
             manual imports needed
-          </div>
-          <div className="flex">
+          </li>
+          <li className="flex items-center">
             <Check size={15} className="text-green-600" />
             <span className="font-semibold ml-2">Fast setup</span> - Connect in
             under 60 seconds
-          </div>
-        </div>
+          </li>
+        </ul>
       ),
       action: (
         <Button
@@ -250,21 +250,55 @@ export default function Home() {
             }
             className={`${
               uploadedFiles.length > 0 ? "bg-green-100" : "bg-white"
-            } rounded-xl p-12 transition-all duration-200 group relative`}
+            } rounded-xl p-8 transition-all duration-200 group relative`}
             style={{
               backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%23333' stroke-width='2' stroke-dasharray='12%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e")`,
             }}
           >
-            <div className="right-[8%] absolute top-[8%] hover:scale-110 cursor-pointer">
-              {uploadedFiles.length > 0 ? (
-                <X
-                  size={25}
-                  onClick={() => handleFileDelete(setUploadedFiles)}
-                />
-              ) : (
-                <Info size={25} onClick={() => setInfoModalOpen(true)} />
+            {uploadedFiles.length > 0 ? (
+              <X size={25} onClick={() => handleFileDelete(setUploadedFiles)} />
+            ) : (
+              <Info
+                size={25}
+                onClick={() => setInfoModalOpen(true)}
+                className="absolute hover:scale-110 cursor-pointer justify-self-end"
+              />
+            )}
+
+            <AnimatePresence>
+              {infoModalOpen && (
+                <motion.div
+                  key="modal"
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0 }}
+                  className="absolute top-0 left-0 right-0 bottom-0 m-2 bg-gray-200 rounded-lg p-6 z-10"
+                >
+                  <div className="flex items-center">
+                    <h4 className="font-bold text-2xl">CSV Parsing Info</h4>
+                    <X
+                      className="ml-auto hover:scale-110 cursor-pointer"
+                      onClick={() => setInfoModalOpen(false)}
+                    />
+                  </div>
+
+                  <ul className="mt-6 space-y-2">
+                    <li className="flex gap-2 items-center">
+                      <Check className="text-green-600" size={15} />
+                      <p>Text format should be in &quot;.csv&quot;</p>
+                    </li>
+                    <li className="flex gap-2 items-center">
+                      <Check className="text-green-600" size={15} />
+                      <p>You can upload multiple files</p>
+                    </li>
+                    <li className="flex gap-2 items-center">
+                      <Check className="text-green-600" size={15} />
+                      <p>Manually select credit cards after</p>
+                    </li>
+                  </ul>
+                </motion.div>
               )}
-            </div>
+            </AnimatePresence>
 
             <input
               multiple
@@ -285,7 +319,7 @@ export default function Home() {
               ) : (
                 <Upload size={50} className="text-gray-400" />
               )}
-              <p className="text-gray-700">
+              <p className={`text-gray-700 ${infoModalOpen ? "blur-xs" : ""}`}>
                 {uploadedFiles.length > 0 ? (
                   <AnimatePresence mode="wait">
                     <motion.span
@@ -325,7 +359,9 @@ export default function Home() {
                     e.stopPropagation();
                     fileInputRef.current?.click();
                   }}
-                  className="px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  className={`px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors ${
+                    infoModalOpen ? "blur-xs" : ""
+                  }`}
                 >
                   Browse Files
                 </button>
