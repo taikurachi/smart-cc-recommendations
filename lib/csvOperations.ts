@@ -23,7 +23,9 @@ export async function processCsvFile(
       const userData = await userResponse.json();
       setUser(userData.user);
       currentUserId = userData.user.id;
-      localStorage.setItem("userId", currentUserId);
+      if (currentUserId) {
+        localStorage.setItem("userId", currentUserId);
+      }
     }
 
     // Read and parse CSV file
@@ -34,23 +36,80 @@ export async function processCsvFile(
       throw new Error("CSV file must have at least a header and one data row");
     }
 
-    // Parse CSV (basic implementation - you might want to use a proper CSV parser)
-    const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
-    const transactions = [];
+    // Parse CSV properly (handles quoted fields with commas)
+    const parseCSVLine = (line: string): string[] => {
+      const result: string[] = [];
+      let current = "";
+      let inQuotes = false;
+
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === "," && !inQuotes) {
+          result.push(current.trim());
+          current = "";
+        } else {
+          current += char;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    };
+
+    const headers = parseCSVLine(lines[0]).map((h) =>
+      h.toLowerCase().replace(/[^a-z0-9_]/g, "_")
+    );
+    const transactions: Transaction[] = [];
 
     for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(",");
+      const values = parseCSVLine(lines[i]);
       if (values.length >= headers.length) {
-        const transaction: any = {};
+        const transaction: Partial<Transaction> &
+          Record<string, string | number> = {};
         headers.forEach((header, index) => {
-          transaction[header] = values[index]?.trim() || "";
+          // Remove surrounding quotes if present
+          let value = values[index] || "";
+          if (value.startsWith('"') && value.endsWith('"')) {
+            value = value.slice(1, -1);
+          }
+          transaction[header] = value;
         });
 
-        // Add some metadata
+        // Map CSV fields to Transaction interface
+        // Support multiple common date field names
+        const dateField =
+          transaction.posted_date ||
+          transaction.date ||
+          transaction.transaction_date ||
+          transaction.datetime ||
+          "";
+
+        // Support multiple common name/merchant field names
+        const nameField =
+          transaction.payee ||
+          transaction.name ||
+          transaction.merchant ||
+          transaction.description ||
+          transaction.vendor ||
+          "";
+
+        // Support multiple common amount field names
+        const amountField =
+          transaction.amount ||
+          transaction.total ||
+          transaction.price ||
+          transaction.value ||
+          "0";
+
         transaction.transaction_id = `csv_${i}_${Date.now()}`;
         transaction.account_id = "csv_upload";
+        transaction.date = String(dateField);
+        transaction.name = String(nameField);
+        transaction.amount = parseFloat(String(amountField)) || 0;
 
-        transactions.push(transaction);
+        transactions.push(transaction as Transaction);
       }
     }
 
