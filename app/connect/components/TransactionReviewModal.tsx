@@ -1,14 +1,14 @@
 "use client";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X, CheckCircle, Edit } from "lucide-react";
+import { X, CheckCircle, Edit, Save, Trash2, Plus } from "lucide-react";
 import Button from "@/app/components/Button";
 import { Transaction } from "@/lib/types";
 
 interface TransactionReviewModalProps {
   isOpen: boolean;
   transactions: Transaction[];
-  onConfirm: () => void;
-  onEdit: () => void;
+  onConfirm: (editedTransactions: Transaction[]) => void;
   onClose: () => void;
 }
 
@@ -16,13 +16,58 @@ export default function TransactionReviewModal({
   isOpen,
   transactions,
   onConfirm,
-  onEdit,
   onClose,
 }: TransactionReviewModalProps) {
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editedTransactions, setEditedTransactions] =
+    useState<Transaction[]>(transactions);
+
+  // Reset edited transactions when modal opens with new data
+  useEffect(() => {
+    if (isOpen) {
+      setEditedTransactions(transactions);
+      setIsEditMode(false);
+    }
+  }, [isOpen, transactions]);
+
   if (!isOpen) return null;
 
   // Calculate total
-  const total = transactions.reduce((sum, t) => sum + t.amount, 0);
+  const total = editedTransactions.reduce((sum, t) => sum + t.amount, 0);
+
+  const handleEditTransaction = (
+    index: number,
+    field: keyof Transaction,
+    value: string | number
+  ) => {
+    const updated = [...editedTransactions];
+    updated[index] = { ...updated[index], [field]: value };
+    setEditedTransactions(updated);
+  };
+
+  const handleDeleteTransaction = (index: number) => {
+    setEditedTransactions(editedTransactions.filter((_, i) => i !== index));
+  };
+
+  const handleAddTransaction = () => {
+    const newTransaction: Transaction = {
+      transaction_id: `csv_new_${Date.now()}`,
+      account_id: "csv_upload",
+      date: new Date().toISOString().split("T")[0], // Today's date in YYYY-MM-DD format
+      name: "New Transaction",
+      amount: 0,
+    };
+    setEditedTransactions([...editedTransactions, newTransaction]);
+  };
+
+  const handleSaveEdits = () => {
+    setIsEditMode(false);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+    setEditedTransactions(transactions);
+  };
 
   return (
     <AnimatePresence>
@@ -74,77 +119,207 @@ export default function TransactionReviewModal({
                     Transactions Parsed
                   </p>
                   <p className="text-3xl font-bold text-blue-900">
-                    {transactions.length}
+                    {editedTransactions.length}
                   </p>
                 </div>
                 <div className="bg-purple-50 rounded-lg p-4">
                   <p className="text-sm text-purple-600 font-medium mb-1">
                     Total Amount
                   </p>
-                  <p className="text-3xl font-bold text-purple-900">
+                  <p className={`text-3xl font-bold text-red-600`}>
                     ${Math.abs(total).toFixed(2)}
                   </p>
                 </div>
               </div>
 
-              {/* Sample Transactions */}
+              {/* Transactions List */}
               <div className="mb-4">
-                <p className="text-sm font-medium text-gray-700 mb-3">
-                  Sample Transactions (first 5):
-                </p>
-                <div className="space-y-2">
-                  {transactions.slice(0, 5).map((transaction, index) => (
-                    <div
-                      key={index}
-                      className="bg-gray-50 rounded-lg p-3 flex items-center justify-between"
-                    >
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">
-                          {transaction.name}
-                        </p>
-                        <p className="text-xs text-gray-600">
-                          {transaction.date}
-                        </p>
-                      </div>
-                      <p
-                        className={`font-semibold ${
-                          transaction.amount < 0
-                            ? "text-red-600"
-                            : "text-green-600"
-                        }`}
-                      >
-                        ${Math.abs(transaction.amount).toFixed(2)}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-                {transactions.length > 5 && (
-                  <p className="text-xs text-gray-500 mt-2 text-center">
-                    + {transactions.length - 5} more transactions
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-sm font-medium text-gray-700">
+                    {isEditMode
+                      ? "Edit Transactions:"
+                      : `Transactions (showing ${Math.min(
+                          5,
+                          editedTransactions.length
+                        )} of ${editedTransactions.length}):`}
                   </p>
+                  {isEditMode && (
+                    <button
+                      onClick={handleAddTransaction}
+                      className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded-md transition-colors"
+                    >
+                      <Plus size={14} />
+                      Add Transaction
+                    </button>
+                  )}
+                </div>
+
+                {!isEditMode ? (
+                  // View Mode - Show first 5
+                  <>
+                    <div className="space-y-2">
+                      {editedTransactions
+                        .slice(0, 5)
+                        .map((transaction, index) => (
+                          <div
+                            key={index}
+                            className="bg-gray-50 rounded-lg p-3 flex items-center justify-between"
+                          >
+                            <div className="flex-1">
+                              <p className="font-medium text-gray-900">
+                                {transaction.name}
+                              </p>
+                              <p className="text-xs text-gray-600">
+                                {transaction.date}
+                              </p>
+                            </div>
+                            <p
+                              className={`font-semibold ${
+                                transaction.amount < 0
+                                  ? "text-red-600"
+                                  : "text-green-600"
+                              }`}
+                            >
+                              ${Math.abs(transaction.amount).toFixed(2)}
+                            </p>
+                          </div>
+                        ))}
+                    </div>
+                    {editedTransactions.length > 5 && (
+                      <p className="text-xs text-gray-500 mt-2 text-center">
+                        + {editedTransactions.length - 5} more transactions
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  // Edit Mode - Show all in table
+                  <div className="border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="overflow-x-auto max-h-96 overflow-y-auto">
+                      <table className="w-full text-sm">
+                        <thead className="bg-gray-50 sticky top-0">
+                          <tr>
+                            <th className="px-3 py-2 text-left font-medium text-gray-700">
+                              Date
+                            </th>
+                            <th className="px-3 py-2 text-left font-medium text-gray-700">
+                              Name
+                            </th>
+                            <th className="px-3 py-2 text-right font-medium text-gray-700">
+                              Amount
+                            </th>
+                            <th className="px-3 py-2 text-center font-medium text-gray-700 w-16">
+                              Action
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {editedTransactions.map((transaction, index) => (
+                            <tr key={index} className="hover:bg-gray-50">
+                              <td className="px-3 py-2">
+                                <input
+                                  type="text"
+                                  value={transaction.date}
+                                  onChange={(e) =>
+                                    handleEditTransaction(
+                                      index,
+                                      "date",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                              </td>
+                              <td className="px-3 py-2">
+                                <input
+                                  type="text"
+                                  value={transaction.name}
+                                  onChange={(e) =>
+                                    handleEditTransaction(
+                                      index,
+                                      "name",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                              </td>
+                              <td className="px-3 py-2">
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={transaction.amount}
+                                  onChange={(e) =>
+                                    handleEditTransaction(
+                                      index,
+                                      "amount",
+                                      parseFloat(e.target.value)
+                                    )
+                                  }
+                                  className="w-full px-2 py-1 text-xs border border-gray-300 rounded text-right focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                              </td>
+                              <td className="px-3 py-2 text-center">
+                                <button
+                                  onClick={() => handleDeleteTransaction(index)}
+                                  className="text-red-600 hover:text-red-800 transition-colors"
+                                  aria-label="Delete transaction"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
 
             {/* Footer */}
             <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
-              <Button
-                onClick={onEdit}
-                color="gray"
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <Edit size={16} />
-                Edit Data
-              </Button>
-              <Button
-                onClick={onConfirm}
-                color="green"
-                className="flex items-center gap-2"
-              >
-                <CheckCircle size={16} />
-                Looks Good
-              </Button>
+              {isEditMode ? (
+                <>
+                  <Button
+                    onClick={handleCancelEdit}
+                    color="gray"
+                    variant="outline"
+                    className="flex items-center gap-2"
+                  >
+                    <X size={16} />
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleSaveEdits}
+                    color="blue"
+                    className="flex items-center gap-2"
+                  >
+                    <Save size={16} />
+                    Save Changes
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button
+                    onClick={() => setIsEditMode(true)}
+                    color="gray"
+                    variant="outline"
+                    className="flex items-center gap-2"
+                  >
+                    <Edit size={16} />
+                    Edit Data
+                  </Button>
+                  <Button
+                    onClick={() => onConfirm(editedTransactions)}
+                    color="green"
+                    className="flex items-center gap-2"
+                  >
+                    <CheckCircle size={16} />
+                    Looks Good
+                  </Button>
+                </>
+              )}
             </div>
           </motion.div>
         </motion.div>
@@ -152,4 +327,3 @@ export default function TransactionReviewModal({
     </AnimatePresence>
   );
 }
-

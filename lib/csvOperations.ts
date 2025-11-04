@@ -107,13 +107,18 @@ export async function processCsvFile(
         transaction.name = String(nameField);
         transaction.amount = parseFloat(String(amountField)) || 0;
 
-        transactions.push(transaction as Transaction);
+        // Exclude positive amounts (credit card payments) from transactions
+        if (transaction.amount <= 0) {
+          transactions.push(transaction as Transaction);
+        }
       }
     }
 
     // Validate that we have the required fields
     if (transactions.length === 0) {
-      throw new Error("No valid transactions found in CSV file");
+      throw new Error(
+        "No valid spending transactions found in CSV file (positive amounts like payments are excluded)"
+      );
     }
 
     // Check if critical fields are missing
@@ -126,6 +131,11 @@ export async function processCsvFile(
         "CSV file appears to be missing required transaction data. Please ensure your CSV contains date, merchant/payee name, and amount columns."
       );
     }
+
+    showToast.success(
+      `Loaded ${transactions.length} spending transactions (payments excluded)`,
+      { duration: 3000 }
+    );
 
     // Create a mock connection for CSV data
     const mockConnection: Connection = {

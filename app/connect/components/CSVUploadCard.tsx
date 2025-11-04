@@ -209,9 +209,9 @@ export default function CSVUploadCard({
       <TransactionReviewModal
         isOpen={reviewModalOpen}
         transactions={parsedTransactions}
-        onConfirm={() => {
+        onConfirm={(editedTransactions) => {
           handleConfirmTransactions(
-            parsedTransactions,
+            editedTransactions,
             parsedConnections,
             setConnections,
             router
@@ -222,10 +222,6 @@ export default function CSVUploadCard({
           if (fileInputRef.current) {
             fileInputRef.current.value = ""; // Reset file input
           }
-        }}
-        onEdit={() => {
-          // TODO: Implement edit functionality
-          alert("Edit functionality coming soon!");
         }}
         onClose={() => {
           setReviewModalOpen(false);
