@@ -1,7 +1,15 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { X, Upload, CheckCircle, Info, Loader, Check } from "lucide-react";
+import {
+  X,
+  Upload,
+  CheckCircle,
+  Info,
+  Loader,
+  Check,
+  XCircle,
+} from "lucide-react";
 import Button from "@/app/components/Button";
 import { User, Connection, Transaction } from "@/lib/types";
 import {
@@ -54,6 +62,23 @@ export default function CSVUploadCard({
   const [buttonStateIndex, setButtonStateIndex] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Helper function to determine background color
+  const getBackgroundColor = () => {
+    if (uploadedFiles.length === 0) return "bg-white";
+    return buttonStateIndex === 3 ? "bg-red-200" : "bg-green-100";
+  };
+
+  const getIcon = () => {
+    if (uploadedFiles.length === 0)
+      return <Upload size={50} className="text-gray-400" />;
+
+    return buttonStateIndex === 3 ? (
+      <XCircle size={50} className="text-red-500" />
+    ) : (
+      <CheckCircle size={50} className="text-green-600" />
+    );
+  };
+
   // Create interval animation for multiple uploaded files
   useEffect(() => {
     if (uploadedFiles.length === 0) return;
@@ -70,9 +95,7 @@ export default function CSVUploadCard({
       onDragOver={(e) => handleDragOver(e, setIsDragOver)}
       onDragLeave={(e) => handleDragLeave(e, setIsDragOver)}
       onDrop={(e) => handleDrop(e, setIsDragOver, setUploadedFiles)}
-      className={`${
-        uploadedFiles.length > 0 ? "bg-green-100" : "bg-white"
-      } rounded-xl p-8 transition-all duration-200 group relative`}
+      className={`${getBackgroundColor()} rounded-xl p-8 transition-all duration-200 group relative`}
       style={{
         backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%23333' stroke-width='2' stroke-dasharray='12%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e")`,
       }}
@@ -113,11 +136,7 @@ export default function CSVUploadCard({
       />
 
       <div className="flex flex-col items-center justify-center gap-8 h-full">
-        {uploadedFiles.length > 0 ? (
-          <CheckCircle size={50} className="text-green-600" />
-        ) : (
-          <Upload size={50} className="text-gray-400" />
-        )}
+        {getIcon()}
         <p className="text-gray-700">
           {uploadedFiles.length > 0 ? (
             <AnimatePresence mode="wait">
