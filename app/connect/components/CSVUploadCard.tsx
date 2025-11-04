@@ -84,6 +84,9 @@ export default function CSVUploadCard({
           onClick={() => {
             handleFileDelete(setUploadedFiles);
             setButtonStateIndex(0);
+            if (fileInputRef.current) {
+              fileInputRef.current.value = ""; // Reset file input
+            }
           }}
           className="absolute justify-self-end over:scale-110 cursor-pointer"
         />
@@ -201,6 +204,9 @@ export default function CSVUploadCard({
           setReviewModalOpen(false);
           setUploadedFiles([]);
           setButtonStateIndex(0); // Reset button state
+          if (fileInputRef.current) {
+            fileInputRef.current.value = ""; // Reset file input
+          }
         }}
         onEdit={() => {
           // TODO: Implement edit functionality
@@ -208,7 +214,11 @@ export default function CSVUploadCard({
         }}
         onClose={() => {
           setReviewModalOpen(false);
-          // setButtonStateIndex(0); // Reset button state
+          setUploadedFiles([]);
+          setButtonStateIndex(0); // Reset button state
+          if (fileInputRef.current) {
+            fileInputRef.current.value = ""; // Reset file input
+          }
         }}
       />
     </div>
