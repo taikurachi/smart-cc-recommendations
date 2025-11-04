@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { X, Upload, CheckCircle, Info } from "lucide-react";
+import { X, Upload, CheckCircle, Info, Loader, Check } from "lucide-react";
 import Button from "@/app/components/Button";
 import { User, Connection, Transaction } from "@/lib/types";
 import {
@@ -25,6 +25,16 @@ interface CSVUploadCardProps {
   router: { push: (path: string) => void };
 }
 
+const buttonStates = [
+  { title: "Process CSV Files", icon: null, bgColor: "purple" },
+  {
+    title: "Processing",
+    icon: <Loader size={15} className="animate-spin" />,
+    bgColor: "gray",
+  },
+  { title: "Success", icon: <Check size={15} />, bgColor: "green" },
+  { title: "Fail", icon: <X size={15} />, bgColor: "red" },
+];
 export default function CSVUploadCard({
   user,
   setUser,
@@ -42,6 +52,7 @@ export default function CSVUploadCard({
     []
   );
   const [parsedConnections, setParsedConnections] = useState<Connection[]>([]);
+  const [buttonStateIndex, setButtonStateIndex] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Create interval animation for multiple uploaded files
@@ -70,7 +81,10 @@ export default function CSVUploadCard({
       {uploadedFiles.length > 0 ? (
         <X
           size={25}
-          onClick={() => handleFileDelete(setUploadedFiles)}
+          onClick={() => {
+            handleFileDelete(setUploadedFiles);
+            setButtonStateIndex(0);
+          }}
           className="absolute justify-self-end over:scale-110 cursor-pointer"
         />
       ) : (
@@ -124,8 +138,11 @@ export default function CSVUploadCard({
 
         {uploadedFiles.length > 0 ? (
           <Button
-            color="green"
+            color={buttonStates[buttonStateIndex].bgColor}
             onClick={async () => {
+              if (buttonStateIndex > 0) return; // Prevent multiple clicks
+
+              setButtonStateIndex(1); // Set to "Processing"
               const result = await handleParseCsvFile(
                 uploadedFiles,
                 user,
@@ -135,13 +152,27 @@ export default function CSVUploadCard({
               );
 
               if (result) {
+                setButtonStateIndex(2); // Set to "Success"
                 setParsedTransactions(result.transactions);
                 setParsedConnections(result.connections);
                 setReviewModalOpen(true);
+              } else {
+                setButtonStateIndex(3); // Set to "Fail"
               }
             }}
           >
-            {`Parse CSV File${uploadedFiles.length > 1 ? "s" : ""}`}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={buttonStateIndex}
+                className="flex gap-2 items-center"
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: -30, opacity: 0 }}
+                transition={{ duration: 0.1, ease: "easeInOut" }}
+              >
+                {buttonStates[buttonStateIndex].title}{" "}
+                {buttonStates[buttonStateIndex].icon}
+              </motion.div>
+            </AnimatePresence>
           </Button>
         ) : (
           <button
@@ -169,6 +200,7 @@ export default function CSVUploadCard({
           );
           setReviewModalOpen(false);
           setUploadedFiles([]);
+          setButtonStateIndex(0); // Reset button state
         }}
         onEdit={() => {
           // TODO: Implement edit functionality
@@ -176,6 +208,7 @@ export default function CSVUploadCard({
         }}
         onClose={() => {
           setReviewModalOpen(false);
+          // setButtonStateIndex(0); // Reset button state
         }}
       />
     </div>

@@ -155,7 +155,6 @@ export async function processCsvFile(
       connection: mockConnection,
     };
   } catch (error) {
-    console.error("CSV processing error:", error);
     setMessage(
       `❌ Error processing CSV: ${
         error instanceof Error ? error.message : "Unknown error"
