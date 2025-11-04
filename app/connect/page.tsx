@@ -9,9 +9,8 @@ import CSVUploadCard from "./components/CSVUploadCard";
 export default function Home() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [connections, setConnections] = useState<Connection[]>([]);
+  const [, setLoading] = useState(false);
+  const [, setConnections] = useState<Connection[]>([]);
 
   // Load user data function
   const loadData = async () => {
@@ -37,14 +36,12 @@ export default function Home() {
           <PlaidConnectionCard
             user={user}
             setUser={setUser}
-            setMessage={setMessage}
             loadData={loadData}
           />
 
           <CSVUploadCard
             user={user}
             setUser={setUser}
-            setMessage={setMessage}
             setLoading={setLoading}
             setConnections={setConnections}
             router={router}

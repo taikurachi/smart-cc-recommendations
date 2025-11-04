@@ -6,34 +6,27 @@ import { User } from "./types";
 
 export const handleCreateLinkToken = async (
   user: User | null,
-  setUser: React.Dispatch<React.SetStateAction<User | null>>,
-  setMessage: (message: string) => void
+  setUser: React.Dispatch<React.SetStateAction<User | null>>
 ) => {
-  const token = await createPlaidLinkToken(user, setUser, setMessage);
+  const token = await createPlaidLinkToken(user, setUser);
   return token;
 };
 
 export const handlePlaidSuccess = async (
   public_token: string,
   userId: string | undefined,
-  setMessage: (message: string) => void,
   setLoading: (loading: boolean) => void,
   loadData: () => Promise<void>
 ) => {
   setLoading(true);
-  setMessage("🔄 Connecting your bank account...");
 
-  await exchangePlaidPublicToken(public_token, userId, setMessage, loadData);
+  await exchangePlaidPublicToken(public_token, userId, loadData);
 
   setLoading(false);
 };
 
-export const handlePlaidExit = (
-  err: unknown,
-  setMessage: (message: string) => void
-) => {
+export const handlePlaidExit = (err: unknown) => {
   if (err) {
     console.error("Plaid Link exit error:", err);
-    setMessage("❌ Bank connection cancelled or failed");
   }
 };

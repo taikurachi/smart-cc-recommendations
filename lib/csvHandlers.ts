@@ -1,5 +1,6 @@
 import { processCsvFile, validateCsvFile } from "./csvOperations";
 import { User, Connection, Transaction } from "./types";
+import { showToast } from "./toastUtils";
 
 export const handleDragOver = (
   e: React.DragEvent,
@@ -20,8 +21,7 @@ export const handleDragLeave = (
 export const handleDrop = (
   e: React.DragEvent,
   setIsDragOver: (value: boolean) => void,
-  setUploadedFiles: React.Dispatch<React.SetStateAction<File[]>>,
-  setMessage: (message: string) => void
+  setUploadedFiles: React.Dispatch<React.SetStateAction<File[]>>
 ) => {
   e.preventDefault();
   setIsDragOver(false);
@@ -31,25 +31,24 @@ export const handleDrop = (
 
   if (csvFiles.length > 0) {
     setUploadedFiles((prev) => [...prev, ...csvFiles]);
-    setMessage(`✅ Added ${csvFiles.length} file(s)`);
+    showToast.success(`Added ${csvFiles.length} file(s)`);
   } else {
-    setMessage("❌ Please upload valid CSV files");
+    showToast.error("Please upload valid CSV files");
   }
 };
 
 export const handleFileSelect = (
   e: React.ChangeEvent<HTMLInputElement>,
-  setUploadedFiles: React.Dispatch<React.SetStateAction<File[]>>,
-  setMessage: (message: string) => void
+  setUploadedFiles: React.Dispatch<React.SetStateAction<File[]>>
 ) => {
   const files = e.target.files;
   if (files && files.length > 0) {
     const csvFiles = Array.from(files).filter((file) => validateCsvFile(file));
     if (csvFiles.length > 0) {
       setUploadedFiles((prev) => [...prev, ...csvFiles]);
-      setMessage(`✅ Added ${csvFiles.length} file(s)`);
+      showToast.success(`Added ${csvFiles.length} file(s)`);
     } else {
-      setMessage("❌ Please upload valid CSV files");
+      showToast.error("Please upload valid CSV files");
     }
   }
 };
@@ -65,7 +64,6 @@ export const handleParseCsvFile = async (
   uploadedFiles: File[],
   user: User | null,
   setUser: React.Dispatch<React.SetStateAction<User | null>>,
-  setMessage: (message: string) => void,
   setLoading: (loading: boolean) => void
 ): Promise<{
   transactions: Transaction[];
@@ -74,6 +72,9 @@ export const handleParseCsvFile = async (
   if (uploadedFiles.length === 0) return null;
 
   setLoading(true);
+  showToast.loading("Processing CSV file(s)...", {
+    id: "csv-process",
+  });
 
   const allTransactions: Transaction[] = [];
   const allConnections: Connection[] = [];
@@ -81,7 +82,7 @@ export const handleParseCsvFile = async (
   try {
     // Process all uploaded files
     for (const file of uploadedFiles) {
-      const result = await processCsvFile(file, user, setUser, setMessage);
+      const result = await processCsvFile(file, user, setUser);
 
       if (result) {
         allTransactions.push(...result.transactions);
@@ -92,18 +93,29 @@ export const handleParseCsvFile = async (
     setLoading(false);
 
     if (allTransactions.length === 0) {
-      setMessage("❌ No transactions found in the uploaded files");
+      showToast.error("No transactions found in the uploaded files", {
+        id: "csv-process",
+      });
       return null;
     }
 
+    showToast.success(
+      `Successfully parsed ${allTransactions.length} transactions!`,
+      {
+        id: "csv-process",
+      }
+    );
     return {
       transactions: allTransactions,
       connections: allConnections,
     };
   } catch (error) {
     setLoading(false);
-    setMessage(
-      `❌ ${error instanceof Error ? error.message : "Failed to parse CSV"}`
+    showToast.error(
+      error instanceof Error ? error.message : "Failed to parse CSV",
+      {
+        id: "csv-process",
+      }
     );
     return null;
   }

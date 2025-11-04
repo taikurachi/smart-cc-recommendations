@@ -1,17 +1,15 @@
 import { User, Connection, Transaction } from "./types";
+import { showToast } from "./toastUtils";
 
 export async function processCsvFile(
   file: File,
   user: User | null,
-  setUser: (user: User) => void,
-  setMessage: (message: string) => void
+  setUser: (user: User) => void
 ): Promise<{
   transactions: Transaction[];
   connection: Connection;
 } | null> {
   try {
-    setMessage("🔄 Processing CSV file...");
-
     // Ensure user exists
     let currentUserId = user?.id;
     if (!currentUserId) {
@@ -129,10 +127,6 @@ export async function processCsvFile(
       );
     }
 
-    setMessage(
-      `✅ Successfully parsed ${transactions.length} transactions from CSV`
-    );
-
     // Create a mock connection for CSV data
     const mockConnection: Connection = {
       id: `csv_${Date.now()}`,
@@ -155,8 +149,8 @@ export async function processCsvFile(
       connection: mockConnection,
     };
   } catch (error) {
-    setMessage(
-      `❌ Error processing CSV: ${
+    showToast.error(
+      `Error processing CSV: ${
         error instanceof Error ? error.message : "Unknown error"
       }`
     );

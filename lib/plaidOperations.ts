@@ -1,9 +1,9 @@
 import { User, Transaction } from "./types";
+import { showToast } from "./toastUtils";
 
 export async function createLinkToken(
   user: User | null,
-  setUser: (user: User) => void,
-  setMessage: (message: string) => void
+  setUser: (user: User) => void
 ): Promise<string | null> {
   try {
     let currentUserId = user?.id;
@@ -34,11 +34,11 @@ export async function createLinkToken(
     }
 
     const { link_token } = await response.json();
-    setMessage("✅ Link token created! Now click 'Connect Bank Account'");
+    showToast.success("Link token created! Ready to connect.");
     return link_token;
   } catch (error) {
     console.error("Error creating link token:", error);
-    setMessage("❌ Failed to create link token");
+    showToast.error("Failed to create link token");
     return null;
   }
 }
@@ -46,15 +46,16 @@ export async function createLinkToken(
 export async function exchangePublicToken(
   publicToken: string,
   userId: string | undefined,
-  setMessage: (message: string) => void,
   loadUserData: () => Promise<void>
 ): Promise<void> {
   if (!userId) {
-    setMessage("❌ User ID is required");
+    showToast.error("User ID is required");
     return;
   }
 
   try {
+    showToast.loading("Connecting your bank account...", { id: "plaid-exchange" });
+    
     const response = await fetch("/api/plaid/exchange", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -69,26 +70,26 @@ export async function exchangePublicToken(
     }
 
     const data = await response.json();
-    setMessage(
-      `✅ ${data.message} Connected to ${data.institution_name}! You can now view your spending analysis.`
+    showToast.success(
+      `${data.message} Connected to ${data.institution_name}! You can now view your spending analysis.`,
+      { id: "plaid-exchange" }
     );
 
     // Reload user data to show new connection
     await loadUserData();
   } catch (error) {
     console.error("Error connecting bank:", error);
-    setMessage("❌ Failed to connect bank account");
+    showToast.error("Failed to connect bank account", { id: "plaid-exchange" });
   }
 }
 
 export async function fetchTransactions(
   userId: string | undefined,
   connectionId: string | undefined,
-  setMessage: (message: string) => void,
   loadUserData: () => Promise<void>
 ): Promise<Transaction[]> {
   try {
-    setMessage("🔄 Fetching transactions...");
+    showToast.loading("Fetching transactions...", { id: "fetch-transactions" });
 
     const response = await fetch("/api/plaid/transactions", {
       method: "POST",
@@ -105,7 +106,10 @@ export async function fetchTransactions(
     }
 
     const data = await response.json();
-    setMessage(`✅ Loaded ${data.transactions?.length || 0} transactions`);
+    showToast.success(
+      `Loaded ${data.transactions?.length || 0} transactions`,
+      { id: "fetch-transactions" }
+    );
 
     // Reload connections to update last_synced
     await loadUserData();
@@ -113,7 +117,7 @@ export async function fetchTransactions(
     return data.transactions || [];
   } catch (error) {
     console.error("Error fetching transactions:", error);
-    setMessage("❌ Failed to fetch transactions");
+    showToast.error("Failed to fetch transactions", { id: "fetch-transactions" });
     return [];
   }
 }

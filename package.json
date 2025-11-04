@@ -19,6 +19,7 @@
     "playwright": "^1.56.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "react-hot-toast": "^2.6.0",
     "react-plaid-link": "^4.1.1",
     "uuid": "^11.1.0"
   },

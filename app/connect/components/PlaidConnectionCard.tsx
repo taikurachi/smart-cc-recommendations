@@ -17,7 +17,6 @@ import { useConfetti } from "../hooks/useConfetti";
 interface PlaidConnectionCardProps {
   user: User | null;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
-  setMessage: (message: string) => void;
   loadData: () => Promise<void>;
 }
 
@@ -34,7 +33,6 @@ const buttonStates = [
 export default function PlaidConnectionCard({
   user,
   setUser,
-  setMessage,
   loadData,
 }: PlaidConnectionCardProps) {
   const router = useRouter();
@@ -50,7 +48,6 @@ export default function PlaidConnectionCard({
       await handlePlaidSuccess(
         public_token,
         user?.id,
-        setMessage,
         () => {}, // setLoading not needed here
         loadData
       );
@@ -61,7 +58,7 @@ export default function PlaidConnectionCard({
       router.push("/analysis");
     },
     onExit: (err) => {
-      handlePlaidExit(err, setMessage);
+      handlePlaidExit(err);
     },
   });
 
@@ -96,11 +93,7 @@ export default function PlaidConnectionCard({
         <Button
           onClick={async () => {
             setButtonStateIndex((prev) => prev + 1);
-            const token = await handleCreateLinkToken(
-              user,
-              setUser,
-              setMessage
-            );
+            const token = await handleCreateLinkToken(user, setUser);
             if (token) {
               setLinkToken(token);
               setButtonStateIndex((prev) => prev + 1);

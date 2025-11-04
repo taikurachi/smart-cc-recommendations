@@ -19,14 +19,13 @@ import TransactionReviewModal from "./TransactionReviewModal";
 interface CSVUploadCardProps {
   user: User | null;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
-  setMessage: (message: string) => void;
   setLoading: (loading: boolean) => void;
   setConnections: React.Dispatch<React.SetStateAction<Connection[]>>;
   router: { push: (path: string) => void };
 }
 
 const buttonStates = [
-  { title: "Process CSV Files", icon: null, bgColor: "purple" },
+  { title: "Process CSV Files", icon: null, bgColor: "green" },
   {
     title: "Processing",
     icon: <Loader size={15} className="animate-spin" />,
@@ -35,17 +34,17 @@ const buttonStates = [
   { title: "Success", icon: <Check size={15} />, bgColor: "green" },
   { title: "Fail", icon: <X size={15} />, bgColor: "red" },
 ];
+
 export default function CSVUploadCard({
   user,
   setUser,
-  setMessage,
   setLoading,
   setConnections,
   router,
 }: CSVUploadCardProps) {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [fileIndex, setFileIndex] = useState(0);
-  const [isDragOver, setIsDragOver] = useState(false);
+  const [, setIsDragOver] = useState(false);
   const [infoModalOpen, setInfoModalOpen] = useState(false);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [parsedTransactions, setParsedTransactions] = useState<Transaction[]>(
@@ -70,7 +69,7 @@ export default function CSVUploadCard({
     <div
       onDragOver={(e) => handleDragOver(e, setIsDragOver)}
       onDragLeave={(e) => handleDragLeave(e, setIsDragOver)}
-      onDrop={(e) => handleDrop(e, setIsDragOver, setUploadedFiles, setMessage)}
+      onDrop={(e) => handleDrop(e, setIsDragOver, setUploadedFiles)}
       className={`${
         uploadedFiles.length > 0 ? "bg-green-100" : "bg-white"
       } rounded-xl p-8 transition-all duration-200 group relative`}
@@ -83,12 +82,13 @@ export default function CSVUploadCard({
           size={25}
           onClick={() => {
             handleFileDelete(setUploadedFiles);
+            setFileIndex(0);
             setButtonStateIndex(0);
             if (fileInputRef.current) {
               fileInputRef.current.value = ""; // Reset file input
             }
           }}
-          className="absolute justify-self-end over:scale-110 cursor-pointer"
+          className="absolute justify-self-end hover:scale-110 cursor-pointer"
         />
       ) : (
         <Info
@@ -108,14 +108,11 @@ export default function CSVUploadCard({
         ref={fileInputRef}
         type="file"
         accept=".csv"
-        onChange={(e) => handleFileSelect(e, setUploadedFiles, setMessage)}
+        onChange={(e) => handleFileSelect(e, setUploadedFiles)}
         className="hidden"
       />
 
       <div className="flex flex-col items-center justify-center gap-8 h-full">
-        {uploadedFiles.length > 0 && (
-          <p className="relative">{`${uploadedFiles.length} files selected`}</p>
-        )}
         {uploadedFiles.length > 0 ? (
           <CheckCircle size={50} className="text-green-600" />
         ) : (
@@ -150,7 +147,6 @@ export default function CSVUploadCard({
                 uploadedFiles,
                 user,
                 setUser,
-                setMessage,
                 setLoading
               );
 
