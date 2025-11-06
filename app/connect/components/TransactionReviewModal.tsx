@@ -4,6 +4,14 @@ import { motion, AnimatePresence } from "motion/react";
 import { X, CheckCircle, Edit, Save, Trash2, Plus } from "lucide-react";
 import Button from "@/app/components/Button";
 import { Transaction } from "@/lib/types";
+import {
+  createNewTransaction,
+  calculateTotal,
+  formatCurrency,
+  getTotalColorClass,
+} from "@/lib/transactionHelpers";
+import { PREVIEW_TRANSACTION_COUNT } from "@/lib/constants";
+import TransactionItem from "./TransactionItem";
 
 interface TransactionReviewModalProps {
   isOpen: boolean;
@@ -33,7 +41,7 @@ export default function TransactionReviewModal({
   if (!isOpen) return null;
 
   // Calculate total
-  const total = editedTransactions.reduce((sum, t) => sum + t.amount, 0);
+  const total = calculateTotal(editedTransactions);
 
   const handleEditTransaction = (
     index: number,
@@ -50,14 +58,7 @@ export default function TransactionReviewModal({
   };
 
   const handleAddTransaction = () => {
-    const newTransaction: Transaction = {
-      transaction_id: `csv_new_${Date.now()}`,
-      account_id: "csv_upload",
-      date: new Date().toISOString().split("T")[0], // Today's date in YYYY-MM-DD format
-      name: "New Transaction",
-      amount: 0,
-    };
-    setEditedTransactions([...editedTransactions, newTransaction]);
+    setEditedTransactions([...editedTransactions, createNewTransaction()]);
   };
 
   const handleSaveEdits = () => {
@@ -126,8 +127,12 @@ export default function TransactionReviewModal({
                   <p className="text-sm text-purple-600 font-medium mb-1">
                     Total Amount
                   </p>
-                  <p className={`text-3xl font-bold text-red-600`}>
-                    ${Math.abs(total).toFixed(2)}
+                  <p
+                    className={`text-3xl font-bold ${getTotalColorClass(
+                      total
+                    )}`}
+                  >
+                    {formatCurrency(total)}
                   </p>
                 </div>
               </div>
@@ -139,7 +144,7 @@ export default function TransactionReviewModal({
                     {isEditMode
                       ? "Edit Transactions:"
                       : `Transactions (showing ${Math.min(
-                          5,
+                          PREVIEW_TRANSACTION_COUNT,
                           editedTransactions.length
                         )} of ${editedTransactions.length}):`}
                   </p>
@@ -159,35 +164,19 @@ export default function TransactionReviewModal({
                   <>
                     <div className="space-y-2">
                       {editedTransactions
-                        .slice(0, 5)
+                        .slice(0, PREVIEW_TRANSACTION_COUNT)
                         .map((transaction, index) => (
-                          <div
+                          <TransactionItem
                             key={index}
-                            className="bg-gray-50 rounded-lg p-3 flex items-center justify-between"
-                          >
-                            <div className="flex-1">
-                              <p className="font-medium text-gray-900">
-                                {transaction.name}
-                              </p>
-                              <p className="text-xs text-gray-600">
-                                {transaction.date}
-                              </p>
-                            </div>
-                            <p
-                              className={`font-semibold ${
-                                transaction.amount < 0
-                                  ? "text-red-600"
-                                  : "text-green-600"
-                              }`}
-                            >
-                              ${Math.abs(transaction.amount).toFixed(2)}
-                            </p>
-                          </div>
+                            transaction={transaction}
+                          />
                         ))}
                     </div>
-                    {editedTransactions.length > 5 && (
+                    {editedTransactions.length > PREVIEW_TRANSACTION_COUNT && (
                       <p className="text-xs text-gray-500 mt-2 text-center">
-                        + {editedTransactions.length - 5} more transactions
+                        +{" "}
+                        {editedTransactions.length - PREVIEW_TRANSACTION_COUNT}{" "}
+                        more transactions
                       </p>
                     )}
                   </>
