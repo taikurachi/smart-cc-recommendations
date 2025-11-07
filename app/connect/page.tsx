@@ -1,27 +1,12 @@
 "use client";
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { loadUserData } from "@/lib/userOperations";
-import { User, Connection } from "@/lib/types";
+import { useApp } from "@/lib/AppContext";
 import PlaidConnectionCard from "./components/PlaidConnectionCard";
 import CSVUploadCard from "./components/CSVUploadCard";
 
 export default function Home() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [, setLoading] = useState(false);
-  const [, setConnections] = useState<Connection[]>([]);
-
-  // Load user data function
-  const loadData = async () => {
-    const data = await loadUserData();
-    setUser(data.user);
-  };
-
-  // Load existing user data on component mount
-  useEffect(() => {
-    loadData();
-  }, []);
+  const { user, setUser, setConnections, setLoading, loadData } = useApp();
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
