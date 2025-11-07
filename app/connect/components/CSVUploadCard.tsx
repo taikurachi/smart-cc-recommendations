@@ -30,6 +30,7 @@ interface CSVUploadCardProps {
   setLoading: (loading: boolean) => void;
   setConnections: React.Dispatch<React.SetStateAction<Connection[]>>;
   router: { push: (path: string) => void };
+  disabled?: boolean;
 }
 
 const buttonStates = [
@@ -49,6 +50,7 @@ export default function CSVUploadCard({
   setLoading,
   setConnections,
   router,
+  disabled = false,
 }: CSVUploadCardProps) {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [fileIndex, setFileIndex] = useState(0);
@@ -92,14 +94,31 @@ export default function CSVUploadCard({
 
   return (
     <div
-      onDragOver={(e) => handleDragOver(e, setIsDragOver)}
-      onDragLeave={(e) => handleDragLeave(e, setIsDragOver)}
-      onDrop={(e) => handleDrop(e, setIsDragOver, setUploadedFiles)}
-      className={`${getBackgroundColor()} rounded-xl p-8 transition-all duration-200 group relative`}
+      onDragOver={(e) => !disabled && handleDragOver(e, setIsDragOver)}
+      onDragLeave={(e) => !disabled && handleDragLeave(e, setIsDragOver)}
+      onDrop={(e) =>
+        !disabled && handleDrop(e, setIsDragOver, setUploadedFiles)
+      }
+      className={`${getBackgroundColor()} rounded-xl p-8 transition-all duration-200 group relative ${
+        disabled ? "opacity-60 cursor-not-allowed" : ""
+      }`}
       style={{
-        backgroundImage: `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%23333' stroke-width='2' stroke-dasharray='12%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e")`,
+        backgroundImage: disabled
+          ? undefined
+          : `url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='12' ry='12' stroke='%23333' stroke-width='2' stroke-dasharray='12%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e")`,
       }}
     >
+      {disabled && (
+        <div className="absolute inset-0 bg-gray-100/50 backdrop-blur-[2px] z-20 flex items-center justify-center rounded-xl">
+          <div className="bg-white rounded-lg p-4 shadow-lg text-center max-w-xs">
+            <p className="font-semibold text-gray-900 mb-1">🔒 Method Locked</p>
+            <p className="text-sm text-gray-600">
+              You&apos;re using Plaid connection. All accounts must use the same
+              connection method.
+            </p>
+          </div>
+        </div>
+      )}
       {uploadedFiles.length > 0 ? (
         <X
           size={25}
@@ -131,8 +150,9 @@ export default function CSVUploadCard({
         ref={fileInputRef}
         type="file"
         accept=".csv"
-        onChange={(e) => handleFileSelect(e, setUploadedFiles)}
+        onChange={(e) => !disabled && handleFileSelect(e, setUploadedFiles)}
         className="hidden"
+        disabled={disabled}
       />
 
       <div className="flex flex-col items-center justify-center gap-8 h-full">
@@ -159,7 +179,7 @@ export default function CSVUploadCard({
           <Button
             color={buttonStates[buttonStateIndex].bgColor}
             onClick={async () => {
-              if (buttonStateIndex > 0) return; // Prevent multiple clicks
+              if (disabled || buttonStateIndex > 0) return; // Prevent multiple clicks or disabled state
 
               setButtonStateIndex(1); // Set to "Processing"
               const result = await handleParseCsvFile(
@@ -195,10 +215,16 @@ export default function CSVUploadCard({
         ) : (
           <button
             onClick={(e) => {
+              if (disabled) return;
               e.stopPropagation();
               fileInputRef.current?.click();
             }}
-            className="px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            disabled={disabled}
+            className={`px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium transition-colors ${
+              disabled
+                ? "text-gray-400 cursor-not-allowed"
+                : "text-gray-700 hover:bg-gray-50"
+            }`}
           >
             Browse Files
           </button>
@@ -210,6 +236,9 @@ export default function CSVUploadCard({
         isOpen={reviewModalOpen}
         transactions={parsedTransactions}
         onConfirm={(editedTransactions) => {
+          // Set connection method to 'manual'
+          localStorage.setItem("connectionMethod", "manual");
+
           handleConfirmTransactions(
             editedTransactions,
             parsedConnections,

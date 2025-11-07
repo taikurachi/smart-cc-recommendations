@@ -8,7 +8,7 @@ import {
   Dispatch,
   SetStateAction,
 } from "react";
-import { User, Connection, CardPreferences } from "./types";
+import { User, Connection, CardPreferences, ConnectionMethod } from "./types";
 import { loadUserData } from "./userOperations";
 
 interface AppContextType {
@@ -20,6 +20,8 @@ interface AppContextType {
   setLoading: Dispatch<SetStateAction<boolean>>;
   cardPreferences: CardPreferences | null;
   setCardPreferences: Dispatch<SetStateAction<CardPreferences | null>>;
+  connectionMethod: ConnectionMethod;
+  setConnectionMethod: Dispatch<SetStateAction<ConnectionMethod>>;
   loadData: () => Promise<void>;
 }
 
@@ -31,6 +33,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [cardPreferences, setCardPreferences] =
     useState<CardPreferences | null>(null);
+  const [connectionMethod, setConnectionMethod] =
+    useState<ConnectionMethod>(null);
 
   const loadData = async () => {
     const data = await loadUserData();
@@ -38,9 +42,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setConnections(data.connections || []);
 
     // Load card preferences from localStorage
-    const saved = localStorage.getItem("cardPreferences");
-    if (saved) {
-      setCardPreferences(JSON.parse(saved));
+    const savedPreferences = localStorage.getItem("cardPreferences");
+    if (savedPreferences) {
+      setCardPreferences(JSON.parse(savedPreferences));
+    }
+
+    // Load connection method from localStorage
+    const savedMethod = localStorage.getItem(
+      "connectionMethod"
+    ) as ConnectionMethod;
+    if (savedMethod) {
+      setConnectionMethod(savedMethod);
     }
   };
 
@@ -59,6 +71,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setLoading,
         cardPreferences,
         setCardPreferences,
+        connectionMethod,
+        setConnectionMethod,
         loadData,
       }}
     >

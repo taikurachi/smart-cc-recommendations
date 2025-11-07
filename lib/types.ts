@@ -43,3 +43,5 @@ export interface CardPreferences {
   low_interest: boolean;
   beginner_friendly: boolean;
 }
+
+export type ConnectionMethod = "plaid" | "manual" | null;
