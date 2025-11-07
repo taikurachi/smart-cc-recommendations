@@ -1,6 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useApp } from "@/lib/AppContext";
+import CardPreferencesModal from "../components/CardPreferencesModal";
+import { CardPreferences } from "@/lib/types";
 
 interface User {
   id: string;
@@ -67,13 +70,15 @@ interface CreditCard {
 }
 
 export default function AnalysisPage() {
-  const [user, setUser] = useState<User | null>(null);
+  const { cardPreferences, setCardPreferences } = useApp();
+  const [, setUser] = useState<User | null>(null);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [analysis, setAnalysis] = useState<SpendingAnalysis | null>(null);
   const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isCardPreferencesOpen, setIsCardPreferencesOpen] = useState(false);
 
   useEffect(() => {
     if (transactions.length === 0) return;
@@ -327,8 +332,25 @@ export default function AnalysisPage() {
     );
   }
 
+  const handleSavePreferences = (preferences: CardPreferences) => {
+    setCardPreferences(preferences);
+    // Here you can trigger the recommendation algorithm
+    console.log("Saved preferences:", preferences);
+    console.log(
+      "Use these preferences to filter/rank credit card recommendations"
+    );
+  };
+
   return (
     <div className="p-8 max-w-6xl mx-auto">
+      {/* Card Preferences Modal */}
+      <CardPreferencesModal
+        isOpen={isCardPreferencesOpen}
+        onClose={() => setIsCardPreferencesOpen(false)}
+        onSave={handleSavePreferences}
+        initialPreferences={cardPreferences || undefined}
+      />
+
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between">
@@ -341,12 +363,20 @@ export default function AnalysisPage() {
               {connections.length} account{connections.length !== 1 ? "s" : ""}
             </p>
           </div>
-          <Link
-            href="/manage"
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            Manage Connections
-          </Link>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setIsCardPreferencesOpen(true)}
+              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"
+            >
+              💳 Card Preferences
+            </button>
+            <Link
+              href="/manage"
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              Manage Connections
+            </Link>
+          </div>
         </div>
       </div>
 

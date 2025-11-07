@@ -2,6 +2,7 @@ export interface User {
   id: string;
   email?: string;
   created_at: string;
+  updated_at: string;
 }
 
 export interface Connection {
@@ -22,9 +23,23 @@ export interface Connection {
 export interface Transaction {
   transaction_id: string;
   account_id: string;
+  amount: number;
   date: string;
   name: string;
-  amount: number;
   category?: string[];
-  [key: string]: any; // Allow additional properties from CSV or Plaid
+}
+
+export type CardPreference = 
+  | "travel" 
+  | "cashback" 
+  | "no_annual_fee" 
+  | "low_interest" 
+  | "beginner_friendly";
+
+export interface CardPreferences {
+  travel: boolean;
+  cashback: boolean;
+  no_annual_fee: boolean;
+  low_interest: boolean;
+  beginner_friendly: boolean;
 }

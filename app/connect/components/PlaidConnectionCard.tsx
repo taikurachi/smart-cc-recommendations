@@ -39,6 +39,7 @@ export default function PlaidConnectionCard({
   const [linkToken, setLinkToken] = useState("");
   const [plaidStateIndex, setPlaidStateIndex] = useState(0);
   const [buttonStateIndex, setButtonStateIndex] = useState(0);
+
   const { confettiCanvasRef, fireConfetti } = useConfetti();
 
   // Plaid Link hook
@@ -55,7 +56,8 @@ export default function PlaidConnectionCard({
       // Show success state and fire confetti
       setPlaidStateIndex(2);
       await fireConfetti(4000);
-      router.push("/analysis");
+
+      // router.push("/analysis");
     },
     onExit: (err) => {
       handlePlaidExit(err);

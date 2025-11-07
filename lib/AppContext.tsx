@@ -8,7 +8,7 @@ import {
   Dispatch,
   SetStateAction,
 } from "react";
-import { User, Connection } from "./types";
+import { User, Connection, CardPreferences } from "./types";
 import { loadUserData } from "./userOperations";
 
 interface AppContextType {
@@ -18,6 +18,8 @@ interface AppContextType {
   setConnections: Dispatch<SetStateAction<Connection[]>>;
   loading: boolean;
   setLoading: Dispatch<SetStateAction<boolean>>;
+  cardPreferences: CardPreferences | null;
+  setCardPreferences: Dispatch<SetStateAction<CardPreferences | null>>;
   loadData: () => Promise<void>;
 }
 
@@ -27,11 +29,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [connections, setConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(false);
+  const [cardPreferences, setCardPreferences] =
+    useState<CardPreferences | null>(null);
 
   const loadData = async () => {
     const data = await loadUserData();
     setUser(data.user);
     setConnections(data.connections || []);
+
+    // Load card preferences from localStorage
+    const saved = localStorage.getItem("cardPreferences");
+    if (saved) {
+      setCardPreferences(JSON.parse(saved));
+    }
   };
 
   useEffect(() => {
@@ -47,6 +57,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setConnections,
         loading,
         setLoading,
+        cardPreferences,
+        setCardPreferences,
         loadData,
       }}
     >
