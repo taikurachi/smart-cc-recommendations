@@ -4,13 +4,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { useApp } from "@/lib/AppContext";
 import CardPreferencesModal from "../components/CardPreferencesModal";
-import { CardPreferences } from "@/lib/types";
+import { CardPreferences, CreditCard } from "@/lib/types";
 import {
   getRecommendedCards,
   analyzeSpendingCategories,
   CreditCardRecommendation,
 } from "@/lib/recommendationEngine";
 import { loadCreditCardData } from "@/lib/creditCardData";
+import { ListFilterPlus } from "lucide-react";
 
 interface User {
   id: string;
@@ -63,19 +64,6 @@ interface SpendingAnalysis {
   recentTransactions: Transaction[];
 }
 
-interface CreditCard {
-  account_id: string;
-  name: string;
-  official_name: string;
-  type: string;
-  subtype: string;
-  mask?: string;
-  institution_name?: string;
-  credit_limit?: number;
-  current_balance?: number;
-  available_credit?: number;
-}
-
 export default function AnalysisPage() {
   const { cardPreferences, setCardPreferences } = useApp();
   const [, setUser] = useState<User | null>(null);
@@ -85,6 +73,7 @@ export default function AnalysisPage() {
   const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [recIndex, setRecIndex] = useState(0);
   const [isCardPreferencesOpen, setIsCardPreferencesOpen] = useState(false);
   const [recommendations, setRecommendations] = useState<
     CreditCardRecommendation[]
@@ -649,316 +638,45 @@ export default function AnalysisPage() {
             </div>
           </div>
 
-          {/* Charts and Details */}
-          <div className="grid lg:grid-cols-2 gap-8 mb-8">
-            {/* Category Breakdown */}
-            <div className="bg-white border rounded-xl p-6">
-              <h3 className="text-lg font-semibold mb-4">
-                💳 Spending by Category
-              </h3>
-              <div className="space-y-3">
-                {analysis.categoryBreakdown.map((category, index) => (
-                  <div
-                    key={category.category}
-                    className="flex items-center justify-between"
-                  >
-                    <div className="flex items-center flex-1">
-                      <div
-                        className="w-3 h-3 rounded-full mr-3"
-                        style={{
-                          backgroundColor: `hsl(${
-                            (index * 45) % 360
-                          }, 65%, 55%)`,
-                        }}
-                      ></div>
-                      <span className="text-sm font-medium text-gray-700">
-                        {category.category}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-gray-900">
-                          {formatCurrency(category.amount)}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {category.count} transactions
-                        </p>
-                      </div>
-                      <div className="w-16 bg-gray-200 rounded-full h-2">
-                        <div
-                          className="h-2 rounded-full"
-                          style={{
-                            width: `${category.percentage}%`,
-                            backgroundColor: `hsl(${
-                              (index * 45) % 360
-                            }, 65%, 55%)`,
-                          }}
-                        ></div>
-                      </div>
-                      <span className="text-xs text-gray-500 w-10 text-right">
-                        {category.percentage.toFixed(1)}%
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Monthly Trends */}
-            <div className="bg-white border rounded-xl p-6">
-              <h3 className="text-lg font-semibold mb-4">📈 Monthly Trends</h3>
-              <div className="space-y-3">
-                {analysis.monthlyTrends.map((month) => {
-                  const maxAmount = Math.max(
-                    ...analysis.monthlyTrends.map((m) => m.amount)
-                  );
-                  const percentage = (month.amount / maxAmount) * 100;
-
-                  return (
-                    <div
-                      key={month.month}
-                      className="flex items-center justify-between"
-                    >
-                      <span className="text-sm font-medium text-gray-700 w-16">
-                        {formatMonth(month.month)}
-                      </span>
-                      <div className="flex-1 mx-4">
-                        <div className="w-full bg-gray-200 rounded-full h-3">
-                          <div
-                            className="bg-blue-500 h-3 rounded-full transition-all duration-300"
-                            style={{ width: `${percentage}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                      <span className="text-sm font-semibold text-gray-900 w-20 text-right">
-                        {formatCurrency(month.amount)}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* Recent Transactions */}
-          <div className="bg-white border rounded-xl p-6">
-            <h3 className="text-lg font-semibold mb-4">
-              🕐 Recent Transactions
-            </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-2 px-3 font-medium text-gray-700">
-                      Date
-                    </th>
-                    <th className="text-left py-2 px-3 font-medium text-gray-700">
-                      Merchant
-                    </th>
-                    <th className="text-left py-2 px-3 font-medium text-gray-700">
-                      Category
-                    </th>
-                    <th className="text-right py-2 px-3 font-medium text-gray-700">
-                      Amount
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {analysis.recentTransactions.map((transaction) => (
-                    <tr
-                      key={transaction.transaction_id}
-                      className="border-b border-gray-100 hover:bg-gray-50"
-                    >
-                      <td className="py-2 px-3 text-gray-600">
-                        {new Date(transaction.date).toLocaleDateString()}
-                      </td>
-                      <td className="py-2 px-3 font-medium text-gray-900">
-                        {transaction.name}
-                      </td>
-                      <td className="py-2 px-3">
-                        <span className="bg-gray-100 px-2 py-1 rounded text-xs text-gray-600">
-                          {transaction.category?.[0] || "Other"}
-                        </span>
-                      </td>
-                      <td className="py-2 px-3 text-right font-mono font-semibold text-red-600">
-                        {formatCurrency(transaction.amount)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Connected Accounts Summary */}
-          <div className="bg-gray-50 border rounded-xl p-6 mt-8">
-            <h3 className="text-lg font-semibold mb-4">
-              🏦 Connected Accounts
-            </h3>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {connections.map((connection) => (
-                <div
-                  key={connection.id}
-                  className="bg-white border rounded-lg p-4"
-                >
-                  <h4 className="font-medium text-gray-900 mb-2">
-                    {connection.institution_name}
-                  </h4>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {connection.accounts.length} account
-                    {connection.accounts.length !== 1 ? "s" : ""}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Last synced:{" "}
-                    {connection.last_synced
-                      ? new Date(connection.last_synced).toLocaleDateString()
-                      : "Never"}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {/* Credit Card Recommendations */}
           {recommendations.length > 0 || loadingRecommendations ? (
-            <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 mt-8">
+            <div className="from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 mt-8">
               <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-1">
-                    💳 Personalized Card Recommendations
+                <div className="flex gap-4 items-center">
+                  <h3 className="text-4xl font-bold text-gray-900 mb-1">
+                    Showing{" "}
+                    <span
+                      className="px-4 py-1.5 rounded-lg text-center bg-green-200 cursor-pointer"
+                      onClick={() =>
+                        setRecIndex(
+                          (prev) => (prev + 1) % recommendations.length
+                        )
+                      }
+                    >
+                      {recIndex + 1}
+                    </span>{" "}
+                    of {recommendations.length} Recommendations
                   </h3>
-                  <p className="text-sm text-gray-600">
-                    {cardPreferences
-                      ? "Based on your preferences and spending patterns"
-                      : "Based on your spending patterns"}
-                  </p>
+                  <ListFilterPlus
+                    onClick={() => setIsCardPreferencesOpen(true)}
+                    className="bg-gray-300 rounded-lg p-2"
+                    size={36}
+                  />
                 </div>
-                <button
-                  onClick={() => setIsCardPreferencesOpen(true)}
-                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium"
-                >
-                  {cardPreferences ? "Edit Preferences" : "Set Preferences"}
-                </button>
               </div>
 
-              {loadingRecommendations ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
-                    <p className="text-gray-600">
-                      Calculating your perfect matches...
-                    </p>
-                  </div>
-                </div>
-              ) : recommendations.length > 0 ? (
-                <div className="grid md:grid-cols-2 gap-4">
-                  {recommendations.map((card, index) => (
-                    <div
-                      key={index}
-                      className="bg-white border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-shadow"
-                    >
-                      {/* Card Image */}
-                      {card.image?.src && (
-                        <div className="mb-4 flex justify-center">
-                          <div className="relative w-full h-48 bg-gray-50 rounded-lg overflow-hidden">
-                            <Image
-                              src={card.image.src}
-                              alt={card.image.alt || card.name}
-                              fill
-                              className="object-contain"
-                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <h4 className="font-bold text-lg text-gray-900 mb-1">
-                            {card.name}
-                          </h4>
-                          <p className="text-sm text-gray-600">{card.issuer}</p>
-                        </div>
-                        <div className="text-right">
-                          <div className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded">
-                            {card.matchScore.toFixed(0)}% Match
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2 mb-4">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">Rating:</span>
-                          <span className="font-semibold">
-                            ⭐ {card.rating}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">Annual Fee:</span>
-                          <span className="font-semibold">
-                            {card.annualFee === "0" || card.annualFee === "$0"
-                              ? "No Fee"
-                              : card.annualFee}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600">Rewards:</span>
-                          <span className="font-semibold text-green-700">
-                            {card.rewards}
-                          </span>
-                        </div>
-                        {card.introOffer && (
-                          <div className="flex items-center justify-between text-sm">
-                            <span className="text-gray-600">
-                              Welcome Bonus:
-                            </span>
-                            <span className="font-semibold text-blue-700">
-                              {card.introOffer}
-                            </span>
-                          </div>
-                        )}
-                        {card.estimatedValue && (
-                          <div className="flex items-center justify-between text-sm pt-2 border-t border-gray-200">
-                            <span className="text-gray-600">
-                              Est. Annual Value:
-                            </span>
-                            <span className="font-bold text-green-700">
-                              ${card.estimatedValue.toFixed(0)}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      {card.matchReasons.length > 0 && (
-                        <div className="pt-3 border-t border-gray-200">
-                          <p className="text-xs font-medium text-gray-700 mb-2">
-                            Why this card:
-                          </p>
-                          <ul className="space-y-1">
-                            {card.matchReasons
-                              .slice(0, 3)
-                              .map((reason, idx) => (
-                                <li
-                                  key={idx}
-                                  className="text-xs text-gray-600 flex items-start"
-                                >
-                                  <span className="text-green-500 mr-2">✓</span>
-                                  {reason}
-                                </li>
-                              ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-gray-600">
-                    No recommendations found. Try adjusting your preferences.
-                  </p>
-                </div>
-              )}
+              <div className="flex gap-4">
+                {creditCards.length > 0 ? (
+                  recommendations.map((rec) => (
+                    <CreditCard cards={rec} status="new" />
+                  ))
+                ) : (
+                  <CreditCard cards={recommendations[recIndex]} />
+                )}
+                {creditCards.length > 0 && (
+                  <CrediCard cards={creditCards} status="old" />
+                )}
+              </div>
             </div>
           ) : (
             <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 mt-8 text-center">
