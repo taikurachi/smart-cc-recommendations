@@ -28,12 +28,24 @@ export interface Transaction {
   name: string;
   category?: string[];
 }
+export interface CreditCard {
+  account_id: string;
+  name: string;
+  official_name: string;
+  type: string;
+  subtype: string;
+  mask?: string;
+  institution_name?: string;
+  credit_limit?: number;
+  current_balance?: number;
+  available_credit?: number;
+}
 
-export type CardPreference = 
-  | "travel" 
-  | "cashback" 
-  | "no_annual_fee" 
-  | "low_interest" 
+export type CardPreference =
+  | "travel"
+  | "cashback"
+  | "no_annual_fee"
+  | "low_interest"
   | "beginner_friendly";
 
 export interface CardPreferences {
