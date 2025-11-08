@@ -10,6 +10,11 @@ export interface CreditCardRecommendation {
   matchScore: number;
   matchReasons: string[];
   estimatedValue?: number;
+  image?: {
+    src: string;
+    alt: string;
+    filename?: string;
+  };
 }
 
 interface SpendingCategory {
@@ -41,7 +46,8 @@ export function calculateCardMatchScore(
 
   // 1. Preference Matching (40 points max)
   const preferenceCount = Object.values(preferences).filter(Boolean).length;
-  const preferenceWeight = preferenceCount > 0 ? 40 / preferenceCount : 0;
+  // If no preferences selected, give base score to all cards
+  const preferenceWeight = preferenceCount > 0 ? 40 / preferenceCount : 10;
 
   if (preferences.travel) {
     const cardName = card.name?.toLowerCase() || "";
@@ -113,7 +119,8 @@ export function calculateCardMatchScore(
 
   // 2. Spending Category Alignment (40 points max)
   const topCategories = spendingCategories.slice(0, 3); // Top 3 spending categories
-  const categoryWeight = topCategories.length > 0 ? 40 / topCategories.length : 0;
+  // If no categories, give base score
+  const categoryWeight = topCategories.length > 0 ? 40 / topCategories.length : 10;
 
   topCategories.forEach((category) => {
     const rewards = card.rewards?.toLowerCase() || "";
@@ -148,11 +155,20 @@ export function calculateCardMatchScore(
     reasons.push("Highly rated card");
   } else if (rating >= 4.0) {
     score += 5;
+    reasons.push("Well-rated card");
+  } else if (rating >= 3.5) {
+    score += 3;
   }
 
   if (card.introOffer) {
     score += 10;
     reasons.push("Welcome bonus available");
+  }
+
+  // Base score for all cards (ensures we always have recommendations)
+  if (score === 0) {
+    score = 15; // Minimum base score
+    reasons.push("Popular credit card option");
   }
 
   // Normalize score to 0-100
@@ -181,21 +197,126 @@ export function getRecommendedCards(
         spendingCategories
       );
 
+      // Format intro offer for display
+      let introOfferText: string | undefined;
+      if (card.introOffer) {
+        if (typeof card.introOffer === "object" && card.introOffer.amount) {
+          introOfferText = `$${card.introOffer.amount} bonus`;
+        } else {
+          introOfferText = String(card.introOffer);
+        }
+      }
+
       return {
         name: card.name,
-        issuer: card.issuer || "Unknown",
-        rating: card.rating,
-        annualFee: card.annualFee,
-        rewards: card.rewards,
-        introOffer: card.introOffer,
+        issuer: card.issuer || extractIssuerFromName(card.name),
+        rating: card.rating || "N/A",
+        annualFee: card.annualFee || "N/A",
+        rewards: card.rewards || "See details",
+        introOffer: introOfferText,
         matchScore: score,
         matchReasons: reasons,
+        estimatedValue: calculateEstimatedValue(card, spendingCategories),
+        image: card.image,
       };
     })
-    .filter((card) => card.matchScore > 30) // Only show cards with >30% match
+    .filter((card) => card.matchScore > 0) // Show all cards with any match
     .sort((a, b) => b.matchScore - a.matchScore); // Sort by match score
 
+  // If no cards match preferences well, still return top cards by rating
+  if (recommendations.length === 0) {
+    console.log("No cards matched preferences, returning top rated cards");
+    return allCards
+      .map((card) => {
+        const rating = parseFloat(card.rating || "0");
+        return {
+          name: card.name,
+          issuer: extractIssuerFromName(card.name),
+          rating: card.rating || "N/A",
+          annualFee: card.annualFee || "N/A",
+          rewards: card.rewards || "See details",
+          introOffer: card.introOffer
+            ? typeof card.introOffer === "object" && card.introOffer.amount
+              ? `$${card.introOffer.amount} bonus`
+              : String(card.introOffer)
+            : undefined,
+          matchScore: rating * 10, // Use rating as match score
+          matchReasons: ["Highly rated card"],
+          estimatedValue: calculateEstimatedValue(card, spendingCategories),
+          image: card.image,
+        };
+      })
+      .filter((card) => parseFloat(card.rating) >= 4.0)
+      .sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))
+      .slice(0, 10);
+  }
+
   return recommendations.slice(0, 10); // Return top 10
+}
+
+/**
+ * Extract issuer name from card name (e.g., "Chase Freedom" -> "Chase")
+ */
+function extractIssuerFromName(cardName: string): string {
+  const commonIssuers = [
+    "Chase",
+    "American Express",
+    "Citi",
+    "Capital One",
+    "Discover",
+    "Wells Fargo",
+    "Bank of America",
+    "US Bank",
+  ];
+
+  for (const issuer of commonIssuers) {
+    if (cardName.includes(issuer)) {
+      return issuer;
+    }
+  }
+
+  return "Unknown";
+}
+
+/**
+ * Calculate estimated annual value based on spending patterns
+ */
+function calculateEstimatedValue(
+  card: any,
+  spendingCategories: SpendingCategory[]
+): number {
+  // This is a simplified calculation
+  // In a real app, you'd parse the rewards structure more carefully
+  const rewards = card.rewards?.toLowerCase() || "";
+  const annualFee = parseFloat(card.annualFee?.replace("$", "") || "0");
+  
+  // Estimate cashback percentage (simplified)
+  let estimatedCashbackRate = 0;
+  if (rewards.includes("2%")) {
+    estimatedCashbackRate = 0.02;
+  } else if (rewards.includes("1.5%")) {
+    estimatedCashbackRate = 0.015;
+  } else if (rewards.includes("1%")) {
+    estimatedCashbackRate = 0.01;
+  } else if (rewards.includes("5%")) {
+    estimatedCashbackRate = 0.05;
+  } else if (rewards.includes("3%")) {
+    estimatedCashbackRate = 0.03;
+  }
+
+  // Estimate annual spending from top categories
+  const totalSpending = spendingCategories.reduce(
+    (sum, cat) => sum + cat.amount,
+    0
+  );
+  const monthlySpending = totalSpending / Math.max(1, spendingCategories.length);
+  const annualSpending = monthlySpending * 12;
+
+  // Calculate estimated value
+  const estimatedRewards = annualSpending * estimatedCashbackRate;
+  const introBonus = card.introOffer?.amount || 0;
+  
+  return estimatedRewards + introBonus - annualFee;
 }
 
 /**

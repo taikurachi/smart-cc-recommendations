@@ -1,9 +1,16 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useApp } from "@/lib/AppContext";
 import CardPreferencesModal from "../components/CardPreferencesModal";
 import { CardPreferences } from "@/lib/types";
+import {
+  getRecommendedCards,
+  analyzeSpendingCategories,
+  CreditCardRecommendation,
+} from "@/lib/recommendationEngine";
+import { loadCreditCardData } from "@/lib/creditCardData";
 
 interface User {
   id: string;
@@ -79,6 +86,10 @@ export default function AnalysisPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isCardPreferencesOpen, setIsCardPreferencesOpen] = useState(false);
+  const [recommendations, setRecommendations] = useState<
+    CreditCardRecommendation[]
+  >([]);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
 
   useEffect(() => {
     if (transactions.length === 0) return;
@@ -108,6 +119,41 @@ export default function AnalysisPage() {
   useEffect(() => {
     loadUserDataAndAnalysis();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-open preferences modal if no preferences exist and we have transactions
+  useEffect(() => {
+    if (!loading && transactions.length > 0 && !cardPreferences) {
+      setIsCardPreferencesOpen(true);
+    }
+  }, [loading, transactions.length, cardPreferences]);
+
+  // Calculate recommendations when transactions are loaded
+  // Use preferences if available, otherwise use default (all false)
+  useEffect(() => {
+    if (
+      transactions.length > 0 &&
+      recommendations.length === 0 &&
+      !loadingRecommendations &&
+      !loading
+    ) {
+      console.log("Triggering recommendation calculation from useEffect");
+      const prefsToUse = cardPreferences || {
+        travel: false,
+        cashback: false,
+        no_annual_fee: false,
+        low_interest: false,
+        beginner_friendly: false,
+      };
+      calculateRecommendations(prefsToUse);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    transactions.length,
+    recommendations.length,
+    loadingRecommendations,
+    loading,
+    cardPreferences,
+  ]);
 
   const loadUserDataAndAnalysis = async () => {
     try {
@@ -180,12 +226,18 @@ export default function AnalysisPage() {
   };
 
   const analyzeSpending = (transactions: Transaction[]): SpendingAnalysis => {
-    // Filter out positive amounts (credits/refunds) and focus on spending
-    const spendingTransactions = transactions.filter((t) => t.amount > 0);
+    // Filter out positive amounts (credits/refunds/payments) and focus on spending
+    // Transactions are typically negative (spending) or positive (credits)
+    const spendingTransactions = transactions.filter(
+      (t) =>
+        t.amount < 0 ||
+        (t.amount > 0 &&
+          !t.category?.some((cat) => cat.toLowerCase().includes("payment")))
+    );
 
-    // Calculate total spending
+    // Calculate total spending (use absolute values)
     const totalSpending = spendingTransactions.reduce(
-      (sum, t) => sum + t.amount,
+      (sum, t) => sum + Math.abs(t.amount),
       0
     );
 
@@ -210,7 +262,7 @@ export default function AnalysisPage() {
       if (!categoryTotals[category]) {
         categoryTotals[category] = { amount: 0, count: 0 };
       }
-      categoryTotals[category].amount += transaction.amount;
+      categoryTotals[category].amount += Math.abs(transaction.amount);
       categoryTotals[category].count += 1;
     });
 
@@ -235,7 +287,7 @@ export default function AnalysisPage() {
     spendingTransactions.forEach((transaction) => {
       const monthKey = new Date(transaction.date).toISOString().slice(0, 7); // YYYY-MM
       monthlyTotals[monthKey] =
-        (monthlyTotals[monthKey] || 0) + transaction.amount;
+        (monthlyTotals[monthKey] || 0) + Math.abs(transaction.amount);
     });
 
     const monthlyTrends = Object.entries(monthlyTotals)
@@ -332,13 +384,45 @@ export default function AnalysisPage() {
     );
   }
 
-  const handleSavePreferences = (preferences: CardPreferences) => {
+  const calculateRecommendations = async (preferences: CardPreferences) => {
+    if (transactions.length === 0) {
+      console.log("No transactions available for recommendations");
+      return;
+    }
+
+    setLoadingRecommendations(true);
+    try {
+      // Load credit card data (cached after first load)
+      const allCards = await loadCreditCardData();
+      console.log("Loaded credit cards:", allCards.length);
+
+      // Analyze spending categories
+      const spendingCategories = analyzeSpendingCategories(transactions);
+      console.log("Spending categories:", spendingCategories);
+      console.log("User preferences:", preferences);
+
+      // Calculate recommendations
+      const recs = getRecommendedCards(
+        allCards,
+        preferences,
+        spendingCategories
+      );
+
+      console.log("Calculated recommendations:", recs.length, recs);
+      setRecommendations(recs);
+    } catch (error) {
+      console.error("Error calculating recommendations:", error);
+    } finally {
+      setLoadingRecommendations(false);
+    }
+  };
+
+  const handleSavePreferences = async (preferences: CardPreferences) => {
     setCardPreferences(preferences);
-    // Here you can trigger the recommendation algorithm
-    console.log("Saved preferences:", preferences);
-    console.log(
-      "Use these preferences to filter/rank credit card recommendations"
-    );
+    setIsCardPreferencesOpen(false);
+
+    // Calculate recommendations in the background
+    await calculateRecommendations(preferences);
   };
 
   return (
@@ -734,6 +818,164 @@ export default function AnalysisPage() {
               ))}
             </div>
           </div>
+
+          {/* Credit Card Recommendations */}
+          {recommendations.length > 0 || loadingRecommendations ? (
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 mt-8">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-1">
+                    💳 Personalized Card Recommendations
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {cardPreferences
+                      ? "Based on your preferences and spending patterns"
+                      : "Based on your spending patterns"}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsCardPreferencesOpen(true)}
+                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium"
+                >
+                  {cardPreferences ? "Edit Preferences" : "Set Preferences"}
+                </button>
+              </div>
+
+              {loadingRecommendations ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto mb-4"></div>
+                    <p className="text-gray-600">
+                      Calculating your perfect matches...
+                    </p>
+                  </div>
+                </div>
+              ) : recommendations.length > 0 ? (
+                <div className="grid md:grid-cols-2 gap-4">
+                  {recommendations.map((card, index) => (
+                    <div
+                      key={index}
+                      className="bg-white border border-gray-200 rounded-lg p-5 hover:shadow-lg transition-shadow"
+                    >
+                      {/* Card Image */}
+                      {card.image?.src && (
+                        <div className="mb-4 flex justify-center">
+                          <div className="relative w-full h-48 bg-gray-50 rounded-lg overflow-hidden">
+                            <Image
+                              src={card.image.src}
+                              alt={card.image.alt || card.name}
+                              fill
+                              className="object-contain"
+                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h4 className="font-bold text-lg text-gray-900 mb-1">
+                            {card.name}
+                          </h4>
+                          <p className="text-sm text-gray-600">{card.issuer}</p>
+                        </div>
+                        <div className="text-right">
+                          <div className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded">
+                            {card.matchScore.toFixed(0)}% Match
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 mb-4">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">Rating:</span>
+                          <span className="font-semibold">
+                            ⭐ {card.rating}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">Annual Fee:</span>
+                          <span className="font-semibold">
+                            {card.annualFee === "0" || card.annualFee === "$0"
+                              ? "No Fee"
+                              : card.annualFee}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">Rewards:</span>
+                          <span className="font-semibold text-green-700">
+                            {card.rewards}
+                          </span>
+                        </div>
+                        {card.introOffer && (
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">
+                              Welcome Bonus:
+                            </span>
+                            <span className="font-semibold text-blue-700">
+                              {card.introOffer}
+                            </span>
+                          </div>
+                        )}
+                        {card.estimatedValue && (
+                          <div className="flex items-center justify-between text-sm pt-2 border-t border-gray-200">
+                            <span className="text-gray-600">
+                              Est. Annual Value:
+                            </span>
+                            <span className="font-bold text-green-700">
+                              ${card.estimatedValue.toFixed(0)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {card.matchReasons.length > 0 && (
+                        <div className="pt-3 border-t border-gray-200">
+                          <p className="text-xs font-medium text-gray-700 mb-2">
+                            Why this card:
+                          </p>
+                          <ul className="space-y-1">
+                            {card.matchReasons
+                              .slice(0, 3)
+                              .map((reason, idx) => (
+                                <li
+                                  key={idx}
+                                  className="text-xs text-gray-600 flex items-start"
+                                >
+                                  <span className="text-green-500 mr-2">✓</span>
+                                  {reason}
+                                </li>
+                              ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-600">
+                    No recommendations found. Try adjusting your preferences.
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 mt-8 text-center">
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                💳 Get Personalized Recommendations
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Set your card preferences to see personalized recommendations
+              </p>
+              <button
+                onClick={() => setIsCardPreferencesOpen(true)}
+                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium"
+              >
+                Set Preferences
+              </button>
+            </div>
+          )}
         </>
       )}
     </div>
