@@ -45,4 +45,3 @@ export function clearCreditCardCache() {
   cachedCards = null;
   loadingPromise = null;
 }
-

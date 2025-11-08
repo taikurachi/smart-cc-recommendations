@@ -52,7 +52,7 @@ export function calculateCardMatchScore(
   if (preferences.travel) {
     const cardName = card.name?.toLowerCase() || "";
     const rewards = card.rewards?.toLowerCase() || "";
-    
+
     if (
       cardName.includes("travel") ||
       rewards.includes("travel") ||
@@ -66,7 +66,7 @@ export function calculateCardMatchScore(
 
   if (preferences.cashback) {
     const rewards = card.rewards?.toLowerCase() || "";
-    
+
     if (
       rewards.includes("cash back") ||
       rewards.includes("cashback") ||
@@ -79,8 +79,12 @@ export function calculateCardMatchScore(
 
   if (preferences.no_annual_fee) {
     const annualFee = card.annualFee?.toLowerCase() || "";
-    
-    if (annualFee.includes("$0") || annualFee === "0" || annualFee.includes("none")) {
+
+    if (
+      annualFee.includes("$0") ||
+      annualFee === "0" ||
+      annualFee.includes("none")
+    ) {
       score += preferenceWeight;
       reasons.push("No annual fee");
     } else {
@@ -91,7 +95,7 @@ export function calculateCardMatchScore(
   if (preferences.low_interest) {
     const intro = card.introOffer?.toLowerCase() || "";
     const cardName = card.name?.toLowerCase() || "";
-    
+
     if (
       intro.includes("0% apr") ||
       intro.includes("low apr") ||
@@ -105,12 +109,13 @@ export function calculateCardMatchScore(
   if (preferences.beginner_friendly) {
     const cardName = card.name?.toLowerCase() || "";
     const annualFee = card.annualFee?.toLowerCase() || "";
-    
+
     if (
       cardName.includes("starter") ||
       cardName.includes("student") ||
       cardName.includes("secured") ||
-      (annualFee.includes("$0") || annualFee === "0")
+      annualFee.includes("$0") ||
+      annualFee === "0"
     ) {
       score += preferenceWeight;
       reasons.push("Beginner-friendly with easy approval");
@@ -120,7 +125,8 @@ export function calculateCardMatchScore(
   // 2. Spending Category Alignment (40 points max)
   const topCategories = spendingCategories.slice(0, 3); // Top 3 spending categories
   // If no categories, give base score
-  const categoryWeight = topCategories.length > 0 ? 40 / topCategories.length : 10;
+  const categoryWeight =
+    topCategories.length > 0 ? 40 / topCategories.length : 10;
 
   topCategories.forEach((category) => {
     const rewards = card.rewards?.toLowerCase() || "";
@@ -141,7 +147,11 @@ export function calculateCardMatchScore(
       if (keywords.some((kw) => categoryName.includes(kw))) {
         if (keywords.some((kw) => rewards.includes(kw))) {
           score += categoryWeight;
-          reasons.push(`Rewards align with your ${key} spending (${category.percentage.toFixed(0)}%)`);
+          reasons.push(
+            `Rewards align with your ${key} spending (${category.percentage.toFixed(
+              0
+            )}%)`
+          );
           matched = true;
         }
       }
@@ -251,7 +261,7 @@ export function getRecommendedCards(
       .slice(0, 10);
   }
 
-  return recommendations.slice(0, 10); // Return top 10
+  return recommendations.slice(0, 3); // Return top 10
 }
 
 /**
@@ -289,7 +299,7 @@ function calculateEstimatedValue(
   // In a real app, you'd parse the rewards structure more carefully
   const rewards = card.rewards?.toLowerCase() || "";
   const annualFee = parseFloat(card.annualFee?.replace("$", "") || "0");
-  
+
   // Estimate cashback percentage (simplified)
   let estimatedCashbackRate = 0;
   if (rewards.includes("2%")) {
@@ -309,13 +319,14 @@ function calculateEstimatedValue(
     (sum, cat) => sum + cat.amount,
     0
   );
-  const monthlySpending = totalSpending / Math.max(1, spendingCategories.length);
+  const monthlySpending =
+    totalSpending / Math.max(1, spendingCategories.length);
   const annualSpending = monthlySpending * 12;
 
   // Calculate estimated value
   const estimatedRewards = annualSpending * estimatedCashbackRate;
   const introBonus = card.introOffer?.amount || 0;
-  
+
   return estimatedRewards + introBonus - annualFee;
 }
 
@@ -350,4 +361,3 @@ export function analyzeSpendingCategories(
 
   return categories;
 }
-
