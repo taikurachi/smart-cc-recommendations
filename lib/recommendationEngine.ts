@@ -1,21 +1,8 @@
-import { CardPreferences, Transaction } from "./types";
-
-export interface CreditCardRecommendation {
-  name: string;
-  issuer: string;
-  rating: string;
-  annualFee: string;
-  rewards: string;
-  introOffer?: string;
-  matchScore: number;
-  matchReasons: string[];
-  estimatedValue?: number;
-  image?: {
-    src: string;
-    alt: string;
-    filename?: string;
-  };
-}
+import {
+  CardPreferences,
+  Transaction,
+  CreditCardRecommendation,
+} from "./types";
 
 interface SpendingCategory {
   category: string;

@@ -12,6 +12,7 @@ import {
 } from "@/lib/recommendationEngine";
 import { loadCreditCardData } from "@/lib/creditCardData";
 import { ListFilterPlus } from "lucide-react";
+import CreditCardComponent from "./components/CreditCard";
 
 interface User {
   id: string;
@@ -666,15 +667,22 @@ export default function AnalysisPage() {
               </div>
 
               <div className="flex gap-4">
-                {creditCards.length > 0 ? (
+                {creditCards.length === 0 ? (
                   recommendations.map((rec) => (
-                    <CreditCard cards={rec} status="new" />
+                    <CreditCardComponent
+                      key={rec.name}
+                      cards={[rec]}
+                      status="New"
+                    />
                   ))
                 ) : (
-                  <CreditCard cards={recommendations[recIndex]} />
+                  <CreditCardComponent
+                    cards={[recommendations[recIndex]]}
+                    status="New"
+                  />
                 )}
                 {creditCards.length > 0 && (
-                  <CrediCard cards={creditCards} status="old" />
+                  <CreditCardComponent cards={creditCards} status="Old" />
                 )}
               </div>
             </div>
