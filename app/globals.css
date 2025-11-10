@@ -38,8 +38,7 @@
 
   /* Neutral Colors */
   --color-gray: #9ca3af;
-  --color-gray-light: #ced5e1;
-  --color-gray-lighter: #dce2ec;
+  --color-gray-light: #f2f2f2;
 }
 
 @theme inline {
