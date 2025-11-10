@@ -206,7 +206,7 @@ export function getRecommendedCards(
 
       return {
         name: card.name,
-        issuer: card.issuer || extractIssuerFromName(card.name),
+        institution_name: card.institution_name,
         rating: card.rating || "N/A",
         annualFee: card.annualFee || "N/A",
         rewards: card.rewards || "See details",
@@ -228,7 +228,7 @@ export function getRecommendedCards(
         const rating = parseFloat(card.rating || "0");
         return {
           name: card.name,
-          issuer: extractIssuerFromName(card.name),
+          institution_name: card.institution_name,
           rating: card.rating || "N/A",
           annualFee: card.annualFee || "N/A",
           rewards: card.rewards || "See details",
@@ -240,7 +240,10 @@ export function getRecommendedCards(
           matchScore: rating * 10, // Use rating as match score
           matchReasons: ["Highly rated card"],
           estimatedValue: calculateEstimatedValue(card, spendingCategories),
-          image: card.image,
+          image: {
+            src: card.image,
+            alt: `${card.image} image`,
+          },
         };
       })
       .filter((card) => parseFloat(card.rating) >= 4.0)
