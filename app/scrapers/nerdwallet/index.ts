@@ -9,7 +9,71 @@ class NerdWalletScraper {
   private ollama: Ollama;
 
   constructor() {
-    this.ollama = new Ollama({ host: "http://localhost:11434" });
+    // Use 127.0.0.1 instead of localhost to avoid IPv6 connection issues
+    this.ollama = new Ollama({ host: "http://127.0.0.1:11434" });
+  }
+
+  /**
+   * Extracts institution name from card name and returns cleaned name and institution
+   * Examples:
+   * - "Chase Freedom Unlimited®" -> { name: "Freedom Unlimited®", institution_name: "Chase" }
+   * - "American Express Platinum Card®" -> { name: "Platinum Card®", institution_name: "American Express" }
+   * - "Blue Cash Everyday® Card from American Express" -> { name: "Blue Cash Everyday® Card", institution_name: "American Express" }
+   * - "Discover it® Cash Back" -> { name: "Discover it® Cash Back", institution_name: "Discover" } (special case: keeps full name)
+   */
+  private extractInstitutionName(cardName: string): {
+    name: string;
+    institution_name?: string;
+  } {
+    if (!cardName) return { name: cardName };
+
+    const commonIssuers = [
+      "American Express",
+      "Bank of America",
+      "Capital One",
+      "Chase",
+      "Citi",
+      "Citibank",
+      "Discover",
+      "US Bank",
+      "U.S. Bank",
+      "Wells Fargo",
+    ];
+
+    let cleanedName = cardName.trim();
+    let institutionName: string | undefined;
+    const isDiscover = /^Discover\s+/i.test(cleanedName);
+
+    // First, check for "from X" pattern at the end
+    const fromPattern =
+      / from (American Express|Bank of America|Capital One|Chase|Citi|Citibank|Discover|US Bank|U\.S\. Bank|Wells Fargo)$/i;
+    const fromMatch = cleanedName.match(fromPattern);
+    if (fromMatch) {
+      institutionName = fromMatch[1];
+      cleanedName = cleanedName.replace(fromPattern, "").trim();
+    }
+
+    // Then check if issuer is at the beginning
+    for (const issuer of commonIssuers) {
+      const regex = new RegExp(`^${issuer}\\s+`, "i");
+      if (regex.test(cleanedName)) {
+        if (!institutionName) {
+          institutionName = issuer;
+        }
+        // Special case: Keep full name for Discover cards
+        if (issuer === "Discover" && isDiscover) {
+          // Don't remove "Discover" from the name
+          break;
+        }
+        cleanedName = cleanedName.replace(regex, "").trim();
+        break;
+      }
+    }
+
+    return {
+      name: cleanedName,
+      institution_name: institutionName,
+    };
   }
 
   async initialize(): Promise<void> {
@@ -55,7 +119,7 @@ class NerdWalletScraper {
     try {
       // Extract credit card information from the table/list structure
       const creditCards = await this.page.evaluate(() => {
-        const cards: any[] = [];
+        const cards = [];
         const creditCardTable = document.querySelector("tbody");
 
         // Look for table rows or card containers
@@ -86,7 +150,7 @@ class NerdWalletScraper {
           tableData.forEach((col, colIndex) => {
             // 0: card name, 1: rating, 2: annual fee, 3: rewards, 4: intro
 
-            // extract card name
+            // extract card name (raw, will be processed outside browser context)
             if (colIndex === 0) {
               // Try specific selector first
               const nameElement = col.querySelector(
@@ -95,6 +159,7 @@ class NerdWalletScraper {
               const cardName = nameElement?.textContent?.trim();
 
               if (cardName && cardName !== "ref: <Node>") {
+                // Store raw card name, will process institution_name outside
                 cardData.name = cardName;
               }
             }
@@ -225,6 +290,22 @@ class NerdWalletScraper {
 
         return cards;
       });
+
+      // Process institution names outside browser context (using class method)
+      if (creditCards && Array.isArray(creditCards)) {
+        for (let i = 0; i < creditCards.length; i++) {
+          const card = creditCards[i];
+          if (card.name) {
+            const { name, institution_name } = this.extractInstitutionName(
+              card.name
+            );
+            card.name = name;
+            if (institution_name) {
+              card.institution_name = institution_name;
+            }
+          }
+        }
+      }
 
       // Extract detailed tooltip information for cards that have tooltips
       for (let i = 0; i < creditCards.length; i++) {
