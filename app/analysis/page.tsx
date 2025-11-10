@@ -401,7 +401,6 @@ export default function AnalysisPage() {
         spendingCategories
       );
 
-      console.log("Calculated recommendations:", recs.length, recs);
       setRecommendations(recs);
     } catch (error) {
       console.error("Error calculating recommendations:", error);
@@ -636,7 +635,7 @@ export default function AnalysisPage() {
 
           {/* Credit Card Recommendations */}
           {recommendations.length > 0 || loadingRecommendations ? (
-            <div className="from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 mt-8">
+            <div className="mt-8">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex gap-4 items-center">
                   <h3 className="text-4xl font-bold text-gray-900 mb-1">

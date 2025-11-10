@@ -35,6 +35,7 @@
 
   /* Red - Warning & Failures */
   --color-red: #e57070;
+  --color-red-light: #ff9e9e;
 
   /* Neutral Colors */
   --color-gray: #9ca3af;
@@ -69,6 +70,7 @@
   --color-blue-lighter: var(--color-blue-lighter);
 
   --color-red: var(--color-red);
+  --color-red-light: var(--color-red-light);
 
   /* Neutral Grays */
   --color-gray: var(--color-gray);
