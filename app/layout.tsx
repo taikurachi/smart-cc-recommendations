@@ -29,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${raleway.variable} ${outfit.variable} antialiased bg-gray-50`}
+        className={`${raleway.variable} ${outfit.variable} antialiased bg-gray-50 font-medium`}
       >
         <AppProvider>
           <Toaster
