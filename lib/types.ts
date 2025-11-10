@@ -28,17 +28,32 @@ export interface Transaction {
   name: string;
   category?: string[];
 }
+
 export interface CreditCard {
-  account_id: string;
   name: string;
-  official_name: string;
-  type: string;
-  subtype: string;
-  mask?: string;
   institution_name?: string;
+  image: {
+    src: string;
+    alt: string;
+  };
+}
+
+export interface CreditCardOwned extends CreditCard {
+  account_id: string;
   credit_limit?: number;
   current_balance?: number;
   available_credit?: number;
+  mask?: string;
+}
+
+export interface CreditCardRecommendation extends CreditCard {
+  rating: string;
+  annualFee: string;
+  rewards: string;
+  introOffer?: string;
+  matchScore: number;
+  matchReasons: string[];
+  estimatedValue?: number;
 }
 
 export type CardPreference =
