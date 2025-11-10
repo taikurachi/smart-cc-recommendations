@@ -4,11 +4,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { useApp } from "@/lib/AppContext";
 import CardPreferencesModal from "../components/CardPreferencesModal";
-import { CardPreferences, CreditCard } from "@/lib/types";
+import {
+  CardPreferences,
+  CreditCardOwned,
+  CreditCardRecommendation,
+} from "@/lib/types";
 import {
   getRecommendedCards,
   analyzeSpendingCategories,
-  CreditCardRecommendation,
 } from "@/lib/recommendationEngine";
 import { loadCreditCardData } from "@/lib/creditCardData";
 import { ListFilterPlus } from "lucide-react";
@@ -71,7 +74,7 @@ export default function AnalysisPage() {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [analysis, setAnalysis] = useState<SpendingAnalysis | null>(null);
-  const [creditCards, setCreditCards] = useState<CreditCard[]>([]);
+  const [creditCards, setCreditCards] = useState<CreditCardOwned[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [recIndex, setRecIndex] = useState(0);
@@ -440,7 +443,7 @@ export default function AnalysisPage() {
           <div className="flex gap-3">
             <button
               onClick={() => setIsCardPreferencesOpen(true)}
-              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"
+              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
             >
               💳 Card Preferences
             </button>
@@ -471,9 +474,7 @@ export default function AnalysisPage() {
               >
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <h3 className="font-semibold text-gray-900">
-                      {card.official_name}
-                    </h3>
+                    <h3 className="font-semibold text-gray-900">{card.name}</h3>
                     <p className="text-sm text-gray-600">
                       {card.institution_name}
                     </p>
@@ -554,9 +555,7 @@ export default function AnalysisPage() {
             {/* Total Spending */}
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-6">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-blue-800">
-                  Total Spending
-                </h3>
+                <h3 className="text-sm text-blue-800">Total Spending</h3>
                 <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
                   <svg
                     className="w-4 h-4 text-white"
@@ -582,9 +581,7 @@ export default function AnalysisPage() {
             {/* Monthly Average */}
             <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-xl p-6">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-green-800">
-                  Monthly Average
-                </h3>
+                <h3 className="text-sm text-green-800">Monthly Average</h3>
                 <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                   <svg
                     className="w-4 h-4 text-white"
@@ -610,9 +607,7 @@ export default function AnalysisPage() {
             {/* Top Category */}
             <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-xl p-6">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-purple-800">
-                  Top Category
-                </h3>
+                <h3 className="text-sm text-purple-800">Top Category</h3>
                 <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
                   <svg
                     className="w-4 h-4 text-white"
@@ -696,7 +691,7 @@ export default function AnalysisPage() {
               </p>
               <button
                 onClick={() => setIsCardPreferencesOpen(true)}
-                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium"
+                className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm"
               >
                 Set Preferences
               </button>

@@ -17,8 +17,8 @@ export default function CreditCardComponent({
   const currentCard = cards[currentCardIndex];
   return (
     <div className="bg-gray-light">
-      <h3>{currentCard.institution_name || "Undefined"}</h3>
-      <h2 className="font-bold">{currentCard.name}</h2>
+      <h3 className="text-lg">{currentCard.institution_name || "Undefined"}</h3>
+      <h2 className="font-bold text-2xl">{currentCard.name}</h2>
     </div>
   );
 }
