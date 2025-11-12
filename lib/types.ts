@@ -54,6 +54,8 @@ export interface CreditCardRecommendation extends CreditCard {
   matchScore: number;
   matchReasons: string[];
   estimatedValue?: number;
+  annual_fee: number;
+  estimatedRewards: number;
 }
 
 export type CardPreference =
@@ -72,3 +74,24 @@ export interface CardPreferences {
 }
 
 export type ConnectionMethod = "plaid" | "manual" | null;
+
+export interface SpendingAnalysis {
+  totalSpending: number;
+  monthlyAverage: number;
+  topCategory: {
+    category: string;
+    amount: number;
+    percentage: number;
+  };
+  categoryBreakdown: Array<{
+    category: string;
+    amount: number;
+    percentage: number;
+    count: number;
+  }>;
+  monthlyTrends: Array<{
+    month: string;
+    amount: number;
+  }>;
+  recentTransactions: Transaction[];
+}

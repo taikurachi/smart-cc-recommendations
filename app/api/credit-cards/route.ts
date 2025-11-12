@@ -4,7 +4,7 @@ import * as path from "path";
 
 export async function GET() {
   try {
-    const filePath = path.join(process.cwd(), "data", "cc.json");
+    const filePath = path.join(process.cwd(), "data", "manualcc.json");
     const fileContents = fs.readFileSync(filePath, "utf8");
     const data = JSON.parse(fileContents);
 
@@ -21,4 +21,3 @@ export async function GET() {
     );
   }
 }
-

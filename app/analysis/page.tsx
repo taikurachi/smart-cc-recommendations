@@ -8,14 +8,19 @@ import {
   CardPreferences,
   CreditCardOwned,
   CreditCardRecommendation,
+  SpendingAnalysis,
 } from "@/lib/types";
 import {
-  getRecommendedCards,
+  // getRecommendedCards,
   analyzeSpendingCategories,
+  getRecommendedCards,
 } from "@/lib/recommendationEngine";
 import { loadCreditCardData } from "@/lib/creditCardData";
 import { ListFilterPlus } from "lucide-react";
 import CreditCardComponent from "./components/CreditCard";
+import { loadTransactionData } from "@/lib/transactionData";
+import { formatCurrency } from "@/lib/transactionHelpers";
+import { analyzeSpending } from "@/lib/spendingAnalyzer";
 
 interface User {
   id: string;
@@ -45,27 +50,6 @@ interface Transaction {
   date: string;
   name: string;
   category?: string[];
-}
-
-interface SpendingAnalysis {
-  totalSpending: number;
-  monthlyAverage: number;
-  topCategory: {
-    category: string;
-    amount: number;
-    percentage: number;
-  };
-  categoryBreakdown: Array<{
-    category: string;
-    amount: number;
-    percentage: number;
-    count: number;
-  }>;
-  monthlyTrends: Array<{
-    month: string;
-    amount: number;
-  }>;
-  recentTransactions: Transaction[];
 }
 
 export default function AnalysisPage() {
@@ -113,15 +97,35 @@ export default function AnalysisPage() {
     loadUserDataAndAnalysis();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-open preferences modal if no preferences exist and we have transactions
-  useEffect(() => {
-    if (!loading && transactions.length > 0 && !cardPreferences) {
-      setIsCardPreferencesOpen(true);
-    }
-  }, [loading, transactions.length, cardPreferences]);
+  // // Auto-open preferences modal if no preferences exist and we have transactions
+  // useEffect(() => {
+  //   if (!loading && transactions.length > 0 && !cardPreferences) {
+  //     setIsCardPreferencesOpen(true);
+  //   }
+  // }, [loading, transactions.length, cardPreferences]);
 
   // Calculate recommendations when transactions are loaded
   // Use preferences if available, otherwise use default (all false)
+
+  const calculateRecommendations = async () => {
+    if (transactions.length === 0) {
+      console.log("No transactions available for recommendations");
+      return;
+    }
+
+    setLoadingRecommendations(true);
+    try {
+      // const spendingCategories = analyzeSpendingCategories(transactions);
+      const recs = await getRecommendedCards(transactions);
+
+      setRecommendations(recs);
+    } catch (error) {
+      console.error("Error calculating recommendations:", error);
+    } finally {
+      setLoadingRecommendations(false);
+    }
+  };
+
   useEffect(() => {
     if (
       transactions.length > 0 &&
@@ -130,14 +134,14 @@ export default function AnalysisPage() {
       !loading
     ) {
       console.log("Triggering recommendation calculation from useEffect");
-      const prefsToUse = cardPreferences || {
-        travel: false,
-        cashback: false,
-        no_annual_fee: false,
-        low_interest: false,
-        beginner_friendly: false,
-      };
-      calculateRecommendations(prefsToUse);
+      // const prefsToUse = cardPreferences || {
+      //   travel: false,
+      //   cashback: false,
+      //   no_annual_fee: false,
+      //   low_interest: false,
+      //   beginner_friendly: false,
+      // };
+      calculateRecommendations();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -176,31 +180,31 @@ export default function AnalysisPage() {
       }
 
       // Load transactions for all connections
-      const allTransactions: Transaction[] = [];
+      const allTransactions: Transaction[] = await loadTransactionData();
 
-      for (const connection of userData.connections) {
-        try {
-          const transactionResponse = await fetch("/api/plaid/transactions", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userId: userId,
-              itemId: connection.item_id,
-              months: 12, // Get last 12 months for better analysis
-            }),
-          });
+      // for (const connection of userData.connections) {
+      //   try {
+      //     const transactionResponse = await fetch("/api/plaid/transactions", {
+      //       method: "POST",
+      //       headers: { "Content-Type": "application/json" },
+      //       body: JSON.stringify({no
+      //         userId: userId,
+      //         itemId: connection.item_id,
+      //         months: 12, // Get last 12 months for better analysis
+      //       }),
+      //     });
 
-          if (transactionResponse.ok) {
-            const transactionData = await transactionResponse.json();
-            allTransactions.push(...(transactionData.transactions || []));
-          }
-        } catch (error) {
-          console.error(
-            `Error loading transactions for ${connection.institution_name}:`,
-            error
-          );
-        }
-      }
+      //     if (transactionResponse.ok) {
+      //       const transactionData = await transactionResponse.json();
+      //       allTransactions.push(...(transactionData.transactions || []));
+      //     }f
+      //   } catch (error) {
+      //     console.error(
+      //       `Error loading transactions for ${connection.institution_name}:`,
+      //       error
+      //     );
+      //   }
+      // }
 
       setTransactions(allTransactions);
 
@@ -216,105 +220,6 @@ export default function AnalysisPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const analyzeSpending = (transactions: Transaction[]): SpendingAnalysis => {
-    // Filter out positive amounts (credits/refunds/payments) and focus on spending
-    // Transactions are typically negative (spending) or positive (credits)
-    const spendingTransactions = transactions.filter(
-      (t) =>
-        t.amount < 0 ||
-        (t.amount > 0 &&
-          !t.category?.some((cat) => cat.toLowerCase().includes("payment")))
-    );
-
-    // Calculate total spending (use absolute values)
-    const totalSpending = spendingTransactions.reduce(
-      (sum, t) => sum + Math.abs(t.amount),
-      0
-    );
-
-    // Calculate date range for monthly average
-    const dates = spendingTransactions.map((t) => new Date(t.date));
-    const earliestDate = new Date(Math.min(...dates.map((d) => d.getTime())));
-    const latestDate = new Date(Math.max(...dates.map((d) => d.getTime())));
-    const monthsDiff = Math.max(
-      1,
-      (latestDate.getFullYear() - earliestDate.getFullYear()) * 12 +
-        (latestDate.getMonth() - earliestDate.getMonth()) +
-        1
-    );
-    const monthlyAverage = totalSpending / monthsDiff;
-
-    // Category analysis
-    const categoryTotals: { [key: string]: { amount: number; count: number } } =
-      {};
-
-    spendingTransactions.forEach((transaction) => {
-      const category = transaction.category?.[0] || "Other";
-      if (!categoryTotals[category]) {
-        categoryTotals[category] = { amount: 0, count: 0 };
-      }
-      categoryTotals[category].amount += Math.abs(transaction.amount);
-      categoryTotals[category].count += 1;
-    });
-
-    // Sort categories by spending amount
-    const categoryBreakdown = Object.entries(categoryTotals)
-      .map(([category, data]) => ({
-        category,
-        amount: data.amount,
-        percentage: (data.amount / totalSpending) * 100,
-        count: data.count,
-      }))
-      .sort((a, b) => b.amount - a.amount);
-
-    const topCategory = categoryBreakdown[0] || {
-      category: "No Data",
-      amount: 0,
-      percentage: 0,
-    };
-
-    // Monthly trends
-    const monthlyTotals: { [key: string]: number } = {};
-    spendingTransactions.forEach((transaction) => {
-      const monthKey = new Date(transaction.date).toISOString().slice(0, 7); // YYYY-MM
-      monthlyTotals[monthKey] =
-        (monthlyTotals[monthKey] || 0) + Math.abs(transaction.amount);
-    });
-
-    const monthlyTrends = Object.entries(monthlyTotals)
-      .map(([month, amount]) => ({ month, amount }))
-      .sort((a, b) => a.month.localeCompare(b.month))
-      .slice(-6); // Last 6 months
-
-    // Recent transactions (last 10)
-    const recentTransactions = spendingTransactions
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 10);
-
-    return {
-      totalSpending,
-      monthlyAverage,
-      topCategory,
-      categoryBreakdown: categoryBreakdown.slice(0, 8), // Top 8 categories
-      monthlyTrends,
-      recentTransactions,
-    };
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
-  };
-
-  const formatMonth = (monthStr: string) => {
-    return new Date(monthStr + "-01").toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-    });
   };
 
   if (loading) {
@@ -376,38 +281,6 @@ export default function AnalysisPage() {
       </div>
     );
   }
-
-  const calculateRecommendations = async (preferences: CardPreferences) => {
-    if (transactions.length === 0) {
-      console.log("No transactions available for recommendations");
-      return;
-    }
-
-    setLoadingRecommendations(true);
-    try {
-      // Load credit card data (cached after first load)
-      const allCards = await loadCreditCardData();
-      console.log("Loaded credit cards:", allCards.length);
-
-      // Analyze spending categories
-      const spendingCategories = analyzeSpendingCategories(transactions);
-      console.log("Spending categories:", spendingCategories);
-      console.log("User preferences:", preferences);
-
-      // Calculate recommendations
-      const recs = getRecommendedCards(
-        allCards,
-        preferences,
-        spendingCategories
-      );
-
-      setRecommendations(recs);
-    } catch (error) {
-      console.error("Error calculating recommendations:", error);
-    } finally {
-      setLoadingRecommendations(false);
-    }
-  };
 
   const handleSavePreferences = async (preferences: CardPreferences) => {
     setCardPreferences(preferences);

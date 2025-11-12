@@ -1,329 +1,339 @@
-import {
-  CardPreferences,
-  Transaction,
-  CreditCardRecommendation,
-} from "./types";
+import { loadCreditCardData } from "./creditCardData";
+import { Transaction } from "./types";
 
-interface SpendingCategory {
+export interface SpendingCategory {
   category: string;
   amount: number;
   percentage: number;
 }
 
 /**
- * Calculate match score for a credit card based on user preferences and spending
- * @param card - Credit card data from scraping
- * @param preferences - User's card preferences
- * @param spendingCategories - User's spending breakdown by category
- * @returns Match score (0-100) and reasons
+ * Map Plaid transaction categories to credit card reward categories
  */
-export function calculateCardMatchScore(
-  card: any, // Will be replaced with actual card type from scraping
-  preferences: CardPreferences,
-  spendingCategories: SpendingCategory[]
-): { score: number; reasons: string[] } {
-  let score = 0;
-  const reasons: string[] = [];
-  const maxScore = 100;
-
-  // Base score distribution:
-  // - Preferences match: 40 points
-  // - Spending alignment: 40 points
-  // - Card features: 20 points
-
-  // 1. Preference Matching (40 points max)
-  const preferenceCount = Object.values(preferences).filter(Boolean).length;
-  // If no preferences selected, give base score to all cards
-  const preferenceWeight = preferenceCount > 0 ? 40 / preferenceCount : 10;
-
-  if (preferences.travel) {
-    const cardName = card.name?.toLowerCase() || "";
-    const rewards = card.rewards?.toLowerCase() || "";
-
-    if (
-      cardName.includes("travel") ||
-      rewards.includes("travel") ||
-      rewards.includes("miles") ||
-      rewards.includes("airline")
-    ) {
-      score += preferenceWeight;
-      reasons.push("Strong travel rewards program");
-    }
+function mapTransactionCategoryToRewardCategory(
+  transactionCategory: string[]
+): string[] {
+  if (!transactionCategory || transactionCategory.length === 0) {
+    return ["general"];
   }
 
-  if (preferences.cashback) {
-    const rewards = card.rewards?.toLowerCase() || "";
+  const primary = transactionCategory[0]?.toLowerCase() || "";
+  const secondary = transactionCategory[1]?.toLowerCase() || "";
 
-    if (
-      rewards.includes("cash back") ||
-      rewards.includes("cashback") ||
-      rewards.includes("%")
-    ) {
-      score += preferenceWeight;
-      reasons.push("Generous cashback rewards");
+  // Food and Drink
+  if (primary === "food and drink") {
+    if (secondary === "restaurants" || secondary === "dining") {
+      return ["dining"];
     }
+    if (secondary === "groceries" || secondary === "grocery stores") {
+      return ["grocery-stores"];
+    }
+    return ["general"];
   }
 
-  if (preferences.no_annual_fee) {
-    const annualFee = card.annualFee?.toLowerCase() || "";
+  // Travel
+  if (primary === "travel") {
+    if (secondary === "airlines" || secondary === "flights") {
+      return ["Travel", "chase-travel"];
+    }
+    if (secondary === "hotels") {
+      return ["Hotels"];
+    }
+    return ["Travel", "chase-travel"];
+  }
 
-    if (
-      annualFee.includes("$0") ||
-      annualFee === "0" ||
-      annualFee.includes("none")
-    ) {
-      score += preferenceWeight;
-      reasons.push("No annual fee");
+  // General Merchandise
+  if (primary === "general merchandise") {
+    if (secondary === "online" || secondary === "online shopping") {
+      return ["online-shopping", "general"];
+    }
+    if (secondary === "drugstores") {
+      return ["drugstores"];
+    }
+    return ["General Merchandise", "general"];
+  }
+
+  // Gas Stations
+  if (primary === "gas stations" || primary === "gas") {
+    return ["general"];
+  }
+
+  // Entertainment
+  if (primary === "entertainment") {
+    return ["general"];
+  }
+
+  // Default to general
+  return ["general"];
+}
+
+/**
+ * Calculate estimated annual rewards for a credit card based on transactions
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function calculateEstimatedRewards(card: any, transactions: any[]): number {
+  let totalRewards = 0;
+  const categorySpending: Record<string, number> = {};
+
+  // Get all reward categories that the card offers (rewards is now a map/object)
+  const cardRewardCategories = new Set(
+    card.rewards ? Object.keys(card.rewards) : []
+  );
+  const hasGeneralCategory = cardRewardCategories.has("general");
+
+  // First, aggregate spending by reward category
+  console.log(`\nProcessing ${transactions.length} transactions...`);
+  transactions.forEach((transaction, index) => {
+    // Only process spending transactions (positive amounts in our test data)
+    if (transaction.amount <= 0) return;
+
+    const amount = Math.abs(transaction.amount);
+    const rewardCategories = mapTransactionCategoryToRewardCategory(
+      transaction.category || []
+    );
+
+    console.log(
+      `  Transaction ${index + 1}: $${amount} | Categories: ${JSON.stringify(
+        transaction.category
+      )} → Reward Categories: ${JSON.stringify(rewardCategories)}`
+    );
+
+    // Check if any of the mapped categories exist on this card (excluding "general")
+    const matchedCategories = rewardCategories.filter(
+      (cat) => cat !== "general" && cardRewardCategories.has(cat)
+    );
+
+    if (matchedCategories.length > 0) {
+      // Transaction matches specific categories - add to those categories
+      matchedCategories.forEach((rewardCategory) => {
+        categorySpending[rewardCategory] =
+          (categorySpending[rewardCategory] || 0) + amount;
+      });
     } else {
-      score -= 10; // Penalty for having annual fee when preference is set
-    }
-  }
-
-  if (preferences.low_interest) {
-    const intro = card.introOffer?.toLowerCase() || "";
-    const cardName = card.name?.toLowerCase() || "";
-
-    if (
-      intro.includes("0% apr") ||
-      intro.includes("low apr") ||
-      cardName.includes("low interest")
-    ) {
-      score += preferenceWeight;
-      reasons.push("Low interest rate or 0% intro APR");
-    }
-  }
-
-  if (preferences.beginner_friendly) {
-    const cardName = card.name?.toLowerCase() || "";
-    const annualFee = card.annualFee?.toLowerCase() || "";
-
-    if (
-      cardName.includes("starter") ||
-      cardName.includes("student") ||
-      cardName.includes("secured") ||
-      annualFee.includes("$0") ||
-      annualFee === "0"
-    ) {
-      score += preferenceWeight;
-      reasons.push("Beginner-friendly with easy approval");
-    }
-  }
-
-  // 2. Spending Category Alignment (40 points max)
-  const topCategories = spendingCategories.slice(0, 3); // Top 3 spending categories
-  // If no categories, give base score
-  const categoryWeight =
-    topCategories.length > 0 ? 40 / topCategories.length : 10;
-
-  topCategories.forEach((category) => {
-    const rewards = card.rewards?.toLowerCase() || "";
-    const categoryName = category.category.toLowerCase();
-
-    // Map spending categories to reward categories
-    const categoryMatches: Record<string, string[]> = {
-      dining: ["dining", "restaurant", "food"],
-      groceries: ["grocery", "groceries", "supermarket"],
-      travel: ["travel", "airline", "hotel"],
-      gas: ["gas", "fuel"],
-      entertainment: ["entertainment", "streaming"],
-      shopping: ["shopping", "retail"],
-    };
-
-    let matched = false;
-    Object.entries(categoryMatches).forEach(([key, keywords]) => {
-      if (keywords.some((kw) => categoryName.includes(kw))) {
-        if (keywords.some((kw) => rewards.includes(kw))) {
-          score += categoryWeight;
-          reasons.push(
-            `Rewards align with your ${key} spending (${category.percentage.toFixed(
-              0
-            )}%)`
-          );
-          matched = true;
-        }
+      // Transaction doesn't match any specific category - default to "general"
+      if (hasGeneralCategory) {
+        categorySpending["general"] =
+          (categorySpending["general"] || 0) + amount;
+        console.log(`    → No match found, defaulting to "general" category`);
+      } else {
+        console.log(
+          `    → No match found, but card has no "general" category (spending not counted)`
+        );
       }
-    });
+    }
   });
 
-  // 3. Card Features (20 points max)
-  const rating = parseFloat(card.rating || "0");
-  if (rating >= 4.5) {
-    score += 10;
-    reasons.push("Highly rated card");
-  } else if (rating >= 4.0) {
-    score += 5;
-    reasons.push("Well-rated card");
-  } else if (rating >= 3.5) {
-    score += 3;
-  }
+  console.log(`\n=== Card: ${card.name} ===`);
+  console.log("Category spending:", JSON.stringify(categorySpending, null, 2));
+  console.log("Card rewards:", JSON.stringify(card.rewards, null, 2));
 
-  if (card.introOffer) {
-    score += 10;
-    reasons.push("Welcome bonus available");
-  }
-
-  // Base score for all cards (ensures we always have recommendations)
-  if (score === 0) {
-    score = 15; // Minimum base score
-    reasons.push("Popular credit card option");
-  }
-
-  // Normalize score to 0-100
-  score = Math.min(Math.max(score, 0), maxScore);
-
-  return { score, reasons };
-}
-
-/**
- * Get recommended credit cards based on user preferences and spending
- * @param allCards - All available credit cards from scraping
- * @param preferences - User's card preferences
- * @param spendingCategories - User's spending breakdown
- * @returns Sorted array of recommended cards with match scores
- */
-export function getRecommendedCards(
-  allCards: any[],
-  preferences: CardPreferences,
-  spendingCategories: SpendingCategory[]
-): CreditCardRecommendation[] {
-  const recommendations: CreditCardRecommendation[] = allCards
-    .map((card) => {
-      const { score, reasons } = calculateCardMatchScore(
-        card,
-        preferences,
-        spendingCategories
-      );
-
-      // Format intro offer for display
-      let introOfferText: string | undefined;
-      if (card.introOffer) {
-        if (typeof card.introOffer === "object" && card.introOffer.amount) {
-          introOfferText = `$${card.introOffer.amount} bonus`;
-        } else {
-          introOfferText = String(card.introOffer);
+  // Calculate rewards for each card reward category (rewards is now a map/object)
+  if (card.rewards) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Object.entries(card.rewards).forEach(
+      ([category, reward]: [string, any]) => {
+        const spending = categorySpending[category] || 0;
+        if (spending === 0) {
+          console.log(`  No spending for category: ${category}`);
+          return;
         }
+
+        // Apply caps if they exist
+        let cappedSpending = spending;
+        if (reward.cap) {
+          if (reward.cap.quarterly) {
+            // Quarterly cap, so annual cap is 4x
+            const annualCap = reward.cap.quarterly * 4;
+            cappedSpending = Math.min(spending, annualCap);
+            console.log(
+              `  Category ${category}: Spending $${spending}, capped to $${cappedSpending} (annual cap: $${annualCap})`
+            );
+          } else if (reward.cap.annual) {
+            cappedSpending = Math.min(spending, reward.cap.annual);
+            console.log(
+              `  Category ${category}: Spending $${spending}, capped to $${cappedSpending} (annual cap: $${reward.cap.annual})`
+            );
+          }
+        } else {
+          console.log(`  Category ${category}: Spending $${spending} (no cap)`);
+        }
+
+        // Calculate reward amount
+        let rewardAmount: number;
+
+        if (reward.unit === "points") {
+          // For points: rate represents the multiplier (e.g., 0.05 = 5X points = 5 points per dollar)
+          // Convert rate to points per dollar: 0.05 × 100 = 5 points per dollar
+          // Then calculate: spending × points per dollar × $0.01 per point = cash value
+          const pointsPerDollar = reward.rate * 100; // 0.05 → 5 points per dollar (5X)
+          const pointsEarned = cappedSpending * pointsPerDollar; // $450 × 5 = 2,250 points
+          rewardAmount = pointsEarned * 0.01; // 2,250 points × $0.01 = $22.50 cash
+
+          console.log(
+            `  Reward calculation: $${cappedSpending} × ${pointsPerDollar.toFixed(
+              0
+            )}X points = ${pointsEarned.toFixed(
+              0
+            )} points → $${rewardAmount.toFixed(2)} cash`
+          );
+        } else {
+          // For cash: rate is cash back percentage (e.g., 0.03 = 3% cash back)
+          rewardAmount = cappedSpending * reward.rate;
+          console.log(
+            `  Reward calculation: $${cappedSpending} × ${reward.rate} (${(
+              reward.rate * 100
+            ).toFixed(0)}%) = $${rewardAmount.toFixed(2)} cash`
+          );
+        }
+
+        totalRewards += rewardAmount;
       }
-
-      return {
-        name: card.name,
-        institution_name: card.institution_name,
-        rating: card.rating || "N/A",
-        annualFee: card.annualFee || "N/A",
-        rewards: card.rewards || "See details",
-        introOffer: introOfferText,
-        matchScore: score,
-        matchReasons: reasons,
-        estimatedValue: calculateEstimatedValue(card, spendingCategories),
-        image: card.image,
-      };
-    })
-    .filter((card) => card.matchScore > 0) // Show all cards with any match
-    .sort((a, b) => b.matchScore - a.matchScore); // Sort by match score
-
-  // If no cards match preferences well, still return top cards by rating
-  if (recommendations.length === 0) {
-    console.log("No cards matched preferences, returning top rated cards");
-    return allCards
-      .map((card) => {
-        const rating = parseFloat(card.rating || "0");
-        return {
-          name: card.name,
-          institution_name: card.institution_name,
-          rating: card.rating || "N/A",
-          annualFee: card.annualFee || "N/A",
-          rewards: card.rewards || "See details",
-          introOffer: card.introOffer
-            ? typeof card.introOffer === "object" && card.introOffer.amount
-              ? `$${card.introOffer.amount} bonus`
-              : String(card.introOffer)
-            : undefined,
-          matchScore: rating * 10, // Use rating as match score
-          matchReasons: ["Highly rated card"],
-          estimatedValue: calculateEstimatedValue(card, spendingCategories),
-          image: {
-            src: card.image,
-            alt: `${card.image} image`,
-          },
-        };
-      })
-      .filter((card) => parseFloat(card.rating) >= 4.0)
-      .sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating))
-      .slice(0, 10);
+    );
   }
 
-  return recommendations.slice(0, 3); // Return top 10
+  console.log(`Total estimated rewards: $${totalRewards.toFixed(2)}\n`);
+  return totalRewards;
 }
 
 /**
- * Extract issuer name from card name (e.g., "Chase Freedom" -> "Chase")
+ * Get recommended credit cards based on transactions
  */
-function extractIssuerFromName(cardName: string): string {
-  const commonIssuers = [
-    "Chase",
-    "American Express",
-    "Citi",
-    "Capital One",
-    "Discover",
-    "Wells Fargo",
-    "Bank of America",
-    "US Bank",
-  ];
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function getRecommendedCards(transactions: any[]) {
+  const creditCards = await loadCreditCardData();
 
-  for (const issuer of commonIssuers) {
-    if (cardName.includes(issuer)) {
-      return issuer;
-    }
-  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recommendedCards = creditCards.map((card: any) => {
+    console.log(
+      `\n\n╔═══════════════════════════════════════════════════════════╗`
+    );
+    console.log(`║  Calculating Annual Value for: ${card.name.padEnd(35)} ║`);
+    console.log(
+      `╚═══════════════════════════════════════════════════════════╝`
+    );
 
-  return "Unknown";
-}
+    // Calculate estimated rewards
+    console.log(`\n📊 ESTIMATED REWARDS CALCULATION:`);
+    const estimatedRewards = calculateEstimatedRewards(card, transactions);
+    console.log(
+      `   ✅ Final Estimated Rewards: $${estimatedRewards.toFixed(2)}`
+    );
 
-/**
- * Calculate estimated annual value based on spending patterns
- */
-function calculateEstimatedValue(
-  card: any,
-  spendingCategories: SpendingCategory[]
-): number {
-  // This is a simplified calculation
-  // In a real app, you'd parse the rewards structure more carefully
-  const rewards = card.rewards?.toLowerCase() || "";
-  const annualFee = parseFloat(card.annualFee?.replace("$", "") || "0");
+    // Calculate total annual value (rewards + credits + benefits - annual fee)
+    console.log(`\n💳 CREDITS VALUE CALCULATION:`);
+    console.log(`   Credits available: ${(card.credits || []).length}`);
+    const creditsValue = (card.credits || []).reduce(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (sum: number, credit: any) => {
+        // usage_ease: 0 = hard (0% value), 1 = easy (100% value)
+        const adjustedValue = credit.value * (credit.usage_ease || 0);
+        console.log(
+          `   - ${credit.name.padEnd(25)}: $${credit.value
+            .toFixed(2)
+            .padStart(8)} × ${(credit.usage_ease || 0).toFixed(
+            2
+          )} = $${adjustedValue.toFixed(2)}`
+        );
+        return sum + adjustedValue;
+      },
+      0
+    );
+    console.log(`   ✅ Total Credits Value: $${creditsValue.toFixed(2)}`);
 
-  // Estimate cashback percentage (simplified)
-  let estimatedCashbackRate = 0;
-  if (rewards.includes("2%")) {
-    estimatedCashbackRate = 0.02;
-  } else if (rewards.includes("1.5%")) {
-    estimatedCashbackRate = 0.015;
-  } else if (rewards.includes("1%")) {
-    estimatedCashbackRate = 0.01;
-  } else if (rewards.includes("5%")) {
-    estimatedCashbackRate = 0.05;
-  } else if (rewards.includes("3%")) {
-    estimatedCashbackRate = 0.03;
-  }
+    console.log(`\n🎁 BENEFITS VALUE CALCULATION (excluding intro-bonus):`);
+    const nonIntroBenefits = (card.benefits || []).filter(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (b: any) => b.name !== "intro-bonus"
+    );
+    console.log(`   Benefits available: ${nonIntroBenefits.length}`);
+    const benefitsValue = nonIntroBenefits.reduce(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (sum: number, benefit: any) => {
+        // usage_ease: 0 = hard (0% value), 1 = easy (100% value)
+        const adjustedValue = benefit.value * (benefit.usage_ease || 0);
+        console.log(
+          `   - ${benefit.name.padEnd(25)}: $${benefit.value
+            .toFixed(2)
+            .padStart(8)} × ${(benefit.usage_ease || 0).toFixed(
+            2
+          )} = $${adjustedValue.toFixed(2)}`
+        );
+        return sum + adjustedValue;
+      },
+      0
+    );
+    console.log(`✅ Total Benefits Value: $${benefitsValue.toFixed(2)}`);
 
-  // Estimate annual spending from top categories
-  const totalSpending = spendingCategories.reduce(
-    (sum, cat) => sum + cat.amount,
-    0
+    console.log(`\n🎉 INTRO BONUS CALCULATION:`);
+    const introBonus = (card.benefits || []).find(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (b: any) => b.name === "intro-bonus"
+    );
+    const introBonusValue = introBonus
+      ? (() => {
+          // usage_ease: 0 = hard (0% value), 1 = easy (100% value)
+          const adjustedValue = introBonus.value * (introBonus.usage_ease || 0);
+          console.log(
+            `   Intro Bonus: $${introBonus.value.toFixed(2)} × ${(
+              introBonus.usage_ease || 0
+            ).toFixed(2)} = $${adjustedValue.toFixed(2)}`
+          );
+          return adjustedValue;
+        })()
+      : (() => {
+          console.log(`   No intro bonus available`);
+          return 0;
+        })();
+    console.log(`   ✅ Intro Bonus Value: $${introBonusValue.toFixed(2)}`);
+
+    console.log(`\n💰 ANNUAL FEE:`);
+    const annualFee = card.annual_fee || 0;
+    console.log(`   Annual Fee: $${annualFee.toFixed(2)}`);
+
+    console.log(`\n📈 TOTAL ANNUAL VALUE CALCULATION:`);
+    const annualValue =
+      estimatedRewards +
+      creditsValue +
+      benefitsValue +
+      introBonusValue -
+      annualFee;
+    console.log(
+      `   Estimated Rewards:  $${estimatedRewards.toFixed(2).padStart(10)}`
+    );
+    console.log(
+      `   + Credits Value:    $${creditsValue.toFixed(2).padStart(10)}`
+    );
+    console.log(
+      `   + Benefits Value:   $${benefitsValue.toFixed(2).padStart(10)}`
+    );
+    console.log(
+      `   + Intro Bonus:      $${introBonusValue.toFixed(2).padStart(10)}`
+    );
+    console.log(`   - Annual Fee:       $${annualFee.toFixed(2).padStart(10)}`);
+    console.log(`   ────────────────────────────────────────────`);
+    console.log(
+      `   = Total Annual Value: $${annualValue.toFixed(2).padStart(10)}`
+    );
+
+    return {
+      ...card,
+      estimatedRewards,
+      annualValue,
+    };
+  });
+
+  // Sort by annual value (descending)
+  recommendedCards.sort(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (a: any, b: any) => (b.annualValue || 0) - (a.annualValue || 0)
   );
-  const monthlySpending =
-    totalSpending / Math.max(1, spendingCategories.length);
-  const annualSpending = monthlySpending * 12;
-
-  // Calculate estimated value
-  const estimatedRewards = annualSpending * estimatedCashbackRate;
-  const introBonus = card.introOffer?.amount || 0;
-
-  return estimatedRewards + introBonus - annualFee;
+  console.log(recommendedCards, "recommendedCards");
+  return recommendedCards;
 }
 
 /**
- * Calculate spending categories from transactions
- * @param transactions - User's transaction history
- * @returns Breakdown of spending by category
+ * Analyze spending categories from transaction data
+ * Filters out credits/payments and groups by category
  */
 export function analyzeSpendingCategories(
   transactions: Transaction[]
@@ -331,13 +341,25 @@ export function analyzeSpendingCategories(
   const categoryTotals: Record<string, number> = {};
   let totalSpending = 0;
 
-  // Aggregate spending by category
+  // Filter and aggregate spending by category
   transactions.forEach((transaction) => {
-    const amount = Math.abs(transaction.amount); // Use absolute value for spending
-    totalSpending += amount;
+    // Filter out positive amounts (credits/refunds) and payments
+    // Plaid transactions: negative = spending, positive = credits
+    const isSpending =
+      transaction.amount < 0 ||
+      (transaction.amount > 0 &&
+        !transaction.category?.some((cat) =>
+          cat.toLowerCase().includes("payment")
+        ));
 
-    const category = transaction.category?.[0] || "Other";
-    categoryTotals[category] = (categoryTotals[category] || 0) + amount;
+    if (isSpending) {
+      const amount = Math.abs(transaction.amount);
+      totalSpending += amount;
+
+      // Use first category from Plaid's category array, or "Other" if none
+      const category = transaction.category?.[0] || "Other";
+      categoryTotals[category] = (categoryTotals[category] || 0) + amount;
+    }
   });
 
   // Convert to array and calculate percentages
@@ -345,9 +367,9 @@ export function analyzeSpendingCategories(
     .map(([category, amount]) => ({
       category,
       amount,
-      percentage: (amount / totalSpending) * 100,
+      percentage: totalSpending > 0 ? (amount / totalSpending) * 100 : 0,
     }))
-    .sort((a, b) => b.amount - a.amount);
+    .sort((a, b) => b.amount - a.amount); // Sort by amount descending
 
   return categories;
 }

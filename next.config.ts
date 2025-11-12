@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
         hostname: "www.nerdwallet.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "promo.bankofamerica.com",
+        pathname: "/**",
+      },
     ],
   },
 };

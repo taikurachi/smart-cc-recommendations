@@ -1,18 +1,17 @@
 /**
- * Load credit card data from manualcc.json
+ * Load transaction data from transactions.json
  * Uses caching to avoid repeated fetches
- * Converts the object format to an array
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-let cachedCards: any[] | null = null;
+let cachedTransactions: any[] | null = null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let loadingPromise: Promise<any[]> | null = null;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function loadCreditCardData(): Promise<any[]> {
+export async function loadTransactionData(): Promise<any[]> {
   // Return cached data if available
-  if (cachedCards) {
-    return cachedCards;
+  if (cachedTransactions) {
+    return cachedTransactions;
   }
 
   // Return existing promise if already loading
@@ -21,23 +20,22 @@ export async function loadCreditCardData(): Promise<any[]> {
   }
 
   // Start loading
-  loadingPromise = fetch("/api/credit-cards")
+  loadingPromise = fetch("/api/transactions")
     .then((response) => {
       if (!response.ok) {
-        throw new Error("Failed to load credit card data");
+        throw new Error("Failed to load transaction data");
       }
       return response.json();
     })
     .then((data) => {
-      // Convert object format to array
-      // manualcc.json is an object with card IDs as keys
+      // transactions.json is already an array
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const cardsArray: any[] = Object.values(data);
-      cachedCards = cardsArray;
-      return cachedCards;
+      const transactionsArray: any[] = Array.isArray(data) ? data : [];
+      cachedTransactions = transactionsArray;
+      return cachedTransactions;
     })
     .catch((error) => {
-      console.error("Error loading credit card data:", error);
+      console.error("Error loading transaction data:", error);
       loadingPromise = null; // Reset promise on error
       return [];
     });
@@ -48,7 +46,7 @@ export async function loadCreditCardData(): Promise<any[]> {
 /**
  * Clear the cache (useful for testing or if data needs to be refreshed)
  */
-export function clearCreditCardCache() {
-  cachedCards = null;
+export function clearTransactionCache() {
+  cachedTransactions = null;
   loadingPromise = null;
 }
