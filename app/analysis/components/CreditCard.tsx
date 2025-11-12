@@ -71,23 +71,29 @@ export default function CreditCardComponent({
       <div className="bg-white mt-4 rounded-lg p-4 flex flex-col">
         <div className="flex items-center justify-between">
           <p className="font-bold text-2xl">Annual Value</p>
-          <span className="font-bold text-2xl text-green amount">$925</span>
+          <span className="font-bold text-2xl text-green amount">
+            ${Math.ceil(currentCard.annualValue)}
+          </span>
         </div>
         <div className="opacity-70 flex justify-between items-center mt-4">
           <p>Estimated Rewards</p>
-          <span className="amount">$1523</span>
+          <span className="amount">
+            ${Math.ceil(currentCard.estimatedRewards)}
+          </span>
         </div>
         <ul className="ml-4 opacity-40">
           {cards.map((card) => (
             <li className="flex items-center justify-between" key={card.name}>
               <span>{card.name}</span>
-              <span className="amount ">$900</span>
+              <span className="amount">
+                ${Math.ceil(card.estimatedRewards)}
+              </span>
             </li>
           ))}
         </ul>
         <div className="flex justify-between items-center mt-auto">
           <p>Annual Fee</p>
-          <span className="amount">$95</span>
+          <span className="amount">${currentCard.annual_fee || 0}</span>
         </div>
       </div>
     </div>
