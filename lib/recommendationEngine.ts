@@ -26,7 +26,7 @@ function mapTransactionCategoryToRewardCategory(
       return ["dining"];
     }
     if (secondary === "groceries" || secondary === "grocery stores") {
-      return ["grocery-stores"];
+      return ["grocery"];
     }
     return ["general"];
   }
@@ -34,33 +34,33 @@ function mapTransactionCategoryToRewardCategory(
   // Travel
   if (primary === "travel") {
     if (secondary === "airlines" || secondary === "flights") {
-      return ["Travel", "chase-travel"];
+      return ["travel"];
     }
     if (secondary === "hotels") {
-      return ["Hotels"];
+      return ["hotels"];
     }
-    return ["Travel", "chase-travel"];
+    return ["travel"];
   }
 
   // General Merchandise
   if (primary === "general merchandise") {
     if (secondary === "online" || secondary === "online shopping") {
-      return ["online-shopping", "general"];
+      return ["online-shopping"];
     }
     if (secondary === "drugstores") {
       return ["drugstores"];
     }
-    return ["General Merchandise", "general"];
+    return ["general"];
   }
 
   // Gas Stations
   if (primary === "gas stations" || primary === "gas") {
-    return ["general"];
+    return ["gas"];
   }
 
   // Entertainment
   if (primary === "entertainment") {
-    return ["general"];
+    return ["entertainment"];
   }
 
   // Default to general
@@ -79,6 +79,7 @@ function calculateEstimatedRewards(card: any, transactions: any[]): number {
   const cardRewardCategories = new Set(
     card.rewards ? Object.keys(card.rewards) : []
   );
+
   const hasGeneralCategory = cardRewardCategories.has("general");
 
   // First, aggregate spending by reward category
@@ -91,7 +92,7 @@ function calculateEstimatedRewards(card: any, transactions: any[]): number {
     const rewardCategories = mapTransactionCategoryToRewardCategory(
       transaction.category || []
     );
-
+    console.log(rewardCategories, "reward cat");
     console.log(
       `  Transaction ${index + 1}: $${amount} | Categories: ${JSON.stringify(
         transaction.category
