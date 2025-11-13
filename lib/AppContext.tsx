@@ -48,9 +48,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
 
     // Load connection method from localStorage
+    if (data.connections.length === 0) {
+      setConnectionMethod(null);
+      return;
+    }
     const savedMethod = localStorage.getItem(
       "connectionMethod"
     ) as ConnectionMethod;
+
     if (savedMethod) {
       setConnectionMethod(savedMethod);
     }

@@ -23,17 +23,6 @@ export default function Home() {
       <p className="text-center mb-8">
         Connect your bank through Plaid or upload transaction data
       </p>
-      {connectionMethod && (
-        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-center">
-          <p className="text-sm text-blue-800">
-            ℹ️ You&apos;re using{" "}
-            <span className="font-semibold">
-              {connectionMethod === "plaid" ? "Plaid" : "Manual CSV"}
-            </span>{" "}
-            connection method. All accounts must use the same method.
-          </p>
-        </div>
-      )}
       <div className="mb-8">
         <div className="grid md:grid-cols-2 gap-6 sm:h-[400px] h-full">
           <PlaidConnectionCard

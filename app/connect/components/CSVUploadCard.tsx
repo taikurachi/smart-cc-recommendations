@@ -110,11 +110,21 @@ export default function CSVUploadCard({
     >
       {disabled && (
         <div className="absolute inset-0 bg-gray-100/50 backdrop-blur-[2px] z-20 flex items-center justify-center rounded-xl">
-          <div className="bg-white rounded-lg p-4 shadow-lg text-center max-w-xs">
-            <p className="font-semibold text-gray-900 mb-1">🔒 Method Locked</p>
-            <p className="text-sm text-gray-600">
+          <div className="bg-white rounded-lg p-4 shadow-lg max-w-xs">
+            <p className="font-bold text-xl p-2">Method Locked</p>
+            <p className="text-sm text-gray-600 p-2">
               You&apos;re using Plaid connection. All accounts must use the same
-              connection method.
+              connection method. Delete all Plaid connections, before manual.{" "}
+              <span
+                className="underline cursor-pointer
+                
+              "
+                onClick={() => {
+                  router.push("/manage");
+                }}
+              >
+                Manage ↗
+              </span>
             </p>
           </div>
         </div>
