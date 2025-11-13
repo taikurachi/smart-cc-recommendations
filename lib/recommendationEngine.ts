@@ -200,11 +200,31 @@ function calculateEstimatedRewards(card: any, transactions: any[]): number {
  * Get recommended credit cards based on transactions
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function getRecommendedCards(transactions: any[]) {
+export async function getRecommendedCards(
+  transactions: any[],
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  preferences: any
+) {
   const creditCards = await loadCreditCardData();
 
+  // filter out credit cards based preferences, return at most 3 cards
+
+  const preferencesArr = Object.entries(preferences)
+    .filter(([, value]) => value)
+    .map(([key]) => key);
+
+  const preferredCreditCards = creditCards.filter((card) => {
+    const tags = card.tags || [];
+    // Check if card has any of the user's selected preferences
+    return preferencesArr.some((pref) => tags.includes(pref));
+  });
+
+  // If no matches, return all cards
+  const cardsToProcess =
+    preferredCreditCards.length === 0 ? creditCards : preferredCreditCards;
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const recommendedCards = creditCards.map((card: any) => {
+  const recommendedCards = cardsToProcess.map((card: any) => {
     console.log(
       `\n\n╔═══════════════════════════════════════════════════════════╗`
     );

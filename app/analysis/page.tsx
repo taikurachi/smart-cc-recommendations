@@ -97,17 +97,17 @@ export default function AnalysisPage() {
     loadUserDataAndAnalysis();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // // Auto-open preferences modal if no preferences exist and we have transactions
-  // useEffect(() => {
-  //   if (!loading && transactions.length > 0 && !cardPreferences) {
-  //     setIsCardPreferencesOpen(true);
-  //   }
-  // }, [loading, transactions.length, cardPreferences]);
+  // Auto-open preferences modal if no preferences exist and we have transactions
+  useEffect(() => {
+    if (!loading && transactions.length > 0 && !cardPreferences) {
+      setIsCardPreferencesOpen(true);
+    }
+  }, [loading, transactions.length, cardPreferences]);
 
   // Calculate recommendations when transactions are loaded
   // Use preferences if available, otherwise use default (all false)
 
-  const calculateRecommendations = async () => {
+  const calculateRecommendations = async (preferences) => {
     if (transactions.length === 0) {
       console.log("No transactions available for recommendations");
       return;
@@ -116,7 +116,7 @@ export default function AnalysisPage() {
     setLoadingRecommendations(true);
     try {
       // const spendingCategories = analyzeSpendingCategories(transactions);
-      const recs = await getRecommendedCards(transactions);
+      const recs = await getRecommendedCards(transactions, preferences);
 
       setRecommendations(recs);
     } catch (error) {
@@ -134,14 +134,14 @@ export default function AnalysisPage() {
       !loading
     ) {
       console.log("Triggering recommendation calculation from useEffect");
-      // const prefsToUse = cardPreferences || {
-      //   travel: false,
-      //   cashback: false,
-      //   no_annual_fee: false,
-      //   low_interest: false,
-      //   beginner_friendly: false,
-      // };
-      calculateRecommendations();
+      const prefsToUse = cardPreferences || {
+        travel: false,
+        cashback: false,
+        no_annual_fee: false,
+        low_interest: false,
+        beginner_friendly: false,
+      };
+      calculateRecommendations(prefsToUse);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [

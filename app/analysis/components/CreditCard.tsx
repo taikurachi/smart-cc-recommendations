@@ -72,13 +72,13 @@ export default function CreditCardComponent({
         <div className="flex items-center justify-between">
           <p className="font-bold text-2xl">Annual Value</p>
           <span className="font-bold text-2xl text-green amount">
-            ${Math.ceil(currentCard.annualValue)}
+            ${Math.ceil(currentCard.annualValue || 0)}
           </span>
         </div>
         <div className="opacity-70 flex justify-between items-center mt-4">
           <p>Estimated Rewards</p>
           <span className="amount">
-            ${Math.ceil(currentCard.estimatedRewards)}
+            ${Math.ceil(currentCard.estimatedRewards || 0)}
           </span>
         </div>
         <ul className="ml-4 opacity-40">
@@ -86,7 +86,7 @@ export default function CreditCardComponent({
             <li className="flex items-center justify-between" key={card.name}>
               <span>{card.name}</span>
               <span className="amount">
-                ${Math.ceil(card.estimatedRewards)}
+                ${Math.ceil(card.estimatedRewards) || 0}
               </span>
             </li>
           ))}
