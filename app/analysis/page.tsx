@@ -21,6 +21,7 @@ import CreditCardComponent from "./components/CreditCard";
 import { loadTransactionData } from "@/lib/transactionData";
 import { formatCurrency } from "@/lib/transactionHelpers";
 import { analyzeSpending } from "@/lib/spendingAnalyzer";
+import { showToast } from "@/lib/toastUtils";
 
 interface User {
   id: string;
@@ -117,8 +118,9 @@ export default function AnalysisPage() {
     try {
       // const spendingCategories = analyzeSpendingCategories(transactions);
       const recs = await getRecommendedCards(transactions, preferences);
+      if (recs[1]) showToast.error(recs[1]);
 
-      setRecommendations(recs);
+      setRecommendations(recs[0]);
     } catch (error) {
       console.error("Error calculating recommendations:", error);
     } finally {

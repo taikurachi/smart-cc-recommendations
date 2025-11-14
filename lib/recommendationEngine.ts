@@ -206,19 +206,29 @@ export async function getRecommendedCards(
   preferences: any
 ) {
   const creditCards = await loadCreditCardData();
-
+  let message;
   // filter out credit cards based preferences, return at most 3 cards
-
   const preferencesArr = Object.entries(preferences)
     .filter(([, value]) => value)
     .map(([key]) => key);
 
-  const preferredCreditCards = creditCards.filter((card) => {
+  // tags: ['groceries, travel, no_annual_fee']
+  let preferredCreditCards = creditCards.filter((card) => {
     const tags = card.tags || [];
-    // Check if card has any of the user's selected preferences
-    return preferencesArr.some((pref) => tags.includes(pref));
+    // Check if card has all of the user's selected preferences
+    return preferencesArr.every((pref) => tags.includes(pref));
   });
 
+  if (preferredCreditCards.length === 0) {
+    preferredCreditCards = creditCards.filter((card) => {
+      const tags = card.tags || [];
+      // Check if card has any of the user's selected preferences
+      return preferencesArr.some((pref) => tags.includes(pref));
+    });
+  }
+
+  if (preferredCreditCards.length === 0)
+    message = "There were no matches. Recommending you best value cards.";
   // If no matches, return all cards
   const cardsToProcess =
     preferredCreditCards.length === 0 ? creditCards : preferredCreditCards;
@@ -349,7 +359,7 @@ export async function getRecommendedCards(
     (a: any, b: any) => (b.annualValue || 0) - (a.annualValue || 0)
   );
   console.log(recommendedCards, "recommendedCards");
-  return recommendedCards;
+  return [recommendedCards, message];
 }
 
 /**
