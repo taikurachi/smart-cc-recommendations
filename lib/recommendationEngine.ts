@@ -301,55 +301,23 @@ export async function getRecommendedCards(
       (b: any) => b.name === "intro-bonus"
     );
     const introBonusValue = introBonus
-      ? (() => {
-          // usage_ease: 0 = hard (0% value), 1 = easy (100% value)
-          const adjustedValue = introBonus.value * (introBonus.usage_ease || 0);
-          console.log(
-            `   Intro Bonus: $${introBonus.value.toFixed(2)} × ${(
-              introBonus.usage_ease || 0
-            ).toFixed(2)} = $${adjustedValue.toFixed(2)}`
-          );
-          return adjustedValue;
-        })()
-      : (() => {
-          console.log(`   No intro bonus available`);
-          return 0;
-        })();
-    console.log(`   ✅ Intro Bonus Value: $${introBonusValue.toFixed(2)}`);
+      ? introBonus.usage_ease * introBonus.value
+      : 0;
 
-    console.log(`\n💰 ANNUAL FEE:`);
     const annualFee = card.annual_fee || 0;
-    console.log(`   Annual Fee: $${annualFee.toFixed(2)}`);
 
-    console.log(`\n📈 TOTAL ANNUAL VALUE CALCULATION:`);
-    const annualValue =
-      estimatedRewards +
-      creditsValue +
-      benefitsValue +
-      introBonusValue -
-      annualFee;
-    console.log(
-      `   Estimated Rewards:  $${estimatedRewards.toFixed(2).padStart(10)}`
-    );
-    console.log(
-      `   + Credits Value:    $${creditsValue.toFixed(2).padStart(10)}`
-    );
-    console.log(
-      `   + Benefits Value:   $${benefitsValue.toFixed(2).padStart(10)}`
-    );
-    console.log(
-      `   + Intro Bonus:      $${introBonusValue.toFixed(2).padStart(10)}`
-    );
-    console.log(`   - Annual Fee:       $${annualFee.toFixed(2).padStart(10)}`);
-    console.log(`   ────────────────────────────────────────────`);
-    console.log(
-      `   = Total Annual Value: $${annualValue.toFixed(2).padStart(10)}`
-    );
+    const totalRewards =
+      estimatedRewards + creditsValue + benefitsValue + introBonusValue;
 
+    const annualValue = totalRewards - annualFee;
     return {
       ...card,
+      totalRewards,
       estimatedRewards,
       annualValue,
+      introBonusValue,
+      creditsValue,
+      benefitsValue,
     };
   });
 

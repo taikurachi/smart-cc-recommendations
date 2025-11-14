@@ -19,7 +19,7 @@ export default function CreditCardComponent({
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const currentCard = cards[currentCardIndex];
   return (
-    <div className="bg-gray-light w-full p-6 rounded-lg">
+    <div className="bg-gray-light w-full p-6 rounded-lg flex flex-col">
       <div className="flex">
         <h3 className="text-lg">
           {currentCard.institution_name || "Undefined"}
@@ -68,7 +68,7 @@ export default function CreditCardComponent({
         {/* Include table of contents here */}
         {status === "New" && null}
       </div>
-      <div className="bg-white mt-4 rounded-lg p-4 flex flex-col">
+      <div className="bg-white mt-4 rounded-lg p-4 flex flex-col flex-1">
         <div className="flex items-center justify-between">
           <p className="font-bold text-2xl">Annual Value</p>
           <span className="font-bold text-2xl text-green amount">
@@ -78,18 +78,25 @@ export default function CreditCardComponent({
         <div className="opacity-70 flex justify-between items-center mt-4">
           <p>Estimated Rewards</p>
           <span className="amount">
-            ${Math.ceil(currentCard.estimatedRewards || 0)}
+            ${Math.ceil(currentCard.totalRewards || 0)}
           </span>
         </div>
-        <ul className="ml-4 opacity-40">
-          {cards.map((card) => (
-            <li className="flex items-center justify-between" key={card.name}>
-              <span>{card.name}</span>
-              <span className="amount">
-                ${Math.ceil(card.estimatedRewards) || 0}
-              </span>
-            </li>
-          ))}
+        <ul className="ml-4 opacity-40 mb-4">
+          {[
+            { name: "Rewards Value", key: "estimatedRewards" },
+            { name: "Intro Bonus", key: "introBonusValue" },
+            { name: "Credits Bonus", key: "creditsValue" },
+            { name: "Benefits Bonus", key: "benefitsValue" },
+          ].map(({ name, key }) =>
+            currentCard[key] ? (
+              <li className="flex items-center justify-between" key={name}>
+                <span>{name}</span>
+                <span className="amount">
+                  ${Math.ceil(currentCard[key]) || 0}
+                </span>
+              </li>
+            ) : null
+          )}
         </ul>
         <div className="flex justify-between items-center mt-auto">
           <p>Annual Fee</p>
