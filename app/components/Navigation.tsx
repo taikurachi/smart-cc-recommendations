@@ -10,6 +10,7 @@ export default function Navigation() {
     { href: "/", label: "Home", icon: "🏠" },
     { href: "/connect", label: "Connect", icon: "🔗" },
     { href: "/analysis", label: "Analysis", icon: "📊" },
+    { href: "/manage", label: "Manage", icon: "🎥" },
   ];
 
   return (
