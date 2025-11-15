@@ -18,6 +18,8 @@ export default function CreditCardComponent({
 }: CreditCardProps) {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const currentCard = cards[currentCardIndex];
+
+  if (!currentCard) return <div>loading...</div>;
   return (
     <div className="bg-gray-light w-full p-6 rounded-lg flex flex-col">
       <div className="flex">
@@ -83,10 +85,10 @@ export default function CreditCardComponent({
         </div>
         <ul className="ml-4 opacity-40 mb-4">
           {[
-            { name: "Rewards Value", key: "estimatedRewards" },
             { name: "Intro Bonus", key: "introBonusValue" },
             { name: "Credits Bonus", key: "creditsValue" },
             { name: "Benefits Bonus", key: "benefitsValue" },
+            { name: "Rewards Value", key: "estimatedRewards" },
           ].map(({ name, key }) =>
             currentCard[key] ? (
               <li className="flex items-center justify-between" key={name}>
