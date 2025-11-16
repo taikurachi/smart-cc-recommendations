@@ -4,7 +4,13 @@ import { storage } from "@/lib/storage";
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId, itemId, accessToken, months = 12 } = await request.json();
+    const {
+      userId,
+      itemId,
+      accessToken,
+      account_ids,
+      months = 12,
+    } = await request.json();
 
     let finalAccessToken = accessToken;
 
@@ -39,13 +45,24 @@ export async function POST(request: NextRequest) {
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - months);
 
+    // Build options object - only include account_ids if provided
+    const options: {
+      count: number;
+      account_ids?: string[];
+    } = {
+      count: 500,
+    };
+
+    // Only filter by account_ids if provided
+    if (account_ids && Array.isArray(account_ids) && account_ids.length > 0) {
+      options.account_ids = account_ids;
+    }
+
     const response = await plaidClient.transactionsGet({
       access_token: finalAccessToken,
       start_date: startDate.toISOString().split("T")[0],
       end_date: endDate,
-      options: {
-        count: 500,
-      },
+      options,
     });
 
     // Update last synced timestamp if we have itemId
@@ -69,11 +86,25 @@ export async function POST(request: NextRequest) {
       total_transactions: response.data.total_transactions,
       request_id: response.data.request_id,
     });
-  } catch (error: any) {
-    console.error("Transactions error:", error.response?.data || error.message);
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : typeof error === "object" && error !== null && "response" in error
+        ? (error as { response?: { data?: unknown } }).response?.data
+        : "Unknown error";
+    console.error("Transactions error:", errorMessage);
 
     // Handle specific Plaid errors
-    if (error.response?.data?.error_code === "ITEM_LOGIN_REQUIRED") {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "response" in error &&
+      typeof (error as { response?: { data?: { error_code?: string } } })
+        .response?.data?.error_code === "string" &&
+      (error as { response: { data: { error_code: string } } }).response.data
+        .error_code === "ITEM_LOGIN_REQUIRED"
+    ) {
       return NextResponse.json(
         { error: "Bank login required. Please reconnect your account." },
         { status: 401 }

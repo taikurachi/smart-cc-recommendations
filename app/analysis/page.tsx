@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import Image from "next/image";
+
 import { useApp } from "@/lib/AppContext";
 import CardPreferencesModal from "../components/CardPreferencesModal";
 import {
@@ -11,17 +11,23 @@ import {
   SpendingAnalysis,
 } from "@/lib/types";
 import {
-  // getRecommendedCards,
-  analyzeSpendingCategories,
+  calculateEstimatedRewards,
   getRecommendedCards,
 } from "@/lib/recommendationEngine";
-import { loadCreditCardData } from "@/lib/creditCardData";
+
 import { ListFilterPlus } from "lucide-react";
 import CreditCardComponent from "./components/CreditCard";
 import { loadTransactionData } from "@/lib/transactionData";
-import { formatCurrency } from "@/lib/transactionHelpers";
+import {
+  formatCurrency,
+  groupTransactionsByCreditCard,
+} from "@/lib/transactionHelpers";
 import { analyzeSpending } from "@/lib/spendingAnalyzer";
 import { showToast } from "@/lib/toastUtils";
+import {
+  mapCardNameToOfficialCard,
+  getRewardsEstimates,
+} from "@/lib/generalHelpers";
 
 interface User {
   id: string;
@@ -59,7 +65,7 @@ export default function AnalysisPage() {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [analysis, setAnalysis] = useState<SpendingAnalysis | null>(null);
-  const [creditCards, setCreditCards] = useState<CreditCardOwned[]>([]);
+  const [ownedCards, setOwnedCards] = useState<CreditCardOwned[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [recIndex, setRecIndex] = useState(0);
@@ -83,7 +89,6 @@ export default function AnalysisPage() {
         }
 
         const data = await response.json();
-        setCreditCards(data.creditCards || []);
 
         console.log("All accounts:", data.accounts);
         console.log("Credit cards found:", data.creditCards);
@@ -182,36 +187,100 @@ export default function AnalysisPage() {
       }
 
       // Load transactions for all connections
-      const allTransactions: Transaction[] = await loadTransactionData();
+      let allTransactions: Transaction[] = [];
 
-      // for (const connection of userData.connections) {
-      //   try {
-      //     const transactionResponse = await fetch("/api/plaid/transactions", {
-      //       method: "POST",
-      //       headers: { "Content-Type": "application/json" },
-      //       body: JSON.stringify({no
-      //         userId: userId,
-      //         itemId: connection.item_id,
-      //         months: 12, // Get last 12 months for better analysis
-      //       }),
-      //     });
+      for (const connection of userData.connections) {
+        console.log(connection, "connection");
+        const creditCardAccountFound = connection.accounts.find(
+          (acc) => acc.type === "credit"
+        );
 
-      //     if (transactionResponse.ok) {
-      //       const transactionData = await transactionResponse.json();
-      //       allTransactions.push(...(transactionData.transactions || []));
-      //     }f
-      //   } catch (error) {
-      //     console.error(
-      //       `Error loading transactions for ${connection.institution_name}:`,
-      //       error
-      //     );
-      //   }
-      // }
+        const validatedAccountsForTransactions = creditCardAccountFound
+          ? connection.accounts.filter((acc) => acc.type === "credit")
+          : connection.accounts;
+
+        const validatedAccountIds = validatedAccountsForTransactions.map(
+          (acc) => acc.account_id
+        );
+
+        const currentlyOwnedCards = validatedAccountsForTransactions.map(
+          (acc) => ({ account_id: acc.account_id, name: acc.name })
+        );
+
+        // fetch plaid transaction api here
+        try {
+          const transactionResponse = await fetch("/api/plaid/transactions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              userId: userId,
+              itemId: connection.item_id,
+              account_ids: validatedAccountIds,
+              months: 12, // Get last 12 months for better analysis
+            }),
+          });
+
+          if (transactionResponse.ok) {
+            const transactionData = await transactionResponse.json();
+            const fetchedTransactions = transactionData.transactions || [];
+            console.log("Account IDs in transactions:", [
+              ...new Set(fetchedTransactions.map((t) => t.account_id)),
+            ]);
+            const transactionsByCard = groupTransactionsByCreditCard(
+              fetchedTransactions,
+              currentlyOwnedCards
+            );
+
+            console.log(transactionsByCard, "transactions by card");
+            // Process each card's transactions
+            for (const [cardName, transactions] of Object.entries(
+              transactionsByCard
+            )) {
+              const officialCard = await mapCardNameToOfficialCard(
+                cardName,
+                connection.institution_name
+              );
+              const estimatedRewards = calculateEstimatedRewards(
+                officialCard,
+                transactions
+              );
+              const {
+                totalRewards,
+                annualValue,
+                introBonusValue,
+                creditsValue,
+                benefitsValue,
+              } = getRewardsEstimates(officialCard);
+
+              setOwnedCards((prev) => [
+                ...prev,
+                {
+                  ...officialCard,
+                  totalRewards,
+                  estimatedRewards,
+                  annualValue,
+                  introBonusValue,
+                  creditsValue,
+                  benefitsValue,
+                },
+              ]);
+            }
+
+            allTransactions.push(...fetchedTransactions);
+          }
+        } catch (error) {
+          console.error(
+            `Error loading transactions for ${connection.institution_name}:`,
+            error
+          );
+        }
+      }
 
       setTransactions(allTransactions);
 
       if (allTransactions.length > 0) {
-        const analysisResult = analyzeSpending(allTransactions);
+        // pass in transactions and current credit/debit card.
+        const analysisResult = analyzeSpending(allTransactions, "");
         setAnalysis(analysisResult);
       } else {
         setError("No transactions found. Please sync your transactions first.");
@@ -445,7 +514,7 @@ export default function AnalysisPage() {
               </div>
 
               <div className="flex gap-4">
-                {creditCards.length === 0 ? (
+                {ownedCards.length === 0 ? (
                   recommendations.map((rec) => (
                     <CreditCardComponent
                       key={rec.name}
@@ -459,8 +528,8 @@ export default function AnalysisPage() {
                     status="New"
                   />
                 )}
-                {creditCards.length > 0 && (
-                  <CreditCardComponent cards={creditCards} status="Old" />
+                {ownedCards.length > 0 && (
+                  <CreditCardComponent cards={ownedCards} status="Old" />
                 )}
               </div>
             </div>
