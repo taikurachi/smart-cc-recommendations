@@ -1,4 +1,4 @@
-import { Transaction } from "./types";
+import { Transaction, CreditCardOwned } from "./types";
 import { DEFAULT_TRANSACTION_VALUES } from "./constants";
 
 /**
@@ -50,3 +50,84 @@ export function getTotalColorClass(total: number): string {
   return total < 0 ? "text-red-600" : "text-purple-900";
 }
 
+/**
+ * Filter transactions by a specific account_id
+ */
+export function getTransactionsByAccountId(
+  transactions: Transaction[],
+  accountId: string
+): Transaction[] {
+  return transactions.filter((t) => t.account_id === accountId);
+}
+
+/**
+ * Filter transactions for a specific credit card (by account_id)
+ */
+export function getTransactionsByCreditCard(
+  transactions: Transaction[],
+  creditCard: CreditCardOwned
+): Transaction[] {
+  return getTransactionsByAccountId(transactions, creditCard.account_id);
+}
+
+/**
+ * Get transactions for multiple credit cards
+ */
+export function getTransactionsForCreditCards(
+  transactions: Transaction[],
+  creditCards: CreditCardOwned[]
+): Transaction[] {
+  const accountIds = new Set(creditCards.map((card) => card.account_id));
+  return transactions.filter((t) => accountIds.has(t.account_id));
+}
+
+/**
+ * Group transactions by account_id
+ * Returns a map where key is account_id and value is array of transactions
+ */
+export function groupTransactionsByAccount(
+  transactions: Transaction[]
+): Record<string, Transaction[]> {
+  const grouped: Record<string, Transaction[]> = {};
+  transactions.forEach((transaction) => {
+    const accountId = transaction.account_id;
+    if (!grouped[accountId]) {
+      grouped[accountId] = [];
+    }
+    grouped[accountId].push(transaction);
+  });
+  return grouped;
+}
+
+/**
+ * Get transactions grouped by credit card
+ * Returns a map where key is account_id and value is array of transactions
+ * Only includes transactions that match one of the provided credit cards
+ */
+export function groupTransactionsByCreditCard(
+  transactions: Transaction[],
+  currentlyOwnedCards: Record<string, string>[]
+): Record<string, Transaction[]> {
+  const cardMap: Record<string, string> = {};
+  for (const card of currentlyOwnedCards) {
+    cardMap[card.account_id] = card.name;
+  }
+  const accountIds = new Set(
+    currentlyOwnedCards.map((card) => card.account_id)
+  );
+  console.log(accountIds, "accountIds");
+  const grouped: Record<string, Transaction[]> = {};
+
+  transactions.forEach((transaction) => {
+    if (accountIds.has(transaction.account_id)) {
+      const accountId = transaction.account_id;
+      const cardName = cardMap[accountId];
+      if (!grouped[cardName]) {
+        grouped[cardName] = [];
+      }
+      grouped[cardName].push(transaction);
+    }
+  });
+  console.log(grouped, "grouped");
+  return grouped;
+}

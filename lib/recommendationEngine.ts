@@ -71,7 +71,10 @@ function mapTransactionCategoryToRewardCategory(
  * Calculate estimated annual rewards for a credit card based on transactions
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function calculateEstimatedRewards(card: any, transactions: any[]): number {
+export function calculateEstimatedRewards(
+  card: any,
+  transactions: any[]
+): number {
   let totalRewards = 0;
   const categorySpending: Record<string, number> = {};
 
@@ -235,20 +238,7 @@ export async function getRecommendedCards(
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recommendedCards = cardsToProcess.map((card: any) => {
-    console.log(
-      `\n\n╔═══════════════════════════════════════════════════════════╗`
-    );
-    console.log(`║  Calculating Annual Value for: ${card.name.padEnd(35)} ║`);
-    console.log(
-      `╚═══════════════════════════════════════════════════════════╝`
-    );
-
-    // Calculate estimated rewards
-    console.log(`\n📊 ESTIMATED REWARDS CALCULATION:`);
     const estimatedRewards = calculateEstimatedRewards(card, transactions);
-    console.log(
-      `   ✅ Final Estimated Rewards: $${estimatedRewards.toFixed(2)}`
-    );
 
     // Calculate total annual value (rewards + credits + benefits - annual fee)
     console.log(`\n💳 CREDITS VALUE CALCULATION:`);

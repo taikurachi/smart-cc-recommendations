@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
         hostname: "promo.bankofamerica.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+        pathname: "/**",
+      },
     ],
   },
 };
