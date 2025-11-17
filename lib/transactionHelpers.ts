@@ -131,3 +131,38 @@ export function groupTransactionsByCreditCard(
   console.log(grouped, "grouped");
   return grouped;
 }
+
+/**
+ * Removes duplicate transactions based on transaction_id
+ * If duplicates are found, keeps the first occurrence
+ * Returns the deduplicated array
+ */
+export function removeDuplicateTransactions(
+  transactions: Transaction[]
+): Transaction[] {
+  const seen = new Set<string>();
+  const deduplicated: Transaction[] = [];
+
+  for (const transaction of transactions) {
+    // Use transaction_id as the unique identifier
+    // If transaction_id is missing, skip it (shouldn't happen with Plaid data)
+    if (!transaction.transaction_id) {
+      console.warn("Transaction missing transaction_id:", transaction);
+      continue;
+    }
+
+    if (!seen.has(transaction.transaction_id)) {
+      seen.add(transaction.transaction_id);
+      deduplicated.push(transaction);
+    }
+  }
+
+  const duplicateCount = transactions.length - deduplicated.length;
+  if (duplicateCount > 0) {
+    console.log(
+      `Removed ${duplicateCount} duplicate transaction(s) based on transaction_id`
+    );
+  }
+
+  return deduplicated;
+}

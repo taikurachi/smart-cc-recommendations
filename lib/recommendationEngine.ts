@@ -25,30 +25,66 @@ function mapTransactionCategoryToRewardCategory(
     if (secondary === "restaurants" || secondary === "dining") {
       return ["dining"];
     }
-    if (secondary === "groceries" || secondary === "grocery stores") {
+    if (
+      secondary === "groceries" ||
+      secondary === "grocery stores" ||
+      secondary === "supermarkets"
+    ) {
       return ["grocery"];
+    }
+    // Online grocery delivery services
+    if (
+      secondary === "online" ||
+      secondary === "online shopping" ||
+      secondary === "delivery"
+    ) {
+      return ["online-groceries"];
     }
     return ["general"];
   }
 
   // Travel
   if (primary === "travel") {
-    if (secondary === "airlines" || secondary === "flights") {
+    if (
+      secondary === "airlines" ||
+      secondary === "flights" ||
+      secondary === "airports"
+    ) {
       return ["travel"];
     }
-    if (secondary === "hotels") {
+    if (secondary === "hotels" || secondary === "lodging") {
       return ["hotels"];
+    }
+    if (
+      secondary === "car rentals" ||
+      secondary === "rideshare" ||
+      secondary === "taxis" ||
+      secondary === "transit"
+    ) {
+      return ["travel"];
     }
     return ["travel"];
   }
 
   // General Merchandise
   if (primary === "general merchandise") {
-    if (secondary === "online" || secondary === "online shopping") {
+    if (
+      secondary === "online" ||
+      secondary === "online shopping" ||
+      secondary === "e-commerce"
+    ) {
       return ["online-shopping"];
     }
-    if (secondary === "drugstores") {
+    if (secondary === "drugstores" || secondary === "pharmacies") {
       return ["drugstores"];
+    }
+    // Wholesale clubs (Costco, Sam's Club, BJ's)
+    if (
+      secondary === "wholesale clubs" ||
+      secondary === "warehouse clubs" ||
+      secondary === "membership warehouses"
+    ) {
+      return ["wholesale-clubs"];
     }
     return ["general"];
   }
@@ -60,7 +96,73 @@ function mapTransactionCategoryToRewardCategory(
 
   // Entertainment
   if (primary === "entertainment") {
-    return ["entertainment"];
+    // Streaming services (Netflix, Spotify, etc.)
+    if (
+      secondary === "streaming" ||
+      secondary === "music" ||
+      secondary === "video" ||
+      secondary === "subscriptions"
+    ) {
+      return ["streaming"];
+    }
+    return ["general"];
+  }
+
+  // Service (utilities, phone, internet)
+  if (primary === "service") {
+    // Streaming services might be categorized here
+    if (
+      secondary === "streaming" ||
+      secondary === "internet" ||
+      secondary === "cable" ||
+      secondary === "telecommunications"
+    ) {
+      return ["streaming"];
+    }
+    return ["general"];
+  }
+
+  // Shops (various retail categories)
+  if (primary === "shops") {
+    // Wholesale clubs
+    if (
+      secondary === "wholesale clubs" ||
+      secondary === "warehouse clubs" ||
+      secondary === "membership warehouses"
+    ) {
+      return ["wholesale-clubs"];
+    }
+    // Online shopping
+    if (
+      secondary === "online" ||
+      secondary === "e-commerce" ||
+      secondary === "internet"
+    ) {
+      return ["online-shopping"];
+    }
+    // Drugstores
+    if (secondary === "pharmacies" || secondary === "drugstores") {
+      return ["drugstores"];
+    }
+    return ["general"];
+  }
+
+  // Recreation (gyms, sports, etc.)
+  if (primary === "recreation") {
+    return ["general"];
+  }
+
+  // Transportation (rideshare, transit, parking)
+  if (primary === "transportation") {
+    if (
+      secondary === "rideshare" ||
+      secondary === "taxis" ||
+      secondary === "transit" ||
+      secondary === "public transit"
+    ) {
+      return ["travel"];
+    }
+    return ["general"];
   }
 
   // Default to general
@@ -285,7 +387,9 @@ export async function getRecommendedCards(
     );
     console.log(`✅ Total Benefits Value: $${benefitsValue.toFixed(2)}`);
 
-    console.log(`\n🎉 INTRO BONUS CALCULATION:`);
+    console.log(
+      `\n🎉 INTRO BONUS CALCULATION (display only, not included in annual value):`
+    );
     const introBonus = (card.benefits || []).find(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (b: any) => b.name === "intro-bonus"
@@ -296,9 +400,10 @@ export async function getRecommendedCards(
 
     const annualFee = card.annual_fee || 0;
 
-    const totalRewards =
-      estimatedRewards + creditsValue + benefitsValue + introBonusValue;
+    // Total rewards = transaction rewards + credits + benefits (excludes intro bonus - it's one-time)
+    const totalRewards = estimatedRewards + creditsValue + benefitsValue;
 
+    // Annual value = total rewards - annual fee (intro bonus excluded as it's a one-time benefit)
     const annualValue = totalRewards - annualFee;
     return {
       ...card,

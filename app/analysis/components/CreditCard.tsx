@@ -85,20 +85,23 @@ export default function CreditCardComponent({
         </div>
         <ul className="ml-4 opacity-40 mb-4">
           {[
-            { name: "Intro Bonus", key: "introBonusValue" },
+            // { name: "Intro Bonus", key: "introBonusValue" },
             { name: "Credits Bonus", key: "creditsValue" },
             { name: "Benefits Bonus", key: "benefitsValue" },
             { name: "Rewards Value", key: "estimatedRewards" },
-          ].map(({ name, key }) =>
-            currentCard[key] ? (
+          ]
+            .filter(({ key }) => currentCard[key])
+            .sort(
+              (a, b) => (currentCard[b.key] || 0) - (currentCard[a.key] || 0)
+            )
+            .map(({ name, key }) => (
               <li className="flex items-center justify-between" key={name}>
                 <span>{name}</span>
                 <span className="amount">
                   ${Math.ceil(currentCard[key]) || 0}
                 </span>
               </li>
-            ) : null
-          )}
+            ))}
         </ul>
         <div className="flex justify-between items-center mt-auto">
           <p>Annual Fee</p>

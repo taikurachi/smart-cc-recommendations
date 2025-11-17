@@ -124,7 +124,7 @@ export function getRewardsEstimates(card: any): {
     0
   );
 
-  // Calculate intro bonus value
+  // Calculate intro bonus value (display only, not included in annual value calculations)
   const introBonus = (card.benefits || []).find(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (b: any) => b.name === "intro-bonus"
@@ -135,10 +135,11 @@ export function getRewardsEstimates(card: any): {
 
   const annualFee = card.annual_fee || 0;
 
-  // Total rewards = credits + benefits + intro bonus (estimatedRewards should be added separately)
-  const totalRewards = creditsValue + benefitsValue + introBonusValue;
+  // Total rewards = credits + benefits (excludes intro bonus - it's one-time)
+  // Note: estimatedRewards should be added separately when calculating full annual value
+  const totalRewards = creditsValue + benefitsValue;
 
-  // Annual value = total rewards - annual fee
+  // Annual value = total rewards - annual fee (intro bonus excluded as it's a one-time benefit)
   const annualValue = totalRewards - annualFee;
 
   return {

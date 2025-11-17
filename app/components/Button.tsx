@@ -31,6 +31,7 @@ export default function Button({
       "bg-light-green text-white hover:bg-light-green-dark active:scale-[0.98] shadow-sm hover:shadow-md",
     blue: "bg-blue text-white hover:bg-blue-dark active:scale-[0.98] shadow-sm hover:shadow-md",
     gray: "bg-gray",
+    "gray-light": "bg-gray-light",
     red: "bg-red",
   };
 
@@ -48,7 +49,7 @@ export default function Button({
   };
 
   const sizeStyles = {
-    sm: "px-3 py-2 text-sm",
+    sm: "px-3 py-[1px] text-sm",
     md: "px-6 py-3 text-base",
     lg: "px-8 py-4 text-lg",
   };
