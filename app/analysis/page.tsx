@@ -21,6 +21,7 @@ import { loadTransactionData } from "@/lib/transactionData";
 import {
   formatCurrency,
   groupTransactionsByCreditCard,
+  removeDuplicateTransactions,
 } from "@/lib/transactionHelpers";
 import { analyzeSpending } from "@/lib/spendingAnalyzer";
 import { showToast } from "@/lib/toastUtils";
@@ -28,6 +29,7 @@ import {
   mapCardNameToOfficialCard,
   getRewardsEstimates,
 } from "@/lib/generalHelpers";
+import Button from "../components/Button";
 
 interface User {
   id: string;
@@ -244,14 +246,13 @@ export default function AnalysisPage() {
                 officialCard,
                 transactions
               );
-              const {
-                totalRewards,
-                annualValue,
-                introBonusValue,
-                creditsValue,
-                benefitsValue,
-              } = getRewardsEstimates(officialCard);
-
+              const { creditsValue, benefitsValue } =
+                getRewardsEstimates(officialCard);
+              // For owned cards, exclude intro bonus (already earned or missed)
+              // Total rewards = transaction rewards + credits + benefits (no intro bonus)
+              const totalRewards =
+                estimatedRewards + creditsValue + benefitsValue;
+              const annualValue = totalRewards - officialCard.annual_fee;
               setOwnedCards((prev) => [
                 ...prev,
                 {
@@ -259,7 +260,6 @@ export default function AnalysisPage() {
                   totalRewards,
                   estimatedRewards,
                   annualValue,
-                  introBonusValue,
                   creditsValue,
                   benefitsValue,
                 },
@@ -276,11 +276,14 @@ export default function AnalysisPage() {
         }
       }
 
-      setTransactions(allTransactions);
+      // Remove duplicate transactions before setting state
+      const deduplicatedTransactions =
+        removeDuplicateTransactions(allTransactions);
+      setTransactions(deduplicatedTransactions);
 
-      if (allTransactions.length > 0) {
-        // pass in transactions and current credit/debit card.
-        const analysisResult = analyzeSpending(allTransactions, "");
+      if (deduplicatedTransactions.length > 0) {
+        // Analyze spending patterns from deduplicated transactions
+        const analysisResult = analyzeSpending(deduplicatedTransactions);
         setAnalysis(analysisResult);
       } else {
         setError("No transactions found. Please sync your transactions first.");
@@ -383,20 +386,6 @@ export default function AnalysisPage() {
               {connections.length} account{connections.length !== 1 ? "s" : ""}
             </p>
           </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => setIsCardPreferencesOpen(true)}
-              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-            >
-              💳 Card Preferences
-            </button>
-            <Link
-              href="/manage"
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              Manage Connections
-            </Link>
-          </div>
         </div>
       </div>
 
@@ -489,7 +478,7 @@ export default function AnalysisPage() {
           {/* Credit Card Recommendations */}
           {recommendations.length > 0 || loadingRecommendations ? (
             <div className="mt-8">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center justify-between mb-2">
                 <div className="flex gap-4 items-center">
                   <h3 className="text-4xl font-bold text-gray-900 mb-1">
                     Showing{" "}
@@ -505,14 +494,21 @@ export default function AnalysisPage() {
                     </span>{" "}
                     of {recommendations.length} Recommendations
                   </h3>
-                  <ListFilterPlus
-                    onClick={() => setIsCardPreferencesOpen(true)}
-                    className="bg-gray-300 rounded-lg p-2"
-                    size={36}
-                  />
                 </div>
               </div>
-
+              <div className="mb-4 flex gap-4">
+                <Button color="gray-light">
+                  Customize
+                  <ListFilterPlus className="rounded-lg p-2" size={36} />
+                </Button>
+                <Button
+                  color="gray-light"
+                  onClick={() => setIsCardPreferencesOpen((prev) => !prev)}
+                >
+                  Preferences
+                  <ListFilterPlus className="rounded-lg p-2" size={36} />
+                </Button>
+              </div>
               <div className="flex gap-4">
                 {ownedCards.length === 0 ? (
                   recommendations.map((rec) => (
