@@ -1,7 +1,7 @@
 "use client";
 
 import { CreditCardOwned, CreditCardRecommendation } from "@/lib/types";
-import { Plus } from "lucide-react";
+import { Plus, ChevronDown, ChevronUp } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import { motion } from "motion/react";
@@ -17,9 +17,39 @@ export default function CreditCardComponent({
   status,
 }: CreditCardProps) {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [expandedCards, setExpandedCards] = useState<Set<number>>(new Set());
   const currentCard = cards[currentCardIndex];
 
   if (!currentCard) return <div>loading...</div>;
+
+  // Calculate totals across all cards
+  const totalAnnualValue = cards.reduce(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (sum, card: any) => sum + (card.annualValue || 0),
+    0
+  );
+  const totalRewards = cards.reduce(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (sum, card: any) => sum + (card.totalRewards || 0),
+    0
+  );
+  const totalAnnualFees = cards.reduce(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (sum, card: any) => sum + (card.annual_fee || 0),
+    0
+  );
+
+  const toggleCard = (index: number) => {
+    setExpandedCards((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      return newSet;
+    });
+  };
   return (
     <div className="bg-gray-light w-full p-6 rounded-lg flex flex-col">
       <div className="flex">
@@ -72,40 +102,75 @@ export default function CreditCardComponent({
       </div>
       <div className="bg-white mt-4 rounded-lg p-4 flex flex-col flex-1">
         <div className="flex items-center justify-between">
-          <p className="font-bold text-2xl">Annual Value</p>
+          <p className="font-bold text-2xl">
+            {cards.length > 1 ? "Total " : ""}Annual Value
+          </p>
           <span className="font-bold text-2xl text-green amount">
-            ${Math.ceil(currentCard.annualValue || 0)}
+            ${Math.ceil(totalAnnualValue)}
           </span>
         </div>
         <div className="opacity-70 flex justify-between items-center mt-4">
-          <p>Estimated Rewards</p>
-          <span className="amount">
-            ${Math.ceil(currentCard.totalRewards || 0)}
-          </span>
+          <p className="font-semibold">Est. Rewards</p>
+          <span className="amount">${Math.ceil(totalRewards)}</span>
         </div>
-        <ul className="ml-4 opacity-40 mb-4">
-          {[
-            // { name: "Intro Bonus", key: "introBonusValue" },
-            { name: "Credits Bonus", key: "creditsValue" },
-            { name: "Benefits Bonus", key: "benefitsValue" },
-            { name: "Rewards Value", key: "estimatedRewards" },
-          ]
-            .filter(({ key }) => currentCard[key])
-            .sort(
-              (a, b) => (currentCard[b.key] || 0) - (currentCard[a.key] || 0)
-            )
-            .map(({ name, key }) => (
-              <li className="flex items-center justify-between" key={name}>
-                <span>{name}</span>
-                <span className="amount">
-                  ${Math.ceil(currentCard[key]) || 0}
-                </span>
-              </li>
-            ))}
-        </ul>
+        {/* Expandable card list */}
+        <div className="ml-4 mt-2 mb-4">
+          {cards.map((card, index) => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const cardData = card as any;
+            const isExpanded = expandedCards.has(index);
+            const cardTotalRewards = cardData.totalRewards || 0;
+
+            // Get card breakdown items
+            const breakdownItems = [
+              { name: "Benefits Bonus", key: "benefitsValue" },
+              { name: "Credits Bonus", key: "creditsValue" },
+              { name: "Rewards Value", key: "estimatedRewards" },
+            ]
+              .filter(({ key }) => cardData[key])
+              .sort((a, b) => (cardData[b.key] || 0) - (cardData[a.key] || 0));
+
+            return (
+              <div key={index} className="mb-1">
+                <button
+                  onClick={() => toggleCard(index)}
+                  className="flex items-center justify-between w-full text-left transition-opacity cursor-pointer"
+                >
+                  <div className="flex items-center gap-2 opacity-40">
+                    <span className="font-semibold">{card.name}</span>
+                    {isExpanded ? (
+                      <ChevronUp size={16} />
+                    ) : (
+                      <ChevronDown size={16} />
+                    )}
+                  </div>
+
+                  <span className="amount opacity-40">
+                    ${Math.ceil(cardTotalRewards)}
+                  </span>
+                </button>
+                {isExpanded && breakdownItems.length > 0 && (
+                  <ul className="ml-6 mb-2">
+                    {breakdownItems.map(({ name, key }) => (
+                      <li
+                        className="flex items-center justify-between opacity-20"
+                        key={name}
+                      >
+                        <span className="font-semibold">{name}</span>
+                        <span className="amount">
+                          ${Math.ceil(cardData[key] || 0)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
+        </div>
         <div className="flex justify-between items-center mt-auto">
           <p>Annual Fee</p>
-          <span className="amount">${currentCard.annual_fee || 0}</span>
+          <span className="amount">${totalAnnualFees}</span>
         </div>
       </div>
     </div>
