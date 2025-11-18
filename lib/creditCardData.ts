@@ -21,6 +21,26 @@ export async function loadCreditCardData(): Promise<any[]> {
   }
 
   // Start loading
+  // Check if we're in a test environment (Node.js, not browser)
+  if (typeof window === "undefined" && typeof process !== "undefined") {
+    // In Node.js environment (testing), load directly from file
+    try {
+      const fs = require("fs");
+      const path = require("path");
+      const filePath = path.join(process.cwd(), "data", "manualcc.json");
+      const fileContents = fs.readFileSync(filePath, "utf-8");
+      const data = JSON.parse(fileContents);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const cardsArray: any[] = Object.values(data);
+      cachedCards = cardsArray;
+      loadingPromise = Promise.resolve(cachedCards);
+      return loadingPromise;
+    } catch (fileError) {
+      // Fall through to API fetch if file read fails
+    }
+  }
+
+  // In browser environment, use API
   loadingPromise = fetch("/api/credit-cards")
     .then((response) => {
       if (!response.ok) {

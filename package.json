@@ -7,7 +7,8 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "test-scraper": "npx tsx test-scraper.ts"
+    "test-scraper": "npx tsx test-scraper.ts",
+    "test:engine": "npx tsx lib/recommendationEngine.test.ts"
   },
   "dependencies": {
     "canvas-confetti": "^1.9.4",

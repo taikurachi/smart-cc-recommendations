@@ -12,6 +12,7 @@ import {
 } from "@/lib/types";
 import {
   calculateEstimatedRewards,
+  getMultiCardRecommendations,
   getRecommendedCards,
 } from "@/lib/recommendationEngine";
 
@@ -123,10 +124,24 @@ export default function AnalysisPage() {
 
     setLoadingRecommendations(true);
     try {
-      // const spendingCategories = analyzeSpendingCategories(transactions);
-      const recs = await getRecommendedCards(transactions, preferences);
-      if (recs[1]) showToast.error(recs[1]);
+      // Calculate total annual value of owned cards (using the pre-calculated values from page.tsx)
+      // This ensures we use the correct values (calculated with filtered transactions per card)
+      // rather than recalculating with all transactions which would double-count
+      const ownedCardsTotalAnnualValue = ownedCards.reduce(
+        (sum, card) => sum + (card.annualValue || 0),
+        0
+      );
 
+      // const spendingCategories = analyzeSpendingCategories(transactions);
+      // const recs = await getRecommendedCards(transactions, preferences);
+      const recs = await getMultiCardRecommendations(
+        transactions,
+        preferences,
+        ownedCards,
+        ownedCardsTotalAnnualValue
+      );
+      if (recs[1]) showToast.error(recs[1]);
+      console.log(recs, "NEW RECS");
       setRecommendations(recs[0]);
     } catch (error) {
       console.error("Error calculating recommendations:", error);
@@ -481,18 +496,8 @@ export default function AnalysisPage() {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex gap-4 items-center">
                   <h3 className="text-4xl font-bold text-gray-900 mb-1">
-                    Showing{" "}
-                    <span
-                      className="px-4 py-1.5 rounded-lg text-center bg-green-200 cursor-pointer"
-                      onClick={() =>
-                        setRecIndex(
-                          (prev) => (prev + 1) % recommendations.length
-                        )
-                      }
-                    >
-                      {recIndex + 1}
-                    </span>{" "}
-                    of {recommendations.length} Recommendations
+                    <span className="amount">{recommendations.length}</span>{" "}
+                    Recommendations Found! 🎉
                   </h3>
                 </div>
               </div>
@@ -519,10 +524,7 @@ export default function AnalysisPage() {
                     />
                   ))
                 ) : (
-                  <CreditCardComponent
-                    cards={[recommendations[recIndex]]}
-                    status="New"
-                  />
+                  <CreditCardComponent cards={recommendations} status="New" />
                 )}
                 {ownedCards.length > 0 && (
                   <CreditCardComponent cards={ownedCards} status="Old" />
