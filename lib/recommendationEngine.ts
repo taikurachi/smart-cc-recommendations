@@ -451,6 +451,7 @@ export interface MultiCardRecommendation {
 
 /**
  * Allocates spending optimally across multiple cards
+ * Ensures each transaction is allocated to exactly one card (no double-counting)
  * Returns allocation map: cardId -> category -> amount
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -458,7 +459,11 @@ function allocateSpendingToCards(
   cards: any[],
   transactions: any[]
 ): SpendingAllocation[] {
-  // First, aggregate spending by reward category
+  // Track which transactions have been allocated to prevent double-counting
+  const allocatedTransactionIds = new Set<string>();
+  const allocation: SpendingAllocation[] = [];
+
+  // First, aggregate spending by reward category (for finding best cards per category)
   const categorySpending: Record<string, number> = {};
 
   transactions.forEach((transaction) => {
@@ -469,12 +474,12 @@ function allocateSpendingToCards(
       transaction.category || []
     );
 
-    rewardCategories.forEach((category) => {
-      categorySpending[category] = (categorySpending[category] || 0) + amount;
-    });
+    // Use the first category (primary category) to avoid double-counting
+    // If a transaction maps to multiple categories, we'll use the first one
+    const primaryCategory = rewardCategories[0] || "general";
+    categorySpending[primaryCategory] =
+      (categorySpending[primaryCategory] || 0) + amount;
   });
-
-  const allocation: SpendingAllocation[] = [];
 
   // For each spending category, find the best card and allocate spending
   Object.entries(categorySpending).forEach(([category, totalSpending]) => {
@@ -630,6 +635,25 @@ function allocateSpendingToCards(
       }
     }
   });
+
+  // Validation: Ensure total allocated spending equals total transaction spending (no double-counting)
+  const totalAllocated = allocation.reduce(
+    (sum, alloc) => sum + alloc.amount,
+    0
+  );
+  const totalTransactionSpending = transactions
+    .filter((t) => t.amount > 0)
+    .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+  // Note: Total allocated might be less than total spending if some categories don't match any card
+  // But it should never be more (which would indicate double-counting)
+  if (totalAllocated > totalTransactionSpending) {
+    console.warn(
+      `⚠️ Potential double-counting detected: Allocated $${totalAllocated.toFixed(
+        2
+      )} but total spending is $${totalTransactionSpending.toFixed(2)}`
+    );
+  }
 
   return allocation;
 }
