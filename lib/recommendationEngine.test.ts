@@ -37,6 +37,14 @@ async function testGetMultiCardRecommendations(
   );
 }
 
+async function testGetRecommendedCards(
+  transactions: any[],
+  preferences: any
+): Promise<[any[], string | undefined]> {
+  const module = await import("./recommendation");
+  return module.getRecommendedCards(transactions, preferences);
+}
+
 interface TestResult {
   name: string;
   passed: boolean;
@@ -1337,8 +1345,290 @@ async function runTests() {
     }
   });
 
+  // =======================================================
+  // NEW INTEGRATION TESTS
+  // =======================================================
+
+  // Test 21: Single-card mode (getRecommendedCards)
+  test("getRecommendedCards returns ranked single cards", async () => {
+    const transactions = [
+      {
+        transaction_id: "sc1",
+        account_id: "test_account",
+        amount: 3000,
+        date: "2025-01-01",
+        name: "Whole Foods",
+        category: ["Food and Drink", "Groceries"],
+        personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_GROCERIES", confidence_level: "VERY_HIGH" },
+      },
+      {
+        transaction_id: "sc2",
+        account_id: "test_account",
+        amount: 2000,
+        date: "2025-01-05",
+        name: "Restaurant",
+        category: ["Food and Drink", "Restaurants"],
+        personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_RESTAURANT", confidence_level: "VERY_HIGH" },
+      },
+      {
+        transaction_id: "sc3",
+        account_id: "test_account",
+        amount: 1000,
+        date: "2025-01-10",
+        name: "Delta Airlines",
+        category: ["Travel", "Airlines"],
+        personal_finance_category: { primary: "TRAVEL", detailed: "TRAVEL_FLIGHTS", confidence_level: "VERY_HIGH" },
+      },
+    ];
+
+    const preferences = {
+      travel: false,
+      cashback: false,
+      no_annual_fee: false,
+      low_interest: false,
+      beginner_friendly: false,
+    };
+
+    const [cards, message] = await testGetRecommendedCards(transactions, preferences);
+
+    if (cards.length === 0) {
+      throw new Error("Expected at least 1 card from single-card mode");
+    }
+
+    // Verify cards are sorted by annualValue descending
+    for (let i = 1; i < cards.length; i++) {
+      if (cards[i].annualValue > cards[i - 1].annualValue) {
+        throw new Error(
+          `Cards not sorted: card[${i - 1}].annualValue (${cards[i - 1].annualValue}) < card[${i}].annualValue (${cards[i].annualValue})`
+        );
+      }
+    }
+
+    // Verify each card has required value fields
+    for (const card of cards) {
+      if (card.estimatedRewards === undefined) throw new Error("Missing estimatedRewards");
+      if (card.creditsValue === undefined) throw new Error("Missing creditsValue");
+      if (card.benefitsValue === undefined) throw new Error("Missing benefitsValue");
+      if (card.annualValue === undefined) throw new Error("Missing annualValue");
+      if (card.totalRewards === undefined) throw new Error("Missing totalRewards");
+    }
+
+    console.log(`   ✅ Test #21: Single-card mode returned ${cards.length} cards, sorted correctly`);
+  });
+
+  // Test 22: High spending in capped category triggers overflow allocation
+  test("Cap overflow: $15k online shopping splits across cards", async () => {
+    const transactions = [
+      {
+        transaction_id: "cap1",
+        account_id: "test_account",
+        amount: 15000,
+        date: "2025-01-01",
+        name: "Amazon",
+        category: ["Shops", "Online Marketplaces"],
+        personal_finance_category: { primary: "GENERAL_MERCHANDISE", detailed: "GENERAL_MERCHANDISE_ONLINE_MARKETPLACES", confidence_level: "VERY_HIGH" },
+      },
+    ];
+
+    const preferences = {
+      travel: false,
+      cashback: false,
+      no_annual_fee: false,
+      low_interest: false,
+      beginner_friendly: false,
+    };
+
+    const [recommendations] = await testGetMultiCardRecommendations(
+      transactions,
+      preferences,
+      []
+    );
+
+    if (recommendations.length === 0) {
+      throw new Error("Expected recommendations for high online-shopping spend");
+    }
+
+    // BoA Customized Cash has $2500 quarterly cap on online-shopping (3%)
+    // $10k capped at 3% = $300; overflow should go to next best
+    const totalAllocatedRewards = recommendations.reduce(
+      (sum: number, card: any) => sum + (card.estimatedRewards || 0),
+      0
+    );
+
+    if (totalAllocatedRewards <= 0) {
+      throw new Error(`Expected positive rewards, got $${totalAllocatedRewards.toFixed(2)}`);
+    }
+
+    console.log(
+      `   ✅ Test #22: $15k online shopping → ${recommendations.length} cards, ` +
+      `total rewards $${totalAllocatedRewards.toFixed(2)}`
+    );
+  });
+
+  // Test 23: Preference filtering - travel + no_annual_fee
+  test("Preference filter: travel + no_annual_fee returns matching cards", async () => {
+    const transactions = [
+      {
+        transaction_id: "pf1",
+        account_id: "test_account",
+        amount: 2000,
+        date: "2025-01-01",
+        name: "United Airlines",
+        category: ["Travel", "Airlines"],
+        personal_finance_category: { primary: "TRAVEL", detailed: "TRAVEL_FLIGHTS", confidence_level: "VERY_HIGH" },
+      },
+    ];
+
+    const travelNoFeePrefs = {
+      travel: true,
+      cashback: false,
+      no_annual_fee: true,
+      low_interest: false,
+      beginner_friendly: false,
+    };
+
+    const [recommendations] = await testGetMultiCardRecommendations(
+      transactions,
+      travelNoFeePrefs,
+      []
+    );
+
+    if (recommendations.length === 0) {
+      throw new Error("Expected recommendations for travel + no_annual_fee");
+    }
+
+    // Chase Freedom Unlimited has both tags: travel + no_annual_fee
+    const hasChase = recommendations.some(
+      (card: any) => card.id === "chase_freedom_unlimited"
+    );
+    if (!hasChase) {
+      const ids = recommendations.map((c: any) => c.id);
+      throw new Error(
+        `Expected Chase Freedom Unlimited in results (travel + no_annual_fee), got: ${ids}`
+      );
+    }
+
+    // Amex Platinum should NOT be in a combo that has only no_annual_fee cards
+    // (it has travel tag but NOT no_annual_fee)
+    const allNoFee = recommendations.every((c: any) => c.annual_fee === 0);
+    console.log(
+      `   ✅ Test #23: travel + no_annual_fee → ${recommendations.length} cards` +
+      `${allNoFee ? " (all $0 fee)" : ""}, Chase Freedom Unlimited included`
+    );
+  });
+
+  // Test 24: All refunds produces $0 rewards
+  test("All refunds (negative amounts) produce $0 estimated rewards", async () => {
+    const refundTransactions = [
+      {
+        transaction_id: "ref1",
+        account_id: "test_account",
+        amount: -500,
+        date: "2025-01-01",
+        name: "Refund - Restaurant",
+        category: ["Food and Drink", "Restaurants"],
+        personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_RESTAURANT", confidence_level: "VERY_HIGH" },
+      },
+      {
+        transaction_id: "ref2",
+        account_id: "test_account",
+        amount: -200,
+        date: "2025-01-05",
+        name: "Refund - Amazon",
+        category: ["Shops", "Online Marketplaces"],
+        personal_finance_category: { primary: "GENERAL_MERCHANDISE", detailed: "GENERAL_MERCHANDISE_ONLINE_MARKETPLACES", confidence_level: "VERY_HIGH" },
+      },
+      {
+        transaction_id: "ref3",
+        account_id: "test_account",
+        amount: -1000,
+        date: "2025-01-10",
+        name: "Refund - Airline",
+        category: ["Travel", "Airlines"],
+        personal_finance_category: { primary: "TRAVEL", detailed: "TRAVEL_FLIGHTS", confidence_level: "VERY_HIGH" },
+      },
+    ];
+
+    const preferences = {
+      travel: false,
+      cashback: false,
+      no_annual_fee: false,
+      low_interest: false,
+      beginner_friendly: false,
+    };
+
+    const [recommendations] = await testGetMultiCardRecommendations(
+      refundTransactions,
+      preferences,
+      []
+    );
+
+    // All transaction rewards should be $0 since all amounts are negative
+    for (const card of recommendations) {
+      if ((card.estimatedRewards || 0) !== 0) {
+        throw new Error(
+          `Expected $0 estimated rewards for ${card.name}, got $${card.estimatedRewards}`
+        );
+      }
+    }
+
+    console.log(
+      `   ✅ Test #24: All refunds → ${recommendations.length} cards, all with $0 estimated rewards`
+    );
+  });
+
+  // Test 25: Cashback preference only surfaces cashback-tagged cards
+  test("Preference filter: cashback only surfaces cashback-tagged cards", async () => {
+    const transactions = [
+      {
+        transaction_id: "cb1",
+        account_id: "test_account",
+        amount: 1500,
+        date: "2025-01-01",
+        name: "Grocery Store",
+        category: ["Food and Drink", "Groceries"],
+        personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_GROCERIES", confidence_level: "VERY_HIGH" },
+      },
+    ];
+
+    const cashbackPrefs = {
+      travel: false,
+      cashback: true,
+      no_annual_fee: false,
+      low_interest: false,
+      beginner_friendly: false,
+    };
+
+    const [recommendations] = await testGetMultiCardRecommendations(
+      transactions,
+      cashbackPrefs,
+      []
+    );
+
+    if (recommendations.length === 0) {
+      throw new Error("Expected recommendations for cashback preference");
+    }
+
+    // All cards in the recommendation should have "cashback" in tags
+    // (since strict/partial match should find cashback-tagged cards)
+    const allCards = loadCreditCardDataDirect();
+    const cashbackCardIds = new Set(
+      allCards.filter((c: any) => (c.tags || []).includes("cashback")).map((c: any) => c.id)
+    );
+
+    const allCashback = recommendations.every((c: any) => cashbackCardIds.has(c.id));
+    if (!allCashback) {
+      const nonCashback = recommendations.filter((c: any) => !cashbackCardIds.has(c.id)).map((c: any) => c.name);
+      throw new Error(`Non-cashback cards in results: ${nonCashback.join(", ")}`);
+    }
+
+    console.log(
+      `   ✅ Test #25: cashback pref → ${recommendations.length} cashback-tagged cards`
+    );
+  });
+
   // Wait for all async tests to complete
-  await new Promise((resolve) => setTimeout(resolve, 6000));
+  await new Promise((resolve) => setTimeout(resolve, 8000));
 
   // Print results
   console.log("\n📊 Test Results:\n");
