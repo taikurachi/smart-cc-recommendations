@@ -96,6 +96,7 @@ async function runTests() {
         date: "2025-01-01",
         name: "Whole Foods",
         category: ["Food and Drink", "Groceries"],
+        personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_GROCERIES", confidence_level: "VERY_HIGH" },
       },
       {
         transaction_id: "test2",
@@ -104,6 +105,7 @@ async function runTests() {
         date: "2025-01-02",
         name: "United Airlines",
         category: ["Travel", "Airlines"],
+        personal_finance_category: { primary: "TRAVEL", detailed: "TRAVEL_FLIGHTS", confidence_level: "VERY_HIGH" },
       },
     ];
 
@@ -140,6 +142,7 @@ async function runTests() {
         date: "2025-01-01",
         name: "Test",
         category: ["Food and Drink", "Groceries"],
+        personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_GROCERIES", confidence_level: "VERY_HIGH" },
       },
     ];
 
@@ -183,6 +186,7 @@ async function runTests() {
         date: "2025-01-01",
         name: "Test",
         category: ["Food and Drink", "Groceries"],
+        personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_GROCERIES", confidence_level: "VERY_HIGH" },
       },
     ];
 
@@ -226,6 +230,7 @@ async function runTests() {
         date: "2025-01-01",
         name: "Test",
         category: ["Food and Drink", "Groceries"],
+        personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_GROCERIES", confidence_level: "VERY_HIGH" },
       },
     ];
 
@@ -272,6 +277,7 @@ async function runTests() {
         date: "2025-01-01",
         name: "Test",
         category: ["Food and Drink", "Groceries"],
+        personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_GROCERIES", confidence_level: "VERY_HIGH" },
       },
     ];
 
@@ -316,6 +322,7 @@ async function runTests() {
         date: "2025-01-01",
         name: "Refund",
         category: ["General Merchandise", "Online"],
+        personal_finance_category: { primary: "GENERAL_MERCHANDISE", detailed: "GENERAL_MERCHANDISE_ONLINE_MARKETPLACES", confidence_level: "VERY_HIGH" },
       },
       {
         transaction_id: "test2",
@@ -324,6 +331,7 @@ async function runTests() {
         date: "2025-01-02",
         name: "Purchase",
         category: ["Food and Drink", "Groceries"],
+        personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_GROCERIES", confidence_level: "VERY_HIGH" },
       },
     ];
 
@@ -388,6 +396,7 @@ async function runTests() {
         date: "2025-01-01",
         name: "Test",
         category: ["Food and Drink", "Groceries"],
+        personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_GROCERIES", confidence_level: "VERY_HIGH" },
       },
     ];
 
@@ -435,6 +444,7 @@ async function runTests() {
         date: "2025-01-01",
         name: "Whole Foods",
         category: ["Food and Drink", "Groceries"],
+        personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_GROCERIES", confidence_level: "VERY_HIGH" },
       },
       {
         transaction_id: "test2",
@@ -443,6 +453,7 @@ async function runTests() {
         date: "2025-01-02",
         name: "United Airlines",
         category: ["Travel", "Airlines"],
+        personal_finance_category: { primary: "TRAVEL", detailed: "TRAVEL_FLIGHTS", confidence_level: "VERY_HIGH" },
       },
       {
         transaction_id: "test3",
@@ -451,6 +462,7 @@ async function runTests() {
         date: "2025-01-03",
         name: "Restaurant",
         category: ["Food and Drink", "Restaurants"],
+        personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_RESTAURANTS", confidence_level: "VERY_HIGH" },
       },
     ];
 
@@ -506,6 +518,7 @@ async function runTests() {
         date: "2025-01-01",
         name: "Test",
         category: ["Food and Drink", "Groceries"],
+        personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_GROCERIES", confidence_level: "VERY_HIGH" },
       },
       {
         transaction_id: "test2",
@@ -514,6 +527,7 @@ async function runTests() {
         date: "2025-01-02",
         name: "Test",
         category: ["Travel", "Airlines"],
+        personal_finance_category: { primary: "TRAVEL", detailed: "TRAVEL_FLIGHTS", confidence_level: "VERY_HIGH" },
       },
       {
         transaction_id: "test3",
@@ -522,6 +536,7 @@ async function runTests() {
         date: "2025-01-03",
         name: "Test",
         category: ["Food and Drink", "Restaurants"],
+        personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_RESTAURANTS", confidence_level: "VERY_HIGH" },
       },
     ];
 
@@ -607,6 +622,7 @@ async function runTests() {
         date: "2025-01-01",
         name: "Groceries",
         category: ["Food and Drink", "Groceries"],
+        personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_GROCERIES", confidence_level: "VERY_HIGH" },
       },
       {
         transaction_id: "t2",
@@ -615,6 +631,7 @@ async function runTests() {
         date: "2025-01-02",
         name: "Travel",
         category: ["Travel", "Airlines"],
+        personal_finance_category: { primary: "TRAVEL", detailed: "TRAVEL_FLIGHTS", confidence_level: "VERY_HIGH" },
       },
     ];
 
@@ -675,6 +692,7 @@ async function runTests() {
         date: "2025-01-01",
         name: "Travel",
         category: ["Travel", "Airlines"],
+        personal_finance_category: { primary: "TRAVEL", detailed: "TRAVEL_FLIGHTS", confidence_level: "VERY_HIGH" },
       },
       {
         transaction_id: "t2",
@@ -683,6 +701,7 @@ async function runTests() {
         date: "2025-01-02",
         name: "Hotels",
         category: ["Travel", "Hotels"],
+        personal_finance_category: { primary: "TRAVEL", detailed: "TRAVEL_LODGING", confidence_level: "VERY_HIGH" },
       },
     ];
 
@@ -752,6 +771,7 @@ async function runTests() {
         date: "2025-01-01",
         name: "Groceries",
         category: ["Food and Drink", "Groceries"],
+        personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_GROCERIES", confidence_level: "VERY_HIGH" },
       },
       {
         transaction_id: "t2",
@@ -760,6 +780,7 @@ async function runTests() {
         date: "2025-01-02",
         name: "Online",
         category: ["General Merchandise", "Online"],
+        personal_finance_category: { primary: "GENERAL_MERCHANDISE", detailed: "GENERAL_MERCHANDISE_ONLINE_MARKETPLACES", confidence_level: "VERY_HIGH" },
       },
       {
         transaction_id: "t3",
@@ -768,6 +789,7 @@ async function runTests() {
         date: "2025-01-03",
         name: "Dining",
         category: ["Food and Drink", "Restaurants"],
+        personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_RESTAURANTS", confidence_level: "VERY_HIGH" },
       },
     ];
 
@@ -833,6 +855,7 @@ async function runTests() {
         date: "2025-01-01",
         name: "Online Shopping",
         category: ["General Merchandise", "Online"],
+        personal_finance_category: { primary: "GENERAL_MERCHANDISE", detailed: "GENERAL_MERCHANDISE_ONLINE_MARKETPLACES", confidence_level: "VERY_HIGH" },
       },
     ];
 
@@ -893,6 +916,7 @@ async function runTests() {
         date: "2025-01-01",
         name: "Travel",
         category: ["Travel", "Airlines"],
+        personal_finance_category: { primary: "TRAVEL", detailed: "TRAVEL_FLIGHTS", confidence_level: "VERY_HIGH" },
       },
       {
         transaction_id: "t2",
@@ -901,6 +925,7 @@ async function runTests() {
         date: "2025-01-02",
         name: "Hotels",
         category: ["Travel", "Hotels"],
+        personal_finance_category: { primary: "TRAVEL", detailed: "TRAVEL_LODGING", confidence_level: "VERY_HIGH" },
       },
     ];
 
@@ -971,6 +996,7 @@ async function runTests() {
         date: "2025-01-01",
         name: "Groceries",
         category: ["Food and Drink", "Groceries"],
+        personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_GROCERIES", confidence_level: "VERY_HIGH" },
       },
       {
         transaction_id: "t2",
@@ -979,6 +1005,7 @@ async function runTests() {
         date: "2025-01-02",
         name: "Travel",
         category: ["Travel", "Airlines"],
+        personal_finance_category: { primary: "TRAVEL", detailed: "TRAVEL_FLIGHTS", confidence_level: "VERY_HIGH" },
       },
       {
         transaction_id: "t3",
@@ -987,6 +1014,7 @@ async function runTests() {
         date: "2025-01-03",
         name: "Dining",
         category: ["Food and Drink", "Restaurants"],
+        personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_RESTAURANTS", confidence_level: "VERY_HIGH" },
       },
     ];
 
@@ -1049,6 +1077,7 @@ async function runTests() {
         date: "2025-01-01",
         name: "Travel",
         category: ["Travel", "Airlines"],
+        personal_finance_category: { primary: "TRAVEL", detailed: "TRAVEL_FLIGHTS", confidence_level: "VERY_HIGH" },
       },
       {
         transaction_id: "t2",
@@ -1057,6 +1086,7 @@ async function runTests() {
         date: "2025-01-02",
         name: "Hotels",
         category: ["Travel", "Hotels"],
+        personal_finance_category: { primary: "TRAVEL", detailed: "TRAVEL_LODGING", confidence_level: "VERY_HIGH" },
       },
     ];
 
@@ -1121,6 +1151,7 @@ async function runTests() {
         date: "2025-01-01",
         name: "Groceries",
         category: ["Food and Drink", "Groceries"],
+        personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_GROCERIES", confidence_level: "VERY_HIGH" },
       },
     ];
 
@@ -1191,6 +1222,7 @@ async function runTests() {
         date: "2025-01-01",
         name: "Groceries",
         category: ["Food and Drink", "Groceries"],
+        personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_GROCERIES", confidence_level: "VERY_HIGH" },
       },
       {
         transaction_id: "t2",
@@ -1199,6 +1231,7 @@ async function runTests() {
         date: "2025-01-02",
         name: "Travel",
         category: ["Travel", "Airlines"],
+        personal_finance_category: { primary: "TRAVEL", detailed: "TRAVEL_FLIGHTS", confidence_level: "VERY_HIGH" },
       },
     ];
 
@@ -1268,6 +1301,7 @@ async function runTests() {
         date: "2025-01-01",
         name: "Groceries",
         category: ["Food and Drink", "Groceries"],
+        personal_finance_category: { primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_GROCERIES", confidence_level: "VERY_HIGH" },
       },
     ];
 
