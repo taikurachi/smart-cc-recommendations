@@ -11,10 +11,9 @@ import {
   SpendingAnalysis,
 } from "@/lib/types";
 import {
-  calculateEstimatedRewards,
+  calculateCardAnnualValue,
   getMultiCardRecommendations,
-  getRecommendedCards,
-} from "@/lib/recommendationEngine";
+} from "@/lib/recommendation";
 
 import {
   Columns3Cog,
@@ -31,10 +30,7 @@ import {
 } from "@/lib/transactionHelpers";
 import { analyzeSpending } from "@/lib/spendingAnalyzer";
 import { showToast } from "@/lib/toastUtils";
-import {
-  mapCardNameToOfficialCard,
-  getRewardsEstimates,
-} from "@/lib/generalHelpers";
+import { mapCardNameToOfficialCard } from "@/lib/generalHelpers";
 import Button from "../components/Button";
 
 interface User {
@@ -149,7 +145,8 @@ export default function AnalysisPage() {
       );
       if (recs[1]) showToast.error(recs[1]);
       console.log(recs, "NEW RECS");
-      setRecommendations(recs[0]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setRecommendations(recs[0] as any);
     } catch (error) {
       console.error("Error calculating recommendations:", error);
     } finally {
@@ -264,27 +261,14 @@ export default function AnalysisPage() {
                 cardName,
                 connection.institution_name
               );
-              const estimatedRewards = calculateEstimatedRewards(
+              if (!officialCard) continue;
+              const value = calculateCardAnnualValue(
                 officialCard,
                 transactions
               );
-              const { creditsValue, benefitsValue } =
-                getRewardsEstimates(officialCard);
-              // For owned cards, exclude intro bonus (already earned or missed)
-              // Total rewards = transaction rewards + credits + benefits (no intro bonus)
-              const totalRewards =
-                estimatedRewards + creditsValue + benefitsValue;
-              const annualValue = totalRewards - officialCard.annual_fee;
-              setOwnedCards((prev) => [
+              setOwnedCards((prev: any[]) => [
                 ...prev,
-                {
-                  ...officialCard,
-                  totalRewards,
-                  estimatedRewards,
-                  annualValue,
-                  creditsValue,
-                  benefitsValue,
-                },
+                { ...officialCard, ...value },
               ]);
             }
 

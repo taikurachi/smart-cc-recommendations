@@ -29,21 +29,7 @@ async function testGetMultiCardRecommendations(
   preferences: any,
   ownedCards: any[] = []
 ): Promise<[any[], string | undefined]> {
-  // Dynamically import to get fresh module
-  const module = await import("./recommendationEngine");
-
-  // Temporarily replace loadCreditCardData
-  const creditCardModule = await import("./creditCardData");
-  const originalLoad = creditCardModule.loadCreditCardData;
-
-  // Create a new module that uses our direct loader
-  const mockModule = {
-    ...creditCardModule,
-    loadCreditCardData: async () => loadCreditCardDataDirect(),
-  };
-
-  // Use a workaround: call the function but intercept the data loading
-  // Actually, let's just test with the real function but ensure data is available
+  const module = await import("./recommendation");
   return module.getMultiCardRecommendations(
     transactions,
     preferences,
@@ -574,19 +560,16 @@ async function runTests() {
     }
   });
 
-  // Helper function to calculate owned cards' total annual value
   async function calculateOwnedCardsAnnualValue(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ownedCards: any[],
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     transactions: any[]
   ): Promise<number> {
-    const { calculateEstimatedRewards } = await import(
-      "./recommendationEngine"
+    const { calculateCardAnnualValue } = await import(
+      "./recommendation"
     );
-    const { getRewardsEstimates, mapCardNameToOfficialCard } = await import(
-      "./generalHelpers"
-    );
+    const { mapCardNameToOfficialCard } = await import("./generalHelpers");
 
     let totalAnnualValue = 0;
 
@@ -597,14 +580,10 @@ async function runTests() {
       );
 
       if (officialCard) {
-        const estimatedRewards = calculateEstimatedRewards(
+        const { annualValue } = calculateCardAnnualValue(
           officialCard,
           transactions
         );
-        const { creditsValue, benefitsValue } =
-          getRewardsEstimates(officialCard);
-        const totalRewards = estimatedRewards + creditsValue + benefitsValue;
-        const annualValue = totalRewards - (officialCard.annual_fee || 0);
         totalAnnualValue += annualValue;
       }
     }
