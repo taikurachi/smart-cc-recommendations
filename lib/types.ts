@@ -20,6 +20,12 @@ export interface Connection {
   last_synced?: string;
 }
 
+export interface PersonalFinanceCategory {
+  primary: string;
+  detailed: string;
+  confidence_level: string;
+}
+
 export interface Transaction {
   transaction_id: string;
   account_id: string;
@@ -27,6 +33,7 @@ export interface Transaction {
   date: string;
   name: string;
   category?: string[];
+  personal_finance_category?: PersonalFinanceCategory;
 }
 
 export interface CreditCard {

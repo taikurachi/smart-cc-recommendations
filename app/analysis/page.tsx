@@ -16,7 +16,12 @@ import {
   getRecommendedCards,
 } from "@/lib/recommendationEngine";
 
-import { ListFilterPlus } from "lucide-react";
+import {
+  Columns3Cog,
+  CopyPlus,
+  ListFilterPlus,
+  SquarePlus,
+} from "lucide-react";
 import CreditCardComponent from "./components/CreditCard";
 import { loadTransactionData } from "@/lib/transactionData";
 import {
@@ -77,6 +82,8 @@ export default function AnalysisPage() {
     CreditCardRecommendation[]
   >([]);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+  const [recommendationFilterModalOn, setRecommendationFilterModalOn] =
+    useState(false);
 
   useEffect(() => {
     if (transactions.length === 0) return;
@@ -204,7 +211,7 @@ export default function AnalysisPage() {
       }
 
       // Load transactions for all connections
-      let allTransactions: Transaction[] = [];
+      const allTransactions: Transaction[] = [];
 
       for (const connection of userData.connections) {
         console.log(connection, "connection");
@@ -501,19 +508,37 @@ export default function AnalysisPage() {
                   </h3>
                 </div>
               </div>
-              <div className="mb-4 flex gap-4">
-                <Button color="gray-light">
-                  Customize
-                  <ListFilterPlus className="rounded-lg p-2" size={36} />
+              <div className="mb-4 flex gap-4 relative">
+                <Button
+                  color="gray-light"
+                  onClick={() =>
+                    setRecommendationFilterModalOn((prev) => !prev)
+                  }
+                >
+                  <Columns3Cog className="rounded-lg" size={20} />
+                  <span>Customize</span>
                 </Button>
                 <Button
                   color="gray-light"
                   onClick={() => setIsCardPreferencesOpen((prev) => !prev)}
                 >
-                  Preferences
-                  <ListFilterPlus className="rounded-lg p-2" size={36} />
+                  <ListFilterPlus className="rounded-lg" size={20} />
+                  <span>Preferences</span>
                 </Button>
+                {recommendationFilterModalOn && (
+                  <div className="absolute top-full flex flex-col gap-4 text-[14px] mt-1 left-0 bg-gray-light p-3 shadow-lg rounded-lg">
+                    <button className="flex items-center gap-2 font-semibold cursor-pointer">
+                      <SquarePlus size={20} />
+                      <span>Single-card</span>
+                    </button>
+                    <button className="flex items-center gap-2 font-semibold cursor-pointer">
+                      <CopyPlus size={20} />
+                      <span>Multi-card</span>
+                    </button>
+                  </div>
+                )}
               </div>
+
               <div className="flex gap-4">
                 {ownedCards.length === 0 ? (
                   recommendations.map((rec) => (

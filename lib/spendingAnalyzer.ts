@@ -5,11 +5,17 @@ export const analyzeSpending = (
 ): SpendingAnalysis => {
   // Filter out positive amounts (credits/refunds/payments) and focus on spending
   // Transactions are typically negative (spending) or positive (credits)
+  const paymentPrimaries = new Set([
+    "LOAN_PAYMENTS",
+    "TRANSFER_IN",
+    "TRANSFER_OUT",
+    "INCOME",
+  ]);
   const spendingTransactions = transactions.filter(
     (t) =>
       t.amount < 0 ||
       (t.amount > 0 &&
-        !t.category?.some((cat) => cat.toLowerCase().includes("payment")))
+        !paymentPrimaries.has(t.personal_finance_category?.primary ?? ""))
   );
 
   // Calculate total spending (use absolute values)
@@ -35,7 +41,8 @@ export const analyzeSpending = (
     {};
 
   spendingTransactions.forEach((transaction) => {
-    const category = transaction.category?.[0] || "Other";
+    const category =
+      transaction.personal_finance_category?.primary || "Other";
     if (!categoryTotals[category]) {
       categoryTotals[category] = { amount: 0, count: 0 };
     }

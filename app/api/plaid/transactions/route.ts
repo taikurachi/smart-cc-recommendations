@@ -58,18 +58,44 @@ export async function POST(request: NextRequest) {
       options.account_ids = account_ids;
     }
 
+    const startDateStr = startDate.toISOString().split("T")[0];
+
+    let allTransactions: any[] = [];
+    let accounts: any[] = [];
+    let totalTransactions = 0;
+    let requestId = "";
+
     const response = await plaidClient.transactionsGet({
       access_token: finalAccessToken,
-      start_date: startDate.toISOString().split("T")[0],
+      start_date: startDateStr,
       end_date: endDate,
       options,
     });
+
+    allTransactions = response.data.transactions;
+    accounts = response.data.accounts;
+    totalTransactions = response.data.total_transactions;
+    requestId = response.data.request_id;
+
+    while (allTransactions.length < totalTransactions) {
+      const paginatedResponse = await plaidClient.transactionsGet({
+        access_token: finalAccessToken,
+        start_date: startDateStr,
+        end_date: endDate,
+        options: {
+          ...options,
+          offset: allTransactions.length,
+        },
+      });
+      allTransactions = allTransactions.concat(
+        paginatedResponse.data.transactions
+      );
+    }
 
     // Update last synced timestamp if we have itemId
     if (itemId) {
       storage.updateLastSynced(itemId);
     } else {
-      // Try to find itemId from access token by checking stored connections
       const connections = storage.getPlaidConnections();
       const connection = connections.find(
         (conn) => conn.access_token === finalAccessToken
@@ -81,10 +107,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      transactions: response.data.transactions,
-      accounts: response.data.accounts,
-      total_transactions: response.data.total_transactions,
-      request_id: response.data.request_id,
+      transactions: allTransactions,
+      accounts,
+      total_transactions: totalTransactions,
+      request_id: requestId,
     });
   } catch (error) {
     const errorMessage =

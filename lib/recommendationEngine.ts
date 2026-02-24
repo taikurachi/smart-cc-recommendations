@@ -1,5 +1,5 @@
 import { loadCreditCardData } from "./creditCardData";
-import { Transaction } from "./types";
+import { PersonalFinanceCategory, Transaction } from "./types";
 
 export interface SpendingCategory {
   category: string;
@@ -8,164 +8,82 @@ export interface SpendingCategory {
 }
 
 /**
- * Map Plaid transaction categories to credit card reward categories
+ * Map Plaid personal_finance_category to credit card reward categories.
+ * Uses the newer personal_finance_category taxonomy (primary + detailed).
+ * See: https://plaid.com/documents/transactions-personal-finance-category-taxonomy.csv
  */
 function mapTransactionCategoryToRewardCategory(
-  transactionCategory: string[]
+  pfc?: PersonalFinanceCategory
 ): string[] {
-  if (!transactionCategory || transactionCategory.length === 0) {
+  if (!pfc) {
     return ["general"];
   }
 
-  const primary = transactionCategory[0]?.toLowerCase() || "";
-  const secondary = transactionCategory[1]?.toLowerCase() || "";
+  const { primary, detailed } = pfc;
 
-  // Food and Drink
-  if (primary === "food and drink") {
-    if (secondary === "restaurants" || secondary === "dining") {
-      return ["dining"];
-    }
-    if (
-      secondary === "groceries" ||
-      secondary === "grocery stores" ||
-      secondary === "supermarkets"
-    ) {
+  if (primary === "FOOD_AND_DRINK") {
+    if (detailed === "FOOD_AND_DRINK_GROCERIES") {
       return ["grocery"];
     }
-    // Online grocery delivery services
-    if (
-      secondary === "online" ||
-      secondary === "online shopping" ||
-      secondary === "delivery"
-    ) {
-      return ["online-groceries"];
-    }
-    return ["general"];
+    return ["dining"];
   }
 
-  // Travel
-  if (primary === "travel") {
-    if (
-      secondary === "airlines" ||
-      secondary === "flights" ||
-      secondary === "airports"
-    ) {
-      return ["travel"];
-    }
-    if (secondary === "hotels" || secondary === "lodging") {
+  if (primary === "TRAVEL") {
+    if (detailed === "TRAVEL_LODGING") {
       return ["hotels"];
-    }
-    if (
-      secondary === "car rentals" ||
-      secondary === "rideshare" ||
-      secondary === "taxis" ||
-      secondary === "transit"
-    ) {
-      return ["travel"];
     }
     return ["travel"];
   }
 
-  // General Merchandise
-  if (primary === "general merchandise") {
+  if (primary === "TRANSPORTATION") {
+    if (detailed === "TRANSPORTATION_GAS") {
+      return ["gas"];
+    }
     if (
-      secondary === "online" ||
-      secondary === "online shopping" ||
-      secondary === "e-commerce"
-    ) {
-      return ["online-shopping"];
-    }
-    if (secondary === "drugstores" || secondary === "pharmacies") {
-      return ["drugstores"];
-    }
-    // Wholesale clubs (Costco, Sam's Club, BJ's)
-    if (
-      secondary === "wholesale clubs" ||
-      secondary === "warehouse clubs" ||
-      secondary === "membership warehouses"
-    ) {
-      return ["wholesale-clubs"];
-    }
-    return ["general"];
-  }
-
-  // Gas Stations
-  if (primary === "gas stations" || primary === "gas") {
-    return ["gas"];
-  }
-
-  // Entertainment
-  if (primary === "entertainment") {
-    // Streaming services (Netflix, Spotify, etc.)
-    if (
-      secondary === "streaming" ||
-      secondary === "music" ||
-      secondary === "video" ||
-      secondary === "subscriptions"
-    ) {
-      return ["streaming"];
-    }
-    return ["general"];
-  }
-
-  // Service (utilities, phone, internet)
-  if (primary === "service") {
-    // Streaming services might be categorized here
-    if (
-      secondary === "streaming" ||
-      secondary === "internet" ||
-      secondary === "cable" ||
-      secondary === "telecommunications"
-    ) {
-      return ["streaming"];
-    }
-    return ["general"];
-  }
-
-  // Shops (various retail categories)
-  if (primary === "shops") {
-    // Wholesale clubs
-    if (
-      secondary === "wholesale clubs" ||
-      secondary === "warehouse clubs" ||
-      secondary === "membership warehouses"
-    ) {
-      return ["wholesale-clubs"];
-    }
-    // Online shopping
-    if (
-      secondary === "online" ||
-      secondary === "e-commerce" ||
-      secondary === "internet"
-    ) {
-      return ["online-shopping"];
-    }
-    // Drugstores
-    if (secondary === "pharmacies" || secondary === "drugstores") {
-      return ["drugstores"];
-    }
-    return ["general"];
-  }
-
-  // Recreation (gyms, sports, etc.)
-  if (primary === "recreation") {
-    return ["general"];
-  }
-
-  // Transportation (rideshare, transit, parking)
-  if (primary === "transportation") {
-    if (
-      secondary === "rideshare" ||
-      secondary === "taxis" ||
-      secondary === "transit" ||
-      secondary === "public transit"
+      detailed === "TRANSPORTATION_TAXIS_AND_RIDE_SHARES" ||
+      detailed === "TRANSPORTATION_PUBLIC_TRANSIT"
     ) {
       return ["travel"];
     }
     return ["general"];
   }
 
-  // Default to general
+  if (primary === "GENERAL_MERCHANDISE") {
+    if (detailed === "GENERAL_MERCHANDISE_ONLINE_MARKETPLACES") {
+      return ["online-shopping"];
+    }
+    if (detailed === "GENERAL_MERCHANDISE_PHARMACIES") {
+      return ["drugstores"];
+    }
+    if (
+      detailed === "GENERAL_MERCHANDISE_SUPERSTORES" ||
+      detailed === "GENERAL_MERCHANDISE_WAREHOUSE_CLUBS_AND_SUPERCENTERS"
+    ) {
+      return ["wholesale-clubs"];
+    }
+    return ["general"];
+  }
+
+  if (primary === "ENTERTAINMENT") {
+    if (
+      detailed === "ENTERTAINMENT_MUSIC_AND_AUDIO" ||
+      detailed === "ENTERTAINMENT_TV_AND_MOVIES"
+    ) {
+      return ["streaming"];
+    }
+    return ["general"];
+  }
+
+  if (primary === "RENT_AND_UTILITIES") {
+    if (
+      detailed === "RENT_AND_UTILITIES_INTERNET_AND_CABLE" ||
+      detailed === "RENT_AND_UTILITIES_TELEPHONE"
+    ) {
+      return ["streaming"];
+    }
+    return ["general"];
+  }
+
   return ["general"];
 }
 
@@ -195,12 +113,12 @@ export function calculateEstimatedRewards(
 
     const amount = Math.abs(transaction.amount);
     const rewardCategories = mapTransactionCategoryToRewardCategory(
-      transaction.category || []
+      transaction.personal_finance_category
     );
     console.log(rewardCategories, "reward cat");
     console.log(
-      `  Transaction ${index + 1}: $${amount} | Categories: ${JSON.stringify(
-        transaction.category
+      `  Transaction ${index + 1}: $${amount} | PFC: ${JSON.stringify(
+        transaction.personal_finance_category
       )} → Reward Categories: ${JSON.stringify(rewardCategories)}`
     );
 
@@ -471,7 +389,7 @@ function allocateSpendingToCards(
 
     const amount = Math.abs(transaction.amount);
     const rewardCategories = mapTransactionCategoryToRewardCategory(
-      transaction.category || []
+      transaction.personal_finance_category
     );
 
     // Use the first category (primary category) to avoid double-counting
@@ -1000,23 +918,27 @@ export function analyzeSpendingCategories(
   const categoryTotals: Record<string, number> = {};
   let totalSpending = 0;
 
-  // Filter and aggregate spending by category
+  const paymentPrimaries = new Set([
+    "LOAN_PAYMENTS",
+    "TRANSFER_IN",
+    "TRANSFER_OUT",
+    "INCOME",
+  ]);
+
   transactions.forEach((transaction) => {
-    // Filter out positive amounts (credits/refunds) and payments
-    // Plaid transactions: negative = spending, positive = credits
     const isSpending =
       transaction.amount < 0 ||
       (transaction.amount > 0 &&
-        !transaction.category?.some((cat) =>
-          cat.toLowerCase().includes("payment")
+        !paymentPrimaries.has(
+          transaction.personal_finance_category?.primary ?? ""
         ));
 
     if (isSpending) {
       const amount = Math.abs(transaction.amount);
       totalSpending += amount;
 
-      // Use first category from Plaid's category array, or "Other" if none
-      const category = transaction.category?.[0] || "Other";
+      const category =
+        transaction.personal_finance_category?.primary || "Other";
       categoryTotals[category] = (categoryTotals[category] || 0) + amount;
     }
   });
