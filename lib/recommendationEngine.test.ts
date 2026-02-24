@@ -22,8 +22,8 @@ function loadCreditCardDataDirect(): any[] {
   }
 }
 
-// Import the internal functions we need to test
-// We'll need to test the public function, so let's create a test wrapper
+const _cards = loadCreditCardDataDirect();
+
 async function testGetMultiCardRecommendations(
   transactions: any[],
   preferences: any,
@@ -33,7 +33,9 @@ async function testGetMultiCardRecommendations(
   return module.getMultiCardRecommendations(
     transactions,
     preferences,
-    ownedCards
+    ownedCards,
+    undefined,
+    _cards
   );
 }
 
@@ -42,7 +44,7 @@ async function testGetRecommendedCards(
   preferences: any
 ): Promise<[any[], string | undefined]> {
   const module = await import("./recommendation");
-  return module.getRecommendedCards(transactions, preferences);
+  return module.getRecommendedCards(transactions, preferences, _cards);
 }
 
 interface TestResult {
@@ -584,7 +586,8 @@ async function runTests() {
     for (const ownedCard of ownedCards) {
       const officialCard = await mapCardNameToOfficialCard(
         ownedCard.name,
-        ownedCard.institution_name
+        ownedCard.institution_name,
+        _cards
       );
 
       if (officialCard) {

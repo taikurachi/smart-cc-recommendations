@@ -9,13 +9,16 @@ import {
 let cachedCardMap: Map<string, CreditCardData> | null = null;
 
 /**
- * Maps a card name (and optionally institution name) to an official card from manualcc.json
+ * Maps a card name (and optionally institution name) to an official card.
+ * Pass `providedCards` to skip the DB/API load (useful for tests).
  */
 export async function mapCardNameToOfficialCard(
   cardName: string,
-  institutionName?: string
+  institutionName?: string,
+  providedCards?: CreditCardData[]
 ): Promise<CreditCardData | null> {
-  const cards = (await loadCreditCardData()) as CreditCardData[];
+  const cards =
+    providedCards ?? ((await loadCreditCardData()) as CreditCardData[]);
 
   if (!cachedCardMap) {
     cachedCardMap = new Map();

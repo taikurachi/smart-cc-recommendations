@@ -17,38 +17,12 @@ export async function loadCreditCardData(): Promise<any[]> {
   }
 
   if (typeof window === "undefined" && typeof process !== "undefined") {
-    // Server-side: try DB first, then fall back to JSON file
     const db = getDb();
-    if (db) {
-      try {
-        const rows = await db.select().from(creditCardsTable);
-        if (rows.length > 0) {
-          cachedCards = rows;
-          loadingPromise = Promise.resolve(cachedCards);
-          return loadingPromise;
-        }
-      } catch {
-        // DB unavailable, fall through to file
-      }
-    }
-
-    try {
-      const fs = require("fs");
-      const path = require("path");
-      const filePath = path.join(process.cwd(), "data", "manualcc.json");
-      const fileContents = fs.readFileSync(filePath, "utf-8");
-      const data = JSON.parse(fileContents);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const cardsArray: any[] = Object.values(data);
-      cachedCards = cardsArray;
-      loadingPromise = Promise.resolve(cachedCards);
-      return loadingPromise;
-    } catch {
-      // Fall through to API fetch
-    }
+    const rows = await db.select().from(creditCardsTable);
+    cachedCards = rows;
+    return cachedCards;
   }
 
-  // Browser: fetch from API
   loadingPromise = fetch("/api/credit-cards")
     .then((response) => {
       if (!response.ok) {

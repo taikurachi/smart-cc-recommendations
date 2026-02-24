@@ -60,12 +60,15 @@ function generateCombinations<T>(arr: T[], size: number): T[][] {
 
 /**
  * Get recommended credit cards based on transactions (single-card ranking).
+ * Pass `providedCards` to skip the DB/API load (useful for tests).
  */
 export async function getRecommendedCards(
   transactions: Transaction[],
-  preferences: Record<string, boolean>
+  preferences: Record<string, boolean>,
+  providedCards?: CreditCardData[]
 ): Promise<[CreditCardData[], string | undefined]> {
-  const creditCards = (await loadCreditCardData()) as CreditCardData[];
+  const creditCards =
+    providedCards ?? ((await loadCreditCardData()) as CreditCardData[]);
   const [cardsToProcess, message] = filterByPreferences(
     creditCards,
     preferences
@@ -82,14 +85,17 @@ export async function getRecommendedCards(
 
 /**
  * Get multi-card recommendations (2-3 cards) that maximize total annual value.
+ * Pass `providedCards` to skip the DB/API load (useful for tests).
  */
 export async function getMultiCardRecommendations(
   transactions: Transaction[],
   preferences: Record<string, boolean>,
   ownedCards: Array<{ id?: string; name?: string; institution_name?: string }> = [],
-  ownedCardsAnnualValue?: number
+  ownedCardsAnnualValue?: number,
+  providedCards?: CreditCardData[]
 ): Promise<[CreditCardData[], string | undefined]> {
-  const creditCards = (await loadCreditCardData()) as CreditCardData[];
+  const creditCards =
+    providedCards ?? ((await loadCreditCardData()) as CreditCardData[]);
   const [filteredCards, filterMessage] = filterByPreferences(
     creditCards,
     preferences
@@ -164,7 +170,8 @@ export async function getMultiCardRecommendations(
       for (const ownedCard of ownedCards) {
         const officialCard = await mapCardNameToOfficialCard(
           ownedCard.name || "",
-          ownedCard.institution_name
+          ownedCard.institution_name,
+          creditCards
         );
         if (officialCard) {
           const txRewards = calculateTransactionRewards(
