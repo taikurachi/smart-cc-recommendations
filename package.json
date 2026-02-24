@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "test-scraper": "npx tsx test-scraper.ts",
-    "test:engine": "npx tsx lib/recommendationEngine.test.ts"
+    "test:units": "npx tsx lib/recommendation/categoryMapper.test.ts && npx tsx lib/recommendation/creditsCalculator.test.ts && npx tsx lib/recommendation/benefitsCalculator.test.ts && npx tsx lib/recommendation/rewardsCalculator.test.ts && npx tsx lib/recommendation/cardValueCalculator.test.ts && npx tsx lib/recommendation/spendingAllocator.test.ts && npx tsx lib/recommendation/cardFilter.test.ts",
+    "test:engine": "npx tsx lib/recommendationEngine.test.ts",
+    "test:all": "npm run test:units && npm run test:engine"
   },
   "dependencies": {
     "canvas-confetti": "^1.9.4",
