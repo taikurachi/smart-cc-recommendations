@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user's connections
-    const connections = storage.getConnectionsByUserId(userId);
+    const connections = await storage.getConnectionsByUserId(userId);
 
     if (connections.length === 0) {
       return NextResponse.json({

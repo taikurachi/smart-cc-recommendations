@@ -1,8 +1,6 @@
-/**
- * Load credit card data from manualcc.json
- * Uses caching to avoid repeated fetches
- * Converts the object format to an array
- */
+import { getDb } from "./db";
+import { creditCards as creditCardsTable } from "../drizzle/schema";
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let cachedCards: any[] | null = null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -10,20 +8,30 @@ let loadingPromise: Promise<any[]> | null = null;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function loadCreditCardData(): Promise<any[]> {
-  // Return cached data if available
   if (cachedCards) {
     return cachedCards;
   }
 
-  // Return existing promise if already loading
   if (loadingPromise) {
     return loadingPromise;
   }
 
-  // Start loading
-  // Check if we're in a test environment (Node.js, not browser)
   if (typeof window === "undefined" && typeof process !== "undefined") {
-    // In Node.js environment (testing), load directly from file
+    // Server-side: try DB first, then fall back to JSON file
+    const db = getDb();
+    if (db) {
+      try {
+        const rows = await db.select().from(creditCardsTable);
+        if (rows.length > 0) {
+          cachedCards = rows;
+          loadingPromise = Promise.resolve(cachedCards);
+          return loadingPromise;
+        }
+      } catch {
+        // DB unavailable, fall through to file
+      }
+    }
+
     try {
       const fs = require("fs");
       const path = require("path");
@@ -35,12 +43,12 @@ export async function loadCreditCardData(): Promise<any[]> {
       cachedCards = cardsArray;
       loadingPromise = Promise.resolve(cachedCards);
       return loadingPromise;
-    } catch (fileError) {
-      // Fall through to API fetch if file read fails
+    } catch {
+      // Fall through to API fetch
     }
   }
 
-  // In browser environment, use API
+  // Browser: fetch from API
   loadingPromise = fetch("/api/credit-cards")
     .then((response) => {
       if (!response.ok) {
@@ -49,25 +57,20 @@ export async function loadCreditCardData(): Promise<any[]> {
       return response.json();
     })
     .then((data) => {
-      // Convert object format to array
-      // manualcc.json is an object with card IDs as keys
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const cardsArray: any[] = Object.values(data);
+      const cardsArray: any[] = Array.isArray(data) ? data : Object.values(data);
       cachedCards = cardsArray;
       return cachedCards;
     })
     .catch((error) => {
       console.error("Error loading credit card data:", error);
-      loadingPromise = null; // Reset promise on error
+      loadingPromise = null;
       return [];
     });
 
   return loadingPromise;
 }
 
-/**
- * Clear the cache (useful for testing or if data needs to be refreshed)
- */
 export function clearCreditCardCache() {
   cachedCards = null;
   loadingPromise = null;

@@ -9,12 +9,12 @@ export async function GET(request: NextRequest) {
     const email = searchParams.get("email");
 
     if (userId) {
-      const user = storage.getUserById(userId);
+      const user = await storage.getUserById(userId);
       if (!user) {
         return NextResponse.json({ error: "User not found" }, { status: 404 });
       }
 
-      const connections = storage.getConnectionsByUserId(userId);
+      const connections = await storage.getConnectionsByUserId(userId);
       return NextResponse.json({
         user,
         connections: connections.map((conn) => ({
@@ -29,22 +29,21 @@ export async function GET(request: NextRequest) {
     }
 
     if (email) {
-      const user = storage.getUserByEmail(email);
+      const user = await storage.getUserByEmail(email);
       if (!user) {
         return NextResponse.json({ error: "User not found" }, { status: 404 });
       }
       return NextResponse.json({ user });
     }
 
-    // Return all users (without sensitive data)
-    const users = storage.getUsers();
+    const users = await storage.getUsers();
     return NextResponse.json({
       users: users.map((user) => ({
         id: user.id,
         email: user.email,
         created_at: user.created_at,
       })),
-      stats: storage.getStats(),
+      stats: await storage.getStats(),
     });
   } catch (error) {
     console.error("Users GET error:", error);
@@ -60,9 +59,8 @@ export async function POST(request: NextRequest) {
   try {
     const { email } = await request.json();
 
-    // Check if user already exists
     if (email) {
-      const existingUser = storage.getUserByEmail(email);
+      const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
         return NextResponse.json({
           user: existingUser,
@@ -71,7 +69,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const user = storage.createUser(email);
+    const user = await storage.createUser(email);
     return NextResponse.json({
       user,
       message: "User created successfully",

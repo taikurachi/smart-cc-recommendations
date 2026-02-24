@@ -17,12 +17,12 @@ export async function POST(request: NextRequest) {
     // If no access token provided, try to get it from storage
     if (!finalAccessToken) {
       if (itemId) {
-        const connection = storage.getConnectionByItemId(itemId);
+        const connection = await storage.getConnectionByItemId(itemId);
         if (connection) {
           finalAccessToken = connection.access_token;
         }
       } else if (userId) {
-        const connections = storage.getConnectionsByUserId(userId);
+        const connections = await storage.getConnectionsByUserId(userId);
         if (connections.length > 0) {
           // Use the most recent connection
           finalAccessToken = connections[connections.length - 1].access_token;
@@ -94,14 +94,14 @@ export async function POST(request: NextRequest) {
 
     // Update last synced timestamp if we have itemId
     if (itemId) {
-      storage.updateLastSynced(itemId);
+      await storage.updateLastSynced(itemId);
     } else {
-      const connections = storage.getPlaidConnections();
+      const connections = await storage.getPlaidConnections();
       const connection = connections.find(
         (conn) => conn.access_token === finalAccessToken
       );
       if (connection) {
-        storage.updateLastSynced(connection.item_id);
+        await storage.updateLastSynced(connection.item_id);
       }
     }
 

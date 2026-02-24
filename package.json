@@ -14,10 +14,15 @@
     "research:cards": "npx tsx scripts/research-cards.ts",
     "normalize:cards": "npx tsx scripts/normalize-cards.ts",
     "validate:cards": "npx tsx scripts/validate-card.ts",
-    "merge:cards": "npx tsx scripts/merge-cards.ts"
+    "merge:cards": "npx tsx scripts/merge-cards.ts",
+    "db:push": "npx drizzle-kit push",
+    "db:studio": "npx drizzle-kit studio",
+    "seed:db": "npx tsx scripts/seed-db.ts"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
     "canvas-confetti": "^1.9.4",
+    "drizzle-orm": "^0.45.1",
     "lucide-react": "^0.552.0",
     "motion": "^12.23.24",
     "next": "15.5.2",
@@ -36,6 +41,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "drizzle-kit": "^0.31.9",
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
     "openai": "^6.24.0",

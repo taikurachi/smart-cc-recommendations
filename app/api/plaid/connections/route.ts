@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const itemId = searchParams.get("itemId");
 
     if (itemId) {
-      const connection = storage.getConnectionByItemId(itemId);
+      const connection = await storage.getConnectionByItemId(itemId);
       if (!connection) {
         return NextResponse.json(
           { error: "Connection not found" },
@@ -18,13 +18,12 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      // Don't expose access token in response
       const { access_token, ...safeConnection } = connection;
       return NextResponse.json({ connection: safeConnection });
     }
 
     if (userId) {
-      const connections = storage.getConnectionsByUserId(userId);
+      const connections = await storage.getConnectionsByUserId(userId);
       const safeConnections = connections.map(
         ({ access_token, ...conn }) => conn
       );
@@ -60,7 +59,7 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    const connection = storage.getConnectionByItemId(itemId);
+    const connection = await storage.getConnectionByItemId(itemId);
     if (!connection) {
       return NextResponse.json(
         { error: "Connection not found" },
@@ -69,17 +68,14 @@ export async function DELETE(request: NextRequest) {
     }
 
     try {
-      // Remove the item from Plaid
       await plaidClient.itemRemove({
         access_token: connection.access_token,
       });
     } catch (plaidError) {
       console.error("Error removing item from Plaid:", plaidError);
-      // Continue with local removal even if Plaid removal fails
     }
 
-    // Deactivate the connection locally
-    const success = storage.deactivateConnection(itemId);
+    const success = await storage.deactivateConnection(itemId);
 
     if (success) {
       return NextResponse.json({

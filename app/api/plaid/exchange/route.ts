@@ -13,20 +13,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Exchange public token for access token
     const exchangeResponse = await plaidClient.itemPublicTokenExchange({
       public_token: publicToken,
     });
 
     const { access_token, item_id } = exchangeResponse.data;
 
-    // Get institution info
     let institutionName = "Unknown Bank";
     let institutionId = "";
     let accounts: any[] = [];
 
     try {
-      // Get item details to fetch institution info
       const itemResponse = await plaidClient.itemGet({
         access_token: access_token,
       });
@@ -34,7 +31,6 @@ export async function POST(request: NextRequest) {
       if (itemResponse.data.item.institution_id) {
         institutionId = itemResponse.data.item.institution_id;
 
-        // Get institution details
         const institutionResponse = await plaidClient.institutionsGetById({
           institution_id: institutionId,
           country_codes: ["US"],
@@ -43,7 +39,6 @@ export async function POST(request: NextRequest) {
         institutionName = institutionResponse.data.institution.name;
       }
 
-      // Get accounts
       const accountsResponse = await plaidClient.accountsGet({
         access_token: access_token,
       });
@@ -57,17 +52,14 @@ export async function POST(request: NextRequest) {
       }));
     } catch (error) {
       console.error("Error fetching institution/account details:", error);
-      // Continue without institution details
     }
 
-    // Ensure user exists or create one
-    let user = userId ? storage.getUserById(userId) : null;
+    let user = userId ? await storage.getUserById(userId) : null;
     if (!user) {
-      user = storage.createUser();
+      user = await storage.createUser();
     }
 
-    // Store the Plaid connection
-    const connection = storage.createPlaidConnection(
+    const connection = await storage.createPlaidConnection(
       user.id,
       access_token,
       item_id,
