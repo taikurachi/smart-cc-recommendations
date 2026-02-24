@@ -14,9 +14,8 @@ export default function Home() {
             </span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-            Connect your bank account or upload transaction data to get
-            personalized credit card recommendations based on your actual
-            spending patterns.
+            Connect your bank account to get personalized credit card
+            recommendations based on your actual spending patterns.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
@@ -35,7 +34,7 @@ export default function Home() {
         </div>
 
         {/* Features */}
-        <div className="grid md:grid-cols-3 gap-8 mb-16">
+        <div className="grid md:grid-cols-2 gap-8 mb-16">
           <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-100">
             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
               <span className="text-2xl">🏦</span>
@@ -46,17 +45,6 @@ export default function Home() {
             <p className="text-gray-600">
               Connect your bank account securely using Plaid&apos;s
               industry-standard API. Your credentials are never stored.
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-100">
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
-              <span className="text-2xl">📄</span>
-            </div>
-            <h3 className="text-xl font-semibold mb-3">CSV Upload</h3>
-            <p className="text-gray-600">
-              Prefer manual control? Upload your transaction data via CSV file
-              for complete privacy and control.
             </p>
           </div>
 
@@ -84,7 +72,7 @@ export default function Home() {
               </div>
               <h4 className="font-semibold mb-2">Connect Data</h4>
               <p className="text-sm text-gray-600">
-                Link your bank account or upload CSV transactions
+                Link your bank account securely through Plaid
               </p>
             </div>
             <div className="text-center">

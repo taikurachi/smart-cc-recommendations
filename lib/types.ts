@@ -80,8 +80,6 @@ export interface CardPreferences {
   beginner_friendly: boolean;
 }
 
-export type ConnectionMethod = "plaid" | "manual" | null;
-
 export interface SpendingAnalysis {
   totalSpending: number;
   monthlyAverage: number;

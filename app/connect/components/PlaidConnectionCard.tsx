@@ -18,7 +18,6 @@ interface PlaidConnectionCardProps {
   user: User | null;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   loadData: () => Promise<void>;
-  disabled?: boolean;
 }
 
 const buttonStates = [
@@ -35,7 +34,6 @@ export default function PlaidConnectionCard({
   user,
   setUser,
   loadData,
-  disabled = false,
 }: PlaidConnectionCardProps) {
   const router = useRouter();
   const [linkToken, setLinkToken] = useState("");
@@ -99,7 +97,6 @@ export default function PlaidConnectionCard({
       action: (
         <Button
           onClick={async () => {
-            if (disabled) return;
             setButtonStateIndex((prev) => prev + 1);
             const token = await handleCreateLinkToken(user, setUser);
             if (token) {
@@ -151,23 +148,8 @@ export default function PlaidConnectionCard({
 
   return (
     <div
-      className={`bg-white border-2 rounded-xl p-8 transition-all duration-200 group relative overflow-hidden ${
-        disabled
-          ? "border-gray-200 opacity-60 cursor-not-allowed"
-          : "border-gray-200 hover:border-blue-400 hover:shadow-lg"
-      }`}
+      className="bg-white border-2 rounded-xl p-8 transition-all duration-200 group relative overflow-hidden border-gray-200 hover:border-blue-400 hover:shadow-lg"
     >
-      {disabled && (
-        <div className="absolute inset-0 bg-gray-100/50 backdrop-blur-[2px] z-20 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-4 shadow-lg text-center max-w-xs">
-            <p className="font-semibold text-gray-900 mb-1">🔒 Method Locked</p>
-            <p className="text-sm text-gray-600">
-              You&apos;re using Manual CSV upload. All accounts must use the
-              same connection method.
-            </p>
-          </div>
-        </div>
-      )}
       <canvas
         ref={confettiCanvasRef}
         className="absolute inset-0 w-full h-full pointer-events-none"

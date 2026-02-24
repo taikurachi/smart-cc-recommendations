@@ -1,19 +1,9 @@
 "use client";
-import { useRouter } from "next/navigation";
 import { useApp } from "@/lib/AppContext";
 import PlaidConnectionCard from "./components/PlaidConnectionCard";
-import CSVUploadCard from "./components/CSVUploadCard";
 
 export default function Home() {
-  const router = useRouter();
-  const {
-    user,
-    setUser,
-    setConnections,
-    setLoading,
-    loadData,
-    connectionMethod,
-  } = useApp();
+  const { user, setUser, loadData } = useApp();
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
@@ -21,26 +11,14 @@ export default function Home() {
         Connect Your Financial Accounts
       </h1>
       <p className="text-center mb-8">
-        Connect your bank through Plaid or upload transaction data
+        Connect your bank account securely through Plaid
       </p>
-      <div className="mb-8">
-        <div className="grid md:grid-cols-2 gap-6 sm:h-[400px] h-full">
-          <PlaidConnectionCard
-            user={user}
-            setUser={setUser}
-            loadData={loadData}
-            disabled={connectionMethod === "manual"}
-          />
-
-          <CSVUploadCard
-            user={user}
-            setUser={setUser}
-            setLoading={setLoading}
-            setConnections={setConnections}
-            router={router}
-            disabled={connectionMethod === "plaid"}
-          />
-        </div>
+      <div className="mb-8 max-w-lg mx-auto">
+        <PlaidConnectionCard
+          user={user}
+          setUser={setUser}
+          loadData={loadData}
+        />
       </div>
     </div>
   );

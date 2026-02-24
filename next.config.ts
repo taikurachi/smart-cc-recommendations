@@ -5,11 +5,6 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "www.nerdwallet.com",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
         hostname: "promo.bankofamerica.com",
         pathname: "/**",
       },

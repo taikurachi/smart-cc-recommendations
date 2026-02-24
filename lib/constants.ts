@@ -8,13 +8,6 @@ export const ICON_SIZE = {
   XLARGE: 50,
 } as const;
 
-// CSV Processing Constants
-export const DEFAULT_TRANSACTION_VALUES = {
-  ACCOUNT_ID: "csv_upload",
-  NEW_TRANSACTION_NAME: "New Transaction",
-  NEW_TRANSACTION_AMOUNT: 0,
-} as const;
-
 // Modal Heights
 export const MODAL_MAX_HEIGHT = {
   CONTENT: "50vh",

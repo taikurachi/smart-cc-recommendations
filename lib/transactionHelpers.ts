@@ -1,18 +1,4 @@
 import { Transaction, CreditCardOwned } from "./types";
-import { DEFAULT_TRANSACTION_VALUES } from "./constants";
-
-/**
- * Creates a new empty transaction with default values
- */
-export function createNewTransaction(): Transaction {
-  return {
-    transaction_id: `csv_new_${Date.now()}`,
-    account_id: DEFAULT_TRANSACTION_VALUES.ACCOUNT_ID,
-    date: new Date().toISOString().split("T")[0],
-    name: DEFAULT_TRANSACTION_VALUES.NEW_TRANSACTION_NAME,
-    amount: DEFAULT_TRANSACTION_VALUES.NEW_TRANSACTION_AMOUNT,
-  };
-}
 
 /**
  * Calculates the total amount from an array of transactions
