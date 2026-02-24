@@ -14,14 +14,15 @@ const VALID_REWARD_CATEGORIES = new Set([
   "general",
   "dining",
   "grocery",
-  "groceries",
   "travel",
   "hotels",
   "gas",
+  "transit",
   "online-shopping",
   "drugstores",
   "wholesale-clubs",
   "streaming",
+  "entertainment",
 ]);
 
 const VALID_UNITS = new Set(["points", "cash"]);

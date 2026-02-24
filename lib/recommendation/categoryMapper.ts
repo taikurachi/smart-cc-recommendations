@@ -34,9 +34,11 @@ export function mapTransactionCategoryToRewardCategory(
     }
     if (
       detailed === "TRANSPORTATION_TAXIS_AND_RIDE_SHARES" ||
-      detailed === "TRANSPORTATION_PUBLIC_TRANSIT"
+      detailed === "TRANSPORTATION_PUBLIC_TRANSIT" ||
+      detailed === "TRANSPORTATION_PARKING" ||
+      detailed === "TRANSPORTATION_TOLLS"
     ) {
-      return ["travel"];
+      return ["transit"];
     }
     return ["general"];
   }
@@ -64,7 +66,7 @@ export function mapTransactionCategoryToRewardCategory(
     ) {
       return ["streaming"];
     }
-    return ["general"];
+    return ["entertainment"];
   }
 
   if (primary === "RENT_AND_UTILITIES") {

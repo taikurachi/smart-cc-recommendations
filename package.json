@@ -12,6 +12,7 @@
     "test:engine": "npx tsx lib/recommendationEngine.test.ts",
     "test:all": "npm run test:units && npm run test:engine",
     "research:cards": "npx tsx scripts/research-cards.ts",
+    "normalize:cards": "npx tsx scripts/normalize-cards.ts",
     "validate:cards": "npx tsx scripts/validate-card.ts",
     "merge:cards": "npx tsx scripts/merge-cards.ts"
   },

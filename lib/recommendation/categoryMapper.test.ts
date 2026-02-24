@@ -63,23 +63,37 @@ test("TRANSPORTATION_GAS maps to gas", () => {
   );
 });
 
-test("TRANSPORTATION_TAXIS_AND_RIDE_SHARES maps to travel", () => {
+test("TRANSPORTATION_TAXIS_AND_RIDE_SHARES maps to transit", () => {
   eq(
     mapTransactionCategoryToRewardCategory({ primary: "TRANSPORTATION", detailed: "TRANSPORTATION_TAXIS_AND_RIDE_SHARES", confidence_level: "HIGH" }),
-    ["travel"]
+    ["transit"]
   );
 });
 
-test("TRANSPORTATION_PUBLIC_TRANSIT maps to travel", () => {
+test("TRANSPORTATION_PUBLIC_TRANSIT maps to transit", () => {
   eq(
     mapTransactionCategoryToRewardCategory({ primary: "TRANSPORTATION", detailed: "TRANSPORTATION_PUBLIC_TRANSIT", confidence_level: "HIGH" }),
-    ["travel"]
+    ["transit"]
+  );
+});
+
+test("TRANSPORTATION_PARKING maps to transit", () => {
+  eq(
+    mapTransactionCategoryToRewardCategory({ primary: "TRANSPORTATION", detailed: "TRANSPORTATION_PARKING", confidence_level: "HIGH" }),
+    ["transit"]
+  );
+});
+
+test("TRANSPORTATION_TOLLS maps to transit", () => {
+  eq(
+    mapTransactionCategoryToRewardCategory({ primary: "TRANSPORTATION", detailed: "TRANSPORTATION_TOLLS", confidence_level: "HIGH" }),
+    ["transit"]
   );
 });
 
 test("TRANSPORTATION generic falls back to general", () => {
   eq(
-    mapTransactionCategoryToRewardCategory({ primary: "TRANSPORTATION", detailed: "TRANSPORTATION_PARKING", confidence_level: "HIGH" }),
+    mapTransactionCategoryToRewardCategory({ primary: "TRANSPORTATION", detailed: "TRANSPORTATION_OTHER", confidence_level: "HIGH" }),
     ["general"]
   );
 });
@@ -135,10 +149,17 @@ test("ENTERTAINMENT_TV_AND_MOVIES maps to streaming", () => {
   );
 });
 
-test("ENTERTAINMENT generic falls back to general", () => {
+test("ENTERTAINMENT_SPORTING_EVENTS maps to entertainment", () => {
   eq(
     mapTransactionCategoryToRewardCategory({ primary: "ENTERTAINMENT", detailed: "ENTERTAINMENT_SPORTING_EVENTS_AND_SPORTS_VENUES", confidence_level: "HIGH" }),
-    ["general"]
+    ["entertainment"]
+  );
+});
+
+test("ENTERTAINMENT_VIDEO_GAMES maps to entertainment", () => {
+  eq(
+    mapTransactionCategoryToRewardCategory({ primary: "ENTERTAINMENT", detailed: "ENTERTAINMENT_VIDEO_GAMES", confidence_level: "HIGH" }),
+    ["entertainment"]
   );
 });
 
