@@ -10,7 +10,10 @@
     "test-scraper": "npx tsx test-scraper.ts",
     "test:units": "npx tsx lib/recommendation/categoryMapper.test.ts && npx tsx lib/recommendation/creditsCalculator.test.ts && npx tsx lib/recommendation/benefitsCalculator.test.ts && npx tsx lib/recommendation/rewardsCalculator.test.ts && npx tsx lib/recommendation/cardValueCalculator.test.ts && npx tsx lib/recommendation/spendingAllocator.test.ts && npx tsx lib/recommendation/cardFilter.test.ts",
     "test:engine": "npx tsx lib/recommendationEngine.test.ts",
-    "test:all": "npm run test:units && npm run test:engine"
+    "test:all": "npm run test:units && npm run test:engine",
+    "research:cards": "npx tsx scripts/research-cards.ts",
+    "validate:cards": "npx tsx scripts/validate-card.ts",
+    "merge:cards": "npx tsx scripts/merge-cards.ts"
   },
   "dependencies": {
     "canvas-confetti": "^1.9.4",
@@ -34,6 +37,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
+    "openai": "^6.24.0",
     "tailwindcss": "^4",
     "tsx": "^4.20.6",
     "typescript": "^5"
