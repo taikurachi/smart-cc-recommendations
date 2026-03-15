@@ -132,7 +132,7 @@ export default function AnalysisPage() {
       // rather than recalculating with all transactions which would double-count
       const ownedCardsTotalAnnualValue = ownedCards.reduce(
         (sum, card) => sum + (card.annualValue || 0),
-        0
+        0,
       );
 
       // const spendingCategories = analyzeSpendingCategories(transactions);
@@ -141,7 +141,7 @@ export default function AnalysisPage() {
         transactions,
         preferences,
         ownedCards,
-        ownedCardsTotalAnnualValue
+        ownedCardsTotalAnnualValue,
       );
       if (recs[1]) showToast.error(recs[1]);
       console.log(recs, "NEW RECS");
@@ -202,7 +202,7 @@ export default function AnalysisPage() {
 
       if (userData.connections?.length === 0) {
         setError(
-          "No bank connections found. Please connect your bank account first."
+          "No bank connections found. Please connect your bank account first.",
         );
         return;
       }
@@ -213,7 +213,7 @@ export default function AnalysisPage() {
       for (const connection of userData.connections) {
         console.log(connection, "connection");
         const creditCardAccountFound = connection.accounts.find(
-          (acc) => acc.type === "credit"
+          (acc) => acc.type === "credit",
         );
 
         const validatedAccountsForTransactions = creditCardAccountFound
@@ -221,11 +221,11 @@ export default function AnalysisPage() {
           : connection.accounts;
 
         const validatedAccountIds = validatedAccountsForTransactions.map(
-          (acc) => acc.account_id
+          (acc) => acc.account_id,
         );
 
         const currentlyOwnedCards = validatedAccountsForTransactions.map(
-          (acc) => ({ account_id: acc.account_id, name: acc.name })
+          (acc) => ({ account_id: acc.account_id, name: acc.name }),
         );
 
         // fetch plaid transaction api here
@@ -249,22 +249,22 @@ export default function AnalysisPage() {
             ]);
             const transactionsByCard = groupTransactionsByCreditCard(
               fetchedTransactions,
-              currentlyOwnedCards
+              currentlyOwnedCards,
             );
 
             console.log(transactionsByCard, "transactions by card");
             // Process each card's transactions
             for (const [cardName, transactions] of Object.entries(
-              transactionsByCard
+              transactionsByCard,
             )) {
               const officialCard = await mapCardNameToOfficialCard(
                 cardName,
-                connection.institution_name
+                connection.institution_name,
               );
               if (!officialCard) continue;
               const value = calculateCardAnnualValue(
                 officialCard,
-                transactions
+                transactions,
               );
               setOwnedCards((prev: any[]) => [
                 ...prev,
@@ -277,7 +277,7 @@ export default function AnalysisPage() {
         } catch (error) {
           console.error(
             `Error loading transactions for ${connection.institution_name}:`,
-            error
+            error,
           );
         }
       }
