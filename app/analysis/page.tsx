@@ -265,9 +265,9 @@ export default function AnalysisPage() {
                 officialCard,
                 transactions,
               );
-              setOwnedCards((prev: any[]) => [
+              setOwnedCards((prev) => [
                 ...prev,
-                { ...officialCard, ...value },
+                { ...officialCard, ...value } as unknown as CreditCardOwned,
               ]);
             }
 

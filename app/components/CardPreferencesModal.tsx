@@ -167,7 +167,7 @@ export default function CardPreferencesModal({
                 <X size={24} />
               </button>
               <h2 className="text-2xl font-semibold text-gray-900 mb-2">
-                What's Important to you in a Credit Card?
+                What&apos;s Important to you in a Credit Card?
               </h2>
               <p className="text-sm text-gray-600">
                 Select all that apply to get personalized recommendations
