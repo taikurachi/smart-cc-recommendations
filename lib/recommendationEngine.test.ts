@@ -33,8 +33,8 @@ async function testGetMultiCardRecommendations(
   preferences: Record<string, boolean>,
   ownedCards: OwnedCard[] = []
 ): Promise<[RecommendedCard[], string | undefined]> {
-  const module = await import("./recommendation");
-  return module.getMultiCardRecommendations(
+  const recModule = await import("./recommendation");
+  return recModule.getMultiCardRecommendations(
     transactions,
     preferences,
     ownedCards,
@@ -47,8 +47,8 @@ async function testGetRecommendedCards(
   transactions: Transaction[],
   preferences: Record<string, boolean>
 ): Promise<[RecommendedCard[], string | undefined]> {
-  const module = await import("./recommendation");
-  return module.getRecommendedCards(transactions, preferences, _cards) as Promise<[RecommendedCard[], string | undefined]>;
+  const recModule = await import("./recommendation");
+  return recModule.getRecommendedCards(transactions, preferences, _cards) as Promise<[RecommendedCard[], string | undefined]>;
 }
 
 interface TestResult {

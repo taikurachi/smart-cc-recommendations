@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Transaction as PlaidTransaction, AccountBase } from "plaid";
 import { plaidClient } from "@/lib/plaid";
 import { storage } from "@/lib/storage";
 
@@ -60,8 +61,8 @@ export async function POST(request: NextRequest) {
 
     const startDateStr = startDate.toISOString().split("T")[0];
 
-    let allTransactions: any[] = [];
-    let accounts: any[] = [];
+    let allTransactions: PlaidTransaction[] = [];
+    let accounts: AccountBase[] = [];
     let totalTransactions = 0;
     let requestId = "";
 

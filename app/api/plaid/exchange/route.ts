@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
 
     let institutionName = "Unknown Bank";
     let institutionId = "";
-    let accounts: any[] = [];
+    let accounts: Array<{ account_id: string; name: string; type: string; subtype: string; mask: string | null | undefined }> = [];
 
     try {
       const itemResponse = await plaidClient.itemGet({
@@ -77,8 +77,9 @@ export async function POST(request: NextRequest) {
       accounts: accounts,
       message: "Bank account connected successfully!",
     });
-  } catch (error: any) {
-    console.error("Exchange error:", error.response?.data || error.message);
+  } catch (error: unknown) {
+    const err = error as { response?: { data?: unknown }; message?: string };
+    console.error("Exchange error:", err.response?.data || err.message);
     return NextResponse.json(
       { error: "Failed to connect bank account" },
       { status: 500 }
