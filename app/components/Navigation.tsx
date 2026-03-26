@@ -2,33 +2,39 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
+import { Home, Link2, BarChart3, Settings, type LucideIcon } from "lucide-react";
+
+interface NavItem {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+}
+
+const navItems: NavItem[] = [
+  { href: "/", label: "Home", icon: Home },
+  { href: "/connect", label: "Connect", icon: Link2 },
+  { href: "/analysis", label: "Analysis", icon: BarChart3 },
+  { href: "/manage", label: "Manage", icon: Settings },
+];
 
 export default function Navigation() {
   const pathname = usePathname();
-
-  const navItems = [
-    { href: "/", label: "Home", icon: "🏠" },
-    { href: "/connect", label: "Connect", icon: "🔗" },
-    { href: "/analysis", label: "Analysis", icon: "📊" },
-    { href: "/manage", label: "Manage", icon: "🎥" },
-  ];
 
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-6xl mx-auto px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">💳</span>
+              <span className="text-white font-bold text-sm">CC</span>
             </div>
             <span className="font-bold text-gray-900 text-lg">Smart CC</span>
           </Link>
 
-          {/* Navigation Links */}
           <div className="flex items-center space-x-1">
             {navItems.map((item) => {
               const isActive = pathname === item.href;
+              const Icon = item.icon;
               return (
                 <Link
                   key={item.href}
@@ -42,14 +48,13 @@ export default function Navigation() {
                     }
                   `}
                 >
-                  <span>{item.icon}</span>
+                  <Icon size={16} />
                   <span>{item.label}</span>
                 </Link>
               );
             })}
           </div>
 
-          {/* User Status */}
           <div className="flex items-center space-x-3">
             <div className="text-sm text-gray-600">
               <UserStatus />
@@ -66,14 +71,11 @@ function UserStatus() {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    // Mark that we're on the client
     setIsClient(true);
-    // Read from localStorage only on client
     const storedUserId = localStorage.getItem("userId");
     setUserId(storedUserId);
   }, []);
 
-  // During SSR and initial render, show a neutral state
   if (!isClient) {
     return (
       <div className="flex items-center space-x-2">
@@ -83,7 +85,6 @@ function UserStatus() {
     );
   }
 
-  // After hydration, show the actual state
   if (userId) {
     return (
       <div className="flex items-center space-x-2">

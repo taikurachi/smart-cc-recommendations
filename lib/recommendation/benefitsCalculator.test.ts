@@ -1,19 +1,8 @@
 import { calculateBenefitsValue, calculateIntroBonusValue } from "./benefitsCalculator";
 import { Benefit } from "./types";
+import { createTestRunner, eq } from "./testUtils";
 
-interface TestResult { name: string; passed: boolean; error?: string }
-const tests: TestResult[] = [];
-
-function test(name: string, fn: () => void) {
-  try { fn(); tests.push({ name, passed: true }); }
-  catch (e: unknown) { tests.push({ name, passed: false, error: e instanceof Error ? e.message : String(e) }); }
-}
-
-function eq(actual: number, expected: number, label?: string) {
-  if (Math.abs(actual - expected) > 0.001) {
-    throw new Error(`${label || "Mismatch"}: got ${actual}, expected ${expected}`);
-  }
-}
+const { test, report } = createTestRunner();
 
 const sampleBenefits: Benefit[] = [
   { name: "intro-bonus", value: 3000, usage_ease: 0.6 },
@@ -22,10 +11,7 @@ const sampleBenefits: Benefit[] = [
   { name: "purchase-protection", value: 50, usage_ease: 0.2 },
 ];
 
-// --- calculateBenefitsValue ---
-
 test("excludes intro-bonus from benefits total", () => {
-  // 850*0.6 + 200*0.3 + 50*0.2 = 510 + 60 + 10 = 580
   eq(calculateBenefitsValue(sampleBenefits), 580);
 });
 
@@ -48,14 +34,10 @@ test("benefits with no intro-bonus sums all", () => {
     { name: "lounge", value: 100, usage_ease: 1.0 },
     { name: "insurance", value: 50, usage_ease: 0.5 },
   ];
-  // 100*1.0 + 50*0.5 = 125
   eq(calculateBenefitsValue(noBonusBenefits), 125);
 });
 
-// --- calculateIntroBonusValue ---
-
 test("extracts intro-bonus with correct usage_ease", () => {
-  // 3000 * 0.6 = 1800
   eq(calculateIntroBonusValue(sampleBenefits), 1800);
 });
 
@@ -82,12 +64,4 @@ test("intro-bonus usage_ease 0 returns 0", () => {
   eq(calculateIntroBonusValue(zeroBonusBenefits), 0);
 });
 
-// --- Report ---
-console.log("\n--- benefitsCalculator.test.ts ---\n");
-let passed = 0, failed = 0;
-tests.forEach((t) => {
-  if (t.passed) { passed++; console.log(`  ✅ ${t.name}`); }
-  else { failed++; console.log(`  ❌ ${t.name}: ${t.error}`); }
-});
-console.log(`\n  Total: ${tests.length} | Passed: ${passed} | Failed: ${failed}\n`);
-if (failed > 0) process.exit(1);
+report("benefitsCalculator.test.ts");

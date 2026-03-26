@@ -1,18 +1,9 @@
 import { mapTransactionCategoryToRewardCategory } from "./categoryMapper";
+import { createTestRunner } from "./testUtils";
 
-interface TestResult { name: string; passed: boolean; error?: string }
-const tests: TestResult[] = [];
+const { test, report } = createTestRunner();
 
-function test(name: string, fn: () => void) {
-  try {
-    fn();
-    tests.push({ name, passed: true });
-  } catch (e: unknown) {
-    tests.push({ name, passed: false, error: e instanceof Error ? e.message : String(e) });
-  }
-}
-
-function eq<T>(actual: T, expected: T, label?: string) {
+function eqJson<T>(actual: T, expected: T, label?: string) {
   const a = JSON.stringify(actual);
   const b = JSON.stringify(expected);
   if (a !== b) throw new Error(`${label || "Mismatch"}: got ${a}, expected ${b}`);
@@ -20,21 +11,21 @@ function eq<T>(actual: T, expected: T, label?: string) {
 
 // --- FOOD_AND_DRINK ---
 test("FOOD_AND_DRINK primary maps to dining", () => {
-  eq(
+  eqJson(
     mapTransactionCategoryToRewardCategory({ primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_RESTAURANT", confidence_level: "VERY_HIGH" }),
     ["dining"]
   );
 });
 
 test("FOOD_AND_DRINK_GROCERIES maps to grocery", () => {
-  eq(
+  eqJson(
     mapTransactionCategoryToRewardCategory({ primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_GROCERIES", confidence_level: "VERY_HIGH" }),
     ["grocery"]
   );
 });
 
 test("FOOD_AND_DRINK_COFFEE maps to dining (fallback)", () => {
-  eq(
+  eqJson(
     mapTransactionCategoryToRewardCategory({ primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_COFFEE", confidence_level: "HIGH" }),
     ["dining"]
   );
@@ -42,14 +33,14 @@ test("FOOD_AND_DRINK_COFFEE maps to dining (fallback)", () => {
 
 // --- TRAVEL ---
 test("TRAVEL primary maps to travel", () => {
-  eq(
+  eqJson(
     mapTransactionCategoryToRewardCategory({ primary: "TRAVEL", detailed: "TRAVEL_FLIGHTS", confidence_level: "VERY_HIGH" }),
     ["travel"]
   );
 });
 
 test("TRAVEL_LODGING maps to hotels", () => {
-  eq(
+  eqJson(
     mapTransactionCategoryToRewardCategory({ primary: "TRAVEL", detailed: "TRAVEL_LODGING", confidence_level: "VERY_HIGH" }),
     ["hotels"]
   );
@@ -57,42 +48,42 @@ test("TRAVEL_LODGING maps to hotels", () => {
 
 // --- TRANSPORTATION ---
 test("TRANSPORTATION_GAS maps to gas", () => {
-  eq(
+  eqJson(
     mapTransactionCategoryToRewardCategory({ primary: "TRANSPORTATION", detailed: "TRANSPORTATION_GAS", confidence_level: "VERY_HIGH" }),
     ["gas"]
   );
 });
 
 test("TRANSPORTATION_TAXIS_AND_RIDE_SHARES maps to transit", () => {
-  eq(
+  eqJson(
     mapTransactionCategoryToRewardCategory({ primary: "TRANSPORTATION", detailed: "TRANSPORTATION_TAXIS_AND_RIDE_SHARES", confidence_level: "HIGH" }),
     ["transit"]
   );
 });
 
 test("TRANSPORTATION_PUBLIC_TRANSIT maps to transit", () => {
-  eq(
+  eqJson(
     mapTransactionCategoryToRewardCategory({ primary: "TRANSPORTATION", detailed: "TRANSPORTATION_PUBLIC_TRANSIT", confidence_level: "HIGH" }),
     ["transit"]
   );
 });
 
 test("TRANSPORTATION_PARKING maps to transit", () => {
-  eq(
+  eqJson(
     mapTransactionCategoryToRewardCategory({ primary: "TRANSPORTATION", detailed: "TRANSPORTATION_PARKING", confidence_level: "HIGH" }),
     ["transit"]
   );
 });
 
 test("TRANSPORTATION_TOLLS maps to transit", () => {
-  eq(
+  eqJson(
     mapTransactionCategoryToRewardCategory({ primary: "TRANSPORTATION", detailed: "TRANSPORTATION_TOLLS", confidence_level: "HIGH" }),
     ["transit"]
   );
 });
 
 test("TRANSPORTATION generic falls back to general", () => {
-  eq(
+  eqJson(
     mapTransactionCategoryToRewardCategory({ primary: "TRANSPORTATION", detailed: "TRANSPORTATION_OTHER", confidence_level: "HIGH" }),
     ["general"]
   );
@@ -100,35 +91,35 @@ test("TRANSPORTATION generic falls back to general", () => {
 
 // --- GENERAL_MERCHANDISE ---
 test("GENERAL_MERCHANDISE_ONLINE_MARKETPLACES maps to online-shopping", () => {
-  eq(
+  eqJson(
     mapTransactionCategoryToRewardCategory({ primary: "GENERAL_MERCHANDISE", detailed: "GENERAL_MERCHANDISE_ONLINE_MARKETPLACES", confidence_level: "VERY_HIGH" }),
     ["online-shopping"]
   );
 });
 
 test("GENERAL_MERCHANDISE_PHARMACIES maps to drugstores", () => {
-  eq(
+  eqJson(
     mapTransactionCategoryToRewardCategory({ primary: "GENERAL_MERCHANDISE", detailed: "GENERAL_MERCHANDISE_PHARMACIES", confidence_level: "HIGH" }),
     ["drugstores"]
   );
 });
 
 test("GENERAL_MERCHANDISE_SUPERSTORES maps to wholesale-clubs", () => {
-  eq(
+  eqJson(
     mapTransactionCategoryToRewardCategory({ primary: "GENERAL_MERCHANDISE", detailed: "GENERAL_MERCHANDISE_SUPERSTORES", confidence_level: "HIGH" }),
     ["wholesale-clubs"]
   );
 });
 
 test("GENERAL_MERCHANDISE_WAREHOUSE_CLUBS maps to wholesale-clubs", () => {
-  eq(
+  eqJson(
     mapTransactionCategoryToRewardCategory({ primary: "GENERAL_MERCHANDISE", detailed: "GENERAL_MERCHANDISE_WAREHOUSE_CLUBS_AND_SUPERCENTERS", confidence_level: "HIGH" }),
     ["wholesale-clubs"]
   );
 });
 
 test("GENERAL_MERCHANDISE generic falls back to general", () => {
-  eq(
+  eqJson(
     mapTransactionCategoryToRewardCategory({ primary: "GENERAL_MERCHANDISE", detailed: "GENERAL_MERCHANDISE_CLOTHING_AND_ACCESSORIES", confidence_level: "HIGH" }),
     ["general"]
   );
@@ -136,28 +127,28 @@ test("GENERAL_MERCHANDISE generic falls back to general", () => {
 
 // --- ENTERTAINMENT ---
 test("ENTERTAINMENT_MUSIC_AND_AUDIO maps to streaming", () => {
-  eq(
+  eqJson(
     mapTransactionCategoryToRewardCategory({ primary: "ENTERTAINMENT", detailed: "ENTERTAINMENT_MUSIC_AND_AUDIO", confidence_level: "HIGH" }),
     ["streaming"]
   );
 });
 
 test("ENTERTAINMENT_TV_AND_MOVIES maps to streaming", () => {
-  eq(
+  eqJson(
     mapTransactionCategoryToRewardCategory({ primary: "ENTERTAINMENT", detailed: "ENTERTAINMENT_TV_AND_MOVIES", confidence_level: "HIGH" }),
     ["streaming"]
   );
 });
 
 test("ENTERTAINMENT_SPORTING_EVENTS maps to entertainment", () => {
-  eq(
+  eqJson(
     mapTransactionCategoryToRewardCategory({ primary: "ENTERTAINMENT", detailed: "ENTERTAINMENT_SPORTING_EVENTS_AND_SPORTS_VENUES", confidence_level: "HIGH" }),
     ["entertainment"]
   );
 });
 
 test("ENTERTAINMENT_VIDEO_GAMES maps to entertainment", () => {
-  eq(
+  eqJson(
     mapTransactionCategoryToRewardCategory({ primary: "ENTERTAINMENT", detailed: "ENTERTAINMENT_VIDEO_GAMES", confidence_level: "HIGH" }),
     ["entertainment"]
   );
@@ -165,21 +156,21 @@ test("ENTERTAINMENT_VIDEO_GAMES maps to entertainment", () => {
 
 // --- RENT_AND_UTILITIES ---
 test("RENT_AND_UTILITIES_INTERNET_AND_CABLE maps to streaming", () => {
-  eq(
+  eqJson(
     mapTransactionCategoryToRewardCategory({ primary: "RENT_AND_UTILITIES", detailed: "RENT_AND_UTILITIES_INTERNET_AND_CABLE", confidence_level: "HIGH" }),
     ["streaming"]
   );
 });
 
 test("RENT_AND_UTILITIES_TELEPHONE maps to streaming", () => {
-  eq(
+  eqJson(
     mapTransactionCategoryToRewardCategory({ primary: "RENT_AND_UTILITIES", detailed: "RENT_AND_UTILITIES_TELEPHONE", confidence_level: "HIGH" }),
     ["streaming"]
   );
 });
 
 test("RENT_AND_UTILITIES generic falls back to general", () => {
-  eq(
+  eqJson(
     mapTransactionCategoryToRewardCategory({ primary: "RENT_AND_UTILITIES", detailed: "RENT_AND_UTILITIES_RENT", confidence_level: "HIGH" }),
     ["general"]
   );
@@ -187,23 +178,14 @@ test("RENT_AND_UTILITIES generic falls back to general", () => {
 
 // --- Edge cases ---
 test("undefined input returns general", () => {
-  eq(mapTransactionCategoryToRewardCategory(undefined), ["general"]);
+  eqJson(mapTransactionCategoryToRewardCategory(undefined), ["general"]);
 });
 
 test("unknown primary returns general", () => {
-  eq(
+  eqJson(
     mapTransactionCategoryToRewardCategory({ primary: "MEDICAL", detailed: "MEDICAL_DENTIST", confidence_level: "HIGH" }),
     ["general"]
   );
 });
 
-// --- Report ---
-console.log("\n--- categoryMapper.test.ts ---\n");
-let passed = 0;
-let failed = 0;
-tests.forEach((t) => {
-  if (t.passed) { passed++; console.log(`  ✅ ${t.name}`); }
-  else { failed++; console.log(`  ❌ ${t.name}: ${t.error}`); }
-});
-console.log(`\n  Total: ${tests.length} | Passed: ${passed} | Failed: ${failed}\n`);
-if (failed > 0) process.exit(1);
+report("categoryMapper.test.ts");

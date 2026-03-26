@@ -125,7 +125,7 @@ export default function PlaidConnectionCard({
     {
       title: "Success!🎉",
       description:
-        "You've successfully connected your bank account! We're redirecting you to our dashboard now.",
+        "You've successfully connected your bank account! Head to the Analysis page to see your spending insights.",
       action: (
         <Image
           src={"/plaid-graphic.webp"}

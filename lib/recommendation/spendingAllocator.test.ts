@@ -1,19 +1,8 @@
 import { allocateSpendingToCards, evaluateCardCombination } from "./spendingAllocator";
 import { CreditCardData, Transaction } from "./types";
+import { createTestRunner, eq } from "./testUtils";
 
-interface TestResult { name: string; passed: boolean; error?: string }
-const tests: TestResult[] = [];
-
-function test(name: string, fn: () => void) {
-  try { fn(); tests.push({ name, passed: true }); }
-  catch (e: unknown) { tests.push({ name, passed: false, error: e instanceof Error ? e.message : String(e) }); }
-}
-
-function eq(actual: number, expected: number, label?: string) {
-  if (Math.abs(actual - expected) > 0.01) {
-    throw new Error(`${label || "Mismatch"}: got ${actual}, expected ${expected}`);
-  }
-}
+const { test, report } = createTestRunner();
 
 function makeCard(overrides: Partial<CreditCardData>): CreditCardData {
   return {
@@ -184,12 +173,4 @@ test("evaluateCardCombination sums rewards + credits + benefits - fees", () => {
   eq(result.totalAnnualValue, expectedAnnualValue, "totalAnnualValue");
 });
 
-// --- Report ---
-console.log("\n--- spendingAllocator.test.ts ---\n");
-let passed = 0, failed = 0;
-tests.forEach((t) => {
-  if (t.passed) { passed++; console.log(`  ✅ ${t.name}`); }
-  else { failed++; console.log(`  ❌ ${t.name}: ${t.error}`); }
-});
-console.log(`\n  Total: ${tests.length} | Passed: ${passed} | Failed: ${failed}\n`);
-if (failed > 0) process.exit(1);
+report("spendingAllocator.test.ts");

@@ -1,13 +1,8 @@
 import { filterByPreferences, isCardOwned } from "./cardFilter";
 import { CreditCardData } from "./types";
+import { createTestRunner } from "./testUtils";
 
-interface TestResult { name: string; passed: boolean; error?: string }
-const tests: TestResult[] = [];
-
-function test(name: string, fn: () => void) {
-  try { fn(); tests.push({ name, passed: true }); }
-  catch (e: unknown) { tests.push({ name, passed: false, error: e instanceof Error ? e.message : String(e) }); }
-}
+const { test, report } = createTestRunner();
 
 function makeCard(overrides: Partial<CreditCardData>): CreditCardData {
   return {
@@ -31,8 +26,6 @@ const businessCard = makeCard({ id: "biz1", name: "Business Card", tags: ["busin
 
 const allCards = [travelCard, cashbackCard, allRounder, businessCard];
 
-// --- filterByPreferences ---
-
 test("no preferences (all false) returns all cards", () => {
   const [result, msg] = filterByPreferences(allCards, { travel: false, cashback: false });
   if (result.length !== allCards.length) throw new Error(`Expected ${allCards.length}, got ${result.length}`);
@@ -53,7 +46,6 @@ test("strict match: travel + cashback returns only allRounder", () => {
 
 test("strict match fails, partial match returns cards with any tag", () => {
   const [result, msg] = filterByPreferences(allCards, { travel: true, business: true });
-  // No card has BOTH travel + business, so partial: travel1, allRounder, businessCard
   if (result.length !== 3) throw new Error(`Expected 3 partial matches, got ${result.length}`);
   if (msg !== undefined) throw new Error(`Expected no message on partial`);
 });
@@ -67,13 +59,10 @@ test("no matches at all returns all cards with message", () => {
 
 test("single preference filters correctly", () => {
   const [result] = filterByPreferences(allCards, { no_annual_fee: true });
-  // cashbackCard and allRounder have no_annual_fee
   if (result.length !== 2) throw new Error(`Expected 2, got ${result.length}`);
   const ids = result.map((c) => c.id).sort();
   if (ids[0] !== "all1" || ids[1] !== "cb1") throw new Error(`Wrong cards: ${ids}`);
 });
-
-// --- isCardOwned ---
 
 test("matches by ID", () => {
   const card = makeCard({ id: "amex_platinum", name: "Platinum Card" });
@@ -116,12 +105,4 @@ test("returns false when no match", () => {
   if (isCardOwned(card, owned)) throw new Error("Should not match different card");
 });
 
-// --- Report ---
-console.log("\n--- cardFilter.test.ts ---\n");
-let passed = 0, failed = 0;
-tests.forEach((t) => {
-  if (t.passed) { passed++; console.log(`  ✅ ${t.name}`); }
-  else { failed++; console.log(`  ❌ ${t.name}: ${t.error}`); }
-});
-console.log(`\n  Total: ${tests.length} | Passed: ${passed} | Failed: ${failed}\n`);
-if (failed > 0) process.exit(1);
+report("cardFilter.test.ts");

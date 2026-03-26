@@ -1,5 +1,6 @@
 import { User, Transaction } from "./types";
 import { showToast } from "./toastUtils";
+import { TRANSACTION_MONTHS_DEFAULT } from "./constants";
 
 export async function createLinkToken(
   user: User | null,
@@ -97,7 +98,7 @@ export async function fetchTransactions(
       body: JSON.stringify({
         userId: userId,
         itemId: connectionId,
-        months: 6, // Get last 6 months
+        months: TRANSACTION_MONTHS_DEFAULT,
       }),
     });
 

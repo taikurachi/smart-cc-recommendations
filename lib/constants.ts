@@ -29,6 +29,10 @@ export const TOAST_DURATION = {
   LONG: 7000,
 } as const;
 
+// Transaction fetch defaults
+export const TRANSACTION_MONTHS_DEFAULT = 6;
+export const TRANSACTION_MONTHS_ANALYSIS = 12;
+
 // Plaid transaction primaries that represent non-spending (payments, transfers, income)
 export const PAYMENT_PRIMARIES = new Set([
   "LOAN_PAYMENTS",

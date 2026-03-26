@@ -2,7 +2,7 @@
 import { useApp } from "@/lib/AppContext";
 import PlaidConnectionCard from "./components/PlaidConnectionCard";
 
-export default function Home() {
+export default function ConnectPage() {
   const { user, setUser, loadData } = useApp();
 
   return (
