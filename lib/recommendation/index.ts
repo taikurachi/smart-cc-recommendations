@@ -2,10 +2,7 @@ import { loadCreditCardData } from "../creditCardData";
 import { CreditCardData, SpendingAllocation, Transaction } from "./types";
 import { calculateCardAnnualValue } from "./cardValueCalculator";
 import { calculateCardAnnualValueFromRewards } from "./cardValueCalculator";
-import {
-  allocateSpendingToCards,
-  evaluateCardCombination,
-} from "./spendingAllocator";
+import { evaluateCardCombination } from "./spendingAllocator";
 import { filterByPreferences, isCardOwned } from "./cardFilter";
 import { calculateTransactionRewards } from "./rewardsCalculator";
 import { calculateCreditsValue } from "./creditsCalculator";
@@ -23,7 +20,10 @@ export {
   calculateIntroBonusValue,
 } from "./benefitsCalculator";
 export { mapTransactionCategoryToRewardCategory } from "./categoryMapper";
-export { allocateSpendingToCards, evaluateCardCombination } from "./spendingAllocator";
+export {
+  allocateSpendingToCards,
+  evaluateCardCombination,
+} from "./spendingAllocator";
 export { filterByPreferences, isCardOwned } from "./cardFilter";
 export type {
   CreditCardData,
@@ -65,13 +65,13 @@ function generateCombinations<T>(arr: T[], size: number): T[][] {
 export async function getRecommendedCards(
   transactions: Transaction[],
   preferences: Record<string, boolean>,
-  providedCards?: CreditCardData[]
+  providedCards?: CreditCardData[],
 ): Promise<[CreditCardData[], string | undefined]> {
   const creditCards =
     providedCards ?? ((await loadCreditCardData()) as CreditCardData[]);
   const [cardsToProcess, message] = filterByPreferences(
     creditCards,
-    preferences
+    preferences,
   );
 
   const recommendedCards = cardsToProcess.map((card) => {
@@ -90,19 +90,23 @@ export async function getRecommendedCards(
 export async function getMultiCardRecommendations(
   transactions: Transaction[],
   preferences: Record<string, boolean>,
-  ownedCards: Array<{ id?: string; name?: string; institution_name?: string }> = [],
+  ownedCards: Array<{
+    id?: string;
+    name?: string;
+    institution_name?: string;
+  }> = [],
   ownedCardsAnnualValue?: number,
-  providedCards?: CreditCardData[]
+  providedCards?: CreditCardData[],
 ): Promise<[CreditCardData[], string | undefined]> {
   const creditCards =
     providedCards ?? ((await loadCreditCardData()) as CreditCardData[]);
   const [filteredCards, filterMessage] = filterByPreferences(
     creditCards,
-    preferences
+    preferences,
   );
 
   const availableCards = filteredCards.filter(
-    (card) => !isCardOwned(card, ownedCards)
+    (card) => !isCardOwned(card, ownedCards),
   );
 
   if (availableCards.length === 0) {
@@ -131,7 +135,7 @@ export async function getMultiCardRecommendations(
   if (bestCombination.length === 0 && availableCards.length > 0) {
     const singleCardEval = evaluateCardCombination(
       [availableCards[0]],
-      transactions
+      transactions,
     );
     bestCombination = [availableCards[0]];
     bestValue = singleCardEval.totalAnnualValue;
@@ -144,11 +148,11 @@ export async function getMultiCardRecommendations(
 
   const recommendedCards = bestCombination.map((card) => {
     const cardAllocations = bestAllocation.filter(
-      (alloc) => alloc.cardId === (card.id || card.name)
+      (alloc) => alloc.cardId === (card.id || card.name),
     );
     const estimatedRewards = cardAllocations.reduce(
       (sum, alloc) => sum + alloc.rewardValue,
-      0
+      0,
     );
     const value = calculateCardAnnualValueFromRewards(card, estimatedRewards);
     return { ...card, ...value, allocation: cardAllocations };
@@ -158,7 +162,7 @@ export async function getMultiCardRecommendations(
 
   const recommendedTotalAnnualValue = recommendedCards.reduce(
     (sum, card) => sum + card.annualValue,
-    0
+    0,
   );
 
   if (ownedCards.length > 0) {
@@ -171,16 +175,16 @@ export async function getMultiCardRecommendations(
         const officialCard = await mapCardNameToOfficialCard(
           ownedCard.name || "",
           ownedCard.institution_name,
-          creditCards
+          creditCards,
         );
         if (officialCard) {
           const txRewards = calculateTransactionRewards(
             officialCard,
-            transactions
+            transactions,
           );
           const creditsVal = calculateCreditsValue(officialCard.credits || []);
           const benefitsVal = calculateBenefitsValue(
-            officialCard.benefits || []
+            officialCard.benefits || [],
           );
           const totalRewards = txRewards + creditsVal + benefitsVal;
           ownedCardsTotalAnnualValue +=

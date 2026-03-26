@@ -7,15 +7,17 @@
 
 import fs from "fs";
 import path from "path";
+import type { Transaction } from "./types";
+import type { CreditCardData, CardValueResult } from "./recommendation/types";
 
-// Load credit card data directly from JSON
-function loadCreditCardDataDirect(): any[] {
+type RecommendedCard = CreditCardData & CardValueResult;
+
+function loadCreditCardDataDirect(): CreditCardData[] {
   try {
     const filePath = path.join(process.cwd(), "data", "manualcc.json");
     const fileContents = fs.readFileSync(filePath, "utf-8");
     const data = JSON.parse(fileContents);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return Object.values(data) as any[];
+    return Object.values(data) as CreditCardData[];
   } catch (error) {
     console.error("Error loading credit card data:", error);
     return [];
@@ -24,11 +26,13 @@ function loadCreditCardDataDirect(): any[] {
 
 const _cards = loadCreditCardDataDirect();
 
+type OwnedCard = { id?: string; name?: string; institution_name?: string };
+
 async function testGetMultiCardRecommendations(
-  transactions: any[],
-  preferences: any,
-  ownedCards: any[] = []
-): Promise<[any[], string | undefined]> {
+  transactions: Transaction[],
+  preferences: Record<string, boolean>,
+  ownedCards: OwnedCard[] = []
+): Promise<[RecommendedCard[], string | undefined]> {
   const module = await import("./recommendation");
   return module.getMultiCardRecommendations(
     transactions,
@@ -36,15 +40,15 @@ async function testGetMultiCardRecommendations(
     ownedCards,
     undefined,
     _cards
-  );
+  ) as Promise<[RecommendedCard[], string | undefined]>;
 }
 
 async function testGetRecommendedCards(
-  transactions: any[],
-  preferences: any
-): Promise<[any[], string | undefined]> {
+  transactions: Transaction[],
+  preferences: Record<string, boolean>
+): Promise<[RecommendedCard[], string | undefined]> {
   const module = await import("./recommendation");
-  return module.getRecommendedCards(transactions, preferences, _cards);
+  return module.getRecommendedCards(transactions, preferences, _cards) as Promise<[RecommendedCard[], string | undefined]>;
 }
 
 interface TestResult {
@@ -571,10 +575,8 @@ async function runTests() {
   });
 
   async function calculateOwnedCardsAnnualValue(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ownedCards: any[],
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    transactions: any[]
+    ownedCards: OwnedCard[],
+    transactions: Transaction[]
   ): Promise<number> {
     const { calculateCardAnnualValue } = await import(
       "./recommendation"
@@ -1454,7 +1456,7 @@ async function runTests() {
     // BoA Customized Cash has $2500 quarterly cap on online-shopping (3%)
     // $10k capped at 3% = $300; overflow should go to next best
     const totalAllocatedRewards = recommendations.reduce(
-      (sum: number, card: any) => sum + (card.estimatedRewards || 0),
+      (sum: number, card: RecommendedCard) => sum + (card.estimatedRewards || 0),
       0
     );
 
@@ -1502,10 +1504,10 @@ async function runTests() {
 
     // Chase Freedom Unlimited has both tags: travel + no_annual_fee
     const hasChase = recommendations.some(
-      (card: any) => card.id === "chase_freedom_unlimited"
+      (card: RecommendedCard) => card.id === "chase_freedom_unlimited"
     );
     if (!hasChase) {
-      const ids = recommendations.map((c: any) => c.id);
+      const ids = recommendations.map((c: RecommendedCard) => c.id);
       throw new Error(
         `Expected Chase Freedom Unlimited in results (travel + no_annual_fee), got: ${ids}`
       );

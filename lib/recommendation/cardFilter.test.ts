@@ -6,7 +6,7 @@ const tests: TestResult[] = [];
 
 function test(name: string, fn: () => void) {
   try { fn(); tests.push({ name, passed: true }); }
-  catch (e: any) { tests.push({ name, passed: false, error: e.message || String(e) }); }
+  catch (e: unknown) { tests.push({ name, passed: false, error: e instanceof Error ? e.message : String(e) }); }
 }
 
 function makeCard(overrides: Partial<CreditCardData>): CreditCardData {

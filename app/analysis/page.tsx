@@ -22,7 +22,6 @@ import {
   SquarePlus,
 } from "lucide-react";
 import CreditCardComponent from "./components/CreditCard";
-import { loadTransactionData } from "@/lib/transactionData";
 import {
   formatCurrency,
   groupTransactionsByCreditCard,
