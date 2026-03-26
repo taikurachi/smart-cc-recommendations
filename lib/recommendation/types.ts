@@ -1,7 +1,4 @@
-import { Transaction } from "../types";
-
-export { Transaction };
-export type { PersonalFinanceCategory } from "../types";
+export type { Transaction, PersonalFinanceCategory } from "../types";
 
 export interface RewardCap {
   quarterly?: number;
@@ -73,3 +70,5 @@ export interface MultiCardRecommendation {
   allocation: SpendingAllocation[];
   message?: string;
 }
+
+export type CreditCardWithValue = CreditCardData & CardValueResult;

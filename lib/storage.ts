@@ -4,13 +4,11 @@ import {
   users as usersTable,
   plaidConnections as connectionsTable,
 } from "../drizzle/schema";
+import { User } from "./types";
 
-export interface User {
-  id: string;
-  email?: string;
-  created_at: string;
-  updated_at: string;
-}
+type UserRow = typeof usersTable.$inferSelect;
+type ConnectionRow = typeof connectionsTable.$inferSelect;
+type ConnectionInsert = typeof connectionsTable.$inferInsert;
 
 export interface PlaidConnection {
   id: string;
@@ -33,14 +31,8 @@ export interface PlaidAccount {
   mask?: string;
 }
 
-export interface StorageData {
-  users: User[];
-  plaid_connections: PlaidConnection[];
-  version: string;
-}
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function rowToUser(row: any): User {
+function rowToUser(row: UserRow): User {
   return {
     id: row.id,
     email: row.email ?? undefined,
@@ -55,8 +47,7 @@ function rowToUser(row: any): User {
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function rowToConnection(row: any): PlaidConnection {
+function rowToConnection(row: ConnectionRow): PlaidConnection {
   return {
     id: row.id,
     user_id: row.user_id,
@@ -110,9 +101,7 @@ class Storage {
       .insert(usersTable)
       .values({ email })
       .returning();
-    const user = rowToUser(rows[0]);
-    console.log(`Created user: ${user.id}`);
-    return user;
+    return rowToUser(rows[0]);
   }
 
   // ---- Plaid Connections ----
@@ -169,19 +158,14 @@ class Storage {
         accounts,
       })
       .returning();
-    const conn = rowToConnection(rows[0]);
-    console.log(
-      `Created Plaid connection: ${conn.id} for user: ${userId}`
-    );
-    return conn;
+    return rowToConnection(rows[0]);
   }
 
   async updatePlaidConnection(
     itemId: string,
     updates: Partial<PlaidConnection>
   ): Promise<PlaidConnection | null> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const setValues: Record<string, any> = {};
+    const setValues: Partial<ConnectionInsert> = {};
     if (updates.institution_name !== undefined)
       setValues.institution_name = updates.institution_name;
     if (updates.institution_id !== undefined)
@@ -210,16 +194,6 @@ class Storage {
       is_active: false,
     });
     return updated !== null;
-  }
-
-  // ---- Utility ----
-
-  async getAllData(): Promise<StorageData> {
-    return {
-      users: await this.getUsers(),
-      plaid_connections: await this.getPlaidConnections(),
-      version: "1.0.0",
-    };
   }
 
   async getStats(): Promise<{

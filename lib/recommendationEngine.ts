@@ -20,6 +20,7 @@ export {
 
 export type {
   CreditCardData,
+  CreditCardWithValue,
   Reward,
   Credit,
   Benefit,

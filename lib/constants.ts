@@ -29,3 +29,12 @@ export const TOAST_DURATION = {
   LONG: 7000,
 } as const;
 
+// Default Card Preferences (single source of truth)
+export const DEFAULT_CARD_PREFERENCES = {
+  travel: false,
+  cashback: false,
+  no_annual_fee: false,
+  low_interest: false,
+  beginner_friendly: false,
+} as const;
+

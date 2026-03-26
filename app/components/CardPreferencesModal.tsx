@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import Button from "./Button";
 import { CardPreferences } from "@/lib/types";
+import { DEFAULT_CARD_PREFERENCES } from "@/lib/constants";
 
 interface CardPreferencesModalProps {
   isOpen: boolean;
@@ -98,11 +99,7 @@ export default function CardPreferencesModal({
   initialPreferences,
 }: CardPreferencesModalProps) {
   const [preferences, setPreferences] = useState<CardPreferences>({
-    travel: false,
-    cashback: false,
-    no_annual_fee: false,
-    low_interest: false,
-    beginner_friendly: false,
+    ...DEFAULT_CARD_PREFERENCES,
   });
 
   // Initialize with saved preferences or defaults
@@ -142,8 +139,7 @@ export default function CardPreferencesModal({
 
   return (
     <AnimatePresence>
-      {isOpen && (
-        <motion.div
+      <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -242,7 +238,6 @@ export default function CardPreferencesModal({
             </div>
           </motion.div>
         </motion.div>
-      )}
     </AnimatePresence>
   );
 }

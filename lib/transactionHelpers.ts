@@ -101,7 +101,6 @@ export function groupTransactionsByCreditCard(
   const accountIds = new Set(
     currentlyOwnedCards.map((card) => card.account_id)
   );
-  console.log(accountIds, "accountIds");
   const grouped: Record<string, Transaction[]> = {};
 
   transactions.forEach((transaction) => {
@@ -114,7 +113,6 @@ export function groupTransactionsByCreditCard(
       grouped[cardName].push(transaction);
     }
   });
-  console.log(grouped, "grouped");
   return grouped;
 }
 

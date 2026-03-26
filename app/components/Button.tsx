@@ -2,12 +2,13 @@
 
 import { ButtonHTMLAttributes, ReactNode } from "react";
 
+type ButtonColor = "purple" | "green" | "light-green" | "blue" | "gray" | "gray-light" | "red";
+
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
-  color?: "purple" | "green" | "light-green" | "blue" | "gray" | "gray-light" | "red";
+  color?: ButtonColor;
   variant?: "solid" | "outline";
   size?: "sm" | "md" | "lg";
-  showArrow?: boolean;
 }
 
 export default function Button({

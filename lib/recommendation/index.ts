@@ -27,6 +27,7 @@ export {
 export { filterByPreferences, isCardOwned } from "./cardFilter";
 export type {
   CreditCardData,
+  CreditCardWithValue,
   Reward,
   Credit,
   Benefit,
@@ -67,8 +68,7 @@ export async function getRecommendedCards(
   preferences: Record<string, boolean>,
   providedCards?: CreditCardData[],
 ): Promise<[CreditCardData[], string | undefined]> {
-  const creditCards =
-    providedCards ?? ((await loadCreditCardData()) as CreditCardData[]);
+  const creditCards = providedCards ?? (await loadCreditCardData());
   const [cardsToProcess, message] = filterByPreferences(
     creditCards,
     preferences,
@@ -98,8 +98,7 @@ export async function getMultiCardRecommendations(
   ownedCardsAnnualValue?: number,
   providedCards?: CreditCardData[],
 ): Promise<[CreditCardData[], string | undefined]> {
-  const creditCards =
-    providedCards ?? ((await loadCreditCardData()) as CreditCardData[]);
+  const creditCards = providedCards ?? (await loadCreditCardData());
   const [filteredCards, filterMessage] = filterByPreferences(
     creditCards,
     preferences,

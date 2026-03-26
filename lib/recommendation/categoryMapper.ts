@@ -1,4 +1,5 @@
 import { PersonalFinanceCategory } from "./types";
+import { RewardCategory } from "../creditRewardsTypes";
 
 /**
  * Map Plaid personal_finance_category to credit card reward categories.
@@ -7,7 +8,7 @@ import { PersonalFinanceCategory } from "./types";
  */
 export function mapTransactionCategoryToRewardCategory(
   pfc?: PersonalFinanceCategory
-): string[] {
+): RewardCategory[] {
   if (!pfc) {
     return ["general"];
   }

@@ -1,10 +1,5 @@
 import { loadCreditCardData } from "./creditCardData";
 import { CreditCardData } from "./recommendation/types";
-import { calculateCreditsValue } from "./recommendation/creditsCalculator";
-import {
-  calculateBenefitsValue,
-  calculateIntroBonusValue,
-} from "./recommendation/benefitsCalculator";
 
 let cachedCardMap: Map<string, CreditCardData> | null = null;
 
@@ -17,8 +12,7 @@ export async function mapCardNameToOfficialCard(
   institutionName?: string,
   providedCards?: CreditCardData[]
 ): Promise<CreditCardData | null> {
-  const cards =
-    providedCards ?? ((await loadCreditCardData()) as CreditCardData[]);
+  const cards = providedCards ?? (await loadCreditCardData());
 
   if (!cachedCardMap) {
     cachedCardMap = new Map();
@@ -64,30 +58,4 @@ export async function mapCardNameToOfficialCard(
   }
 
   return null;
-}
-
-/**
- * Calculate non-transaction-based value of a card (credits + benefits).
- * Delegates to the focused calculator modules.
- */
-export function getRewardsEstimates(card: CreditCardData): {
-  totalRewards: number;
-  annualValue: number;
-  introBonusValue: number;
-  creditsValue: number;
-  benefitsValue: number;
-} {
-  const creditsValue = calculateCreditsValue(card.credits || []);
-  const benefitsValue = calculateBenefitsValue(card.benefits || []);
-  const introBonusValue = calculateIntroBonusValue(card.benefits || []);
-  const totalRewards = creditsValue + benefitsValue;
-  const annualValue = totalRewards - (card.annual_fee || 0);
-
-  return {
-    totalRewards,
-    annualValue,
-    introBonusValue,
-    creditsValue,
-    benefitsValue,
-  };
 }

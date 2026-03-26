@@ -1,13 +1,11 @@
 import { getDb } from "./db";
 import { creditCards as creditCardsTable } from "../drizzle/schema";
+import { CreditCardData } from "./recommendation/types";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let cachedCards: any[] | null = null;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let loadingPromise: Promise<any[]> | null = null;
+let cachedCards: CreditCardData[] | null = null;
+let loadingPromise: Promise<CreditCardData[]> | null = null;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function loadCreditCardData(): Promise<any[]> {
+export async function loadCreditCardData(): Promise<CreditCardData[]> {
   if (cachedCards) {
     return cachedCards;
   }
@@ -19,7 +17,7 @@ export async function loadCreditCardData(): Promise<any[]> {
   if (typeof window === "undefined" && typeof process !== "undefined") {
     const db = getDb();
     const rows = await db.select().from(creditCardsTable);
-    cachedCards = rows;
+    cachedCards = rows as CreditCardData[];
     return cachedCards;
   }
 
@@ -30,9 +28,10 @@ export async function loadCreditCardData(): Promise<any[]> {
       }
       return response.json();
     })
-    .then((data) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const cardsArray: any[] = Array.isArray(data) ? data : Object.values(data);
+    .then((data: CreditCardData[] | Record<string, CreditCardData>) => {
+      const cardsArray: CreditCardData[] = Array.isArray(data)
+        ? data
+        : Object.values(data);
       cachedCards = cardsArray;
       return cachedCards;
     })

@@ -1,14 +1,13 @@
 "use client";
 
-import { CreditCardOwned, CreditCardRecommendation } from "@/lib/types";
+import { CreditCardWithValue } from "@/lib/recommendation/types";
 import { Plus, ChevronDown, ChevronUp } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import { motion } from "motion/react";
 
 interface CreditCardProps {
-  cards: CreditCardOwned[] | CreditCardRecommendation[];
-
+  cards: CreditCardWithValue[];
   status: string;
 }
 
@@ -22,21 +21,17 @@ export default function CreditCardComponent({
 
   if (!currentCard) return <div>loading...</div>;
 
-  // Calculate totals across all cards
   const totalAnnualValue = cards.reduce(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (sum, card: any) => sum + (card.annualValue || 0),
-    0
+    (sum, card) => sum + (card.annualValue || 0),
+    0,
   );
   const totalRewards = cards.reduce(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (sum, card: any) => sum + (card.totalRewards || 0),
-    0
+    (sum, card) => sum + (card.totalRewards || 0),
+    0,
   );
   const totalAnnualFees = cards.reduce(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (sum, card: any) => sum + (card.annual_fee || 0),
-    0
+    (sum, card) => sum + (card.annual_fee || 0),
+    0,
   );
 
   const toggleCard = (index: number) => {
@@ -70,7 +65,6 @@ export default function CreditCardComponent({
           className="relative mt-4 flex-shrink-0"
           style={{ width: `${300 + (cards.length - 1) * 40}px` }}
         >
-          {/* Spacer to maintain height based on image dimensions */}
           <div style={{ height: "200px", width: "300px" }} aria-hidden="true" />
           {cards.map((card, index) => (
             <Image
@@ -97,7 +91,6 @@ export default function CreditCardComponent({
             />
           </motion.span>
         )}
-        {/* Include table of contents here */}
         {status === "New" && null}
       </div>
       <div className="bg-white mt-4 rounded-lg p-4 flex flex-col flex-1">
@@ -113,22 +106,18 @@ export default function CreditCardComponent({
           <p className="font-semibold">Est. Rewards</p>
           <span className="amount">${Math.ceil(totalRewards)}</span>
         </div>
-        {/* Expandable card list */}
         <div className="ml-4 mt-2 mb-4">
           {cards.map((card, index) => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const cardData = card as any;
             const isExpanded = expandedCards.has(index);
-            const cardTotalRewards = cardData.totalRewards || 0;
+            const cardTotalRewards = card.totalRewards || 0;
 
-            // Get card breakdown items
             const breakdownItems = [
-              { name: "Benefits Bonus", key: "benefitsValue" },
-              { name: "Credits Bonus", key: "creditsValue" },
-              { name: "Rewards Value", key: "estimatedRewards" },
+              { name: "Benefits Bonus", key: "benefitsValue" as const },
+              { name: "Credits Bonus", key: "creditsValue" as const },
+              { name: "Rewards Value", key: "estimatedRewards" as const },
             ]
-              .filter(({ key }) => cardData[key])
-              .sort((a, b) => (cardData[b.key] || 0) - (cardData[a.key] || 0));
+              .filter(({ key }) => card[key])
+              .sort((a, b) => (card[b.key] || 0) - (card[a.key] || 0));
 
             return (
               <div key={index} className="mb-1">
@@ -158,7 +147,7 @@ export default function CreditCardComponent({
                       >
                         <span className="font-semibold">{name}</span>
                         <span className="amount">
-                          ${Math.ceil(cardData[key] || 0)}
+                          ${Math.ceil(card[key] || 0)}
                         </span>
                       </li>
                     ))}

@@ -1,19 +1,10 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 
 import { useApp } from "@/lib/AppContext";
 import CardPreferencesModal from "../components/CardPreferencesModal";
-import {
-  CardPreferences,
-  CreditCardOwned,
-  CreditCardRecommendation,
-  SpendingAnalysis,
-} from "@/lib/types";
-import {
-  calculateCardAnnualValue,
-  getMultiCardRecommendations,
-} from "@/lib/recommendation";
+import { CardPreferences } from "@/lib/types";
 
 import {
   Columns3Cog,
@@ -22,289 +13,26 @@ import {
   SquarePlus,
 } from "lucide-react";
 import CreditCardComponent from "./components/CreditCard";
-import {
-  formatCurrency,
-  groupTransactionsByCreditCard,
-  removeDuplicateTransactions,
-} from "@/lib/transactionHelpers";
-import { analyzeSpending } from "@/lib/spendingAnalyzer";
-import { showToast } from "@/lib/toastUtils";
-import { mapCardNameToOfficialCard } from "@/lib/generalHelpers";
+import { formatCurrency } from "@/lib/transactionHelpers";
 import Button from "../components/Button";
-
-interface User {
-  id: string;
-  email?: string;
-  created_at: string;
-}
-
-interface Connection {
-  id: string;
-  item_id: string;
-  institution_name?: string;
-  accounts: Array<{
-    account_id: string;
-    name: string;
-    type: string;
-    subtype: string;
-    mask?: string;
-  }>;
-  created_at: string;
-  last_synced?: string;
-}
-
-interface Transaction {
-  transaction_id: string;
-  account_id: string;
-  amount: number;
-  date: string;
-  name: string;
-  category?: string[];
-}
+import { useAnalysisData } from "./hooks/useAnalysisData";
+import { useRecommendations } from "./hooks/useRecommendations";
 
 export default function AnalysisPage() {
   const { cardPreferences, setCardPreferences } = useApp();
-  const [, setUser] = useState<User | null>(null);
-  const [connections, setConnections] = useState<Connection[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [analysis, setAnalysis] = useState<SpendingAnalysis | null>(null);
-  const [ownedCards, setOwnedCards] = useState<CreditCardOwned[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const { connections, transactions, analysis, ownedCards, loading, error } =
+    useAnalysisData();
+  const { recommendations, loadingRecommendations, calculateRecommendations } =
+    useRecommendations(transactions, ownedCards, cardPreferences, loading);
+
   const [isCardPreferencesOpen, setIsCardPreferencesOpen] = useState(false);
-  const [recommendations, setRecommendations] = useState<
-    CreditCardRecommendation[]
-  >([]);
-  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
   const [recommendationFilterModalOn, setRecommendationFilterModalOn] =
     useState(false);
 
-  useEffect(() => {
-    if (transactions.length === 0) return;
-
-    const fetchAccountsData = async () => {
-      try {
-        const userId = localStorage.getItem("userId");
-        if (!userId) return;
-
-        const response = await fetch(`/api/plaid/accounts?userId=${userId}`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch accounts");
-        }
-
-        const data = await response.json();
-
-        console.log("All accounts:", data.accounts);
-        console.log("Credit cards found:", data.creditCards);
-      } catch (error) {
-        console.error("Error fetching accounts:", error);
-      }
-    };
-
-    fetchAccountsData();
-  }, [transactions]);
-  useEffect(() => {
-    loadUserDataAndAnalysis();
-  }, []);
-
   // Auto-open preferences modal if no preferences exist and we have transactions
-  useEffect(() => {
-    if (!loading && transactions.length > 0 && !cardPreferences) {
-      setIsCardPreferencesOpen(true);
-    }
-  }, [loading, transactions.length, cardPreferences]);
-
-  // Calculate recommendations when transactions are loaded
-  // Use preferences if available, otherwise use default (all false)
-
-  const calculateRecommendations = async (
-    preferences: Record<string, boolean>,
-  ) => {
-    if (transactions.length === 0) {
-      console.log("No transactions available for recommendations");
-      return;
-    }
-
-    setLoadingRecommendations(true);
-    try {
-      // Calculate total annual value of owned cards (using the pre-calculated values from page.tsx)
-      // This ensures we use the correct values (calculated with filtered transactions per card)
-      // rather than recalculating with all transactions which would double-count
-      const ownedCardsTotalAnnualValue = ownedCards.reduce(
-        (sum, card) =>
-          sum +
-          ((card as CreditCardOwned & { annualValue?: number }).annualValue ||
-            0),
-        0,
-      );
-
-      // const spendingCategories = analyzeSpendingCategories(transactions);
-      // const recs = await getRecommendedCards(transactions, preferences);
-      const recs = await getMultiCardRecommendations(
-        transactions,
-        preferences,
-        ownedCards,
-        ownedCardsTotalAnnualValue,
-      );
-      if (recs[1]) showToast.error(recs[1]);
-      console.log(recs, "NEW RECS");
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      setRecommendations(recs[0] as any);
-    } catch (error) {
-      console.error("Error calculating recommendations:", error);
-    } finally {
-      setLoadingRecommendations(false);
-    }
-  };
-
-  useEffect(() => {
-    if (
-      transactions.length > 0 &&
-      recommendations.length === 0 &&
-      !loadingRecommendations &&
-      !loading
-    ) {
-      console.log("Triggering recommendation calculation from useEffect");
-      const prefsToUse = cardPreferences || {
-        travel: false,
-        cashback: false,
-        no_annual_fee: false,
-        low_interest: false,
-        beginner_friendly: false,
-      };
-      calculateRecommendations({ ...prefsToUse });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    transactions.length,
-    recommendations.length,
-    loadingRecommendations,
-    loading,
-    cardPreferences,
-  ]);
-
-  const loadUserDataAndAnalysis = async () => {
-    try {
-      setLoading(true);
-      const userId = localStorage.getItem("userId");
-
-      if (!userId) {
-        setError("No user found. Please connect your bank account first.");
-        return;
-      }
-
-      // Load user and connections
-      const userResponse = await fetch(`/api/users?userId=${userId}`);
-      if (!userResponse.ok) {
-        throw new Error("Failed to load user data");
-      }
-
-      const userData = await userResponse.json();
-      setUser(userData.user);
-      const userConnections: Connection[] = userData.connections || [];
-      setConnections(userConnections);
-
-      if (userConnections.length === 0) {
-        setError(
-          "No bank connections found. Please connect your bank account first.",
-        );
-        return;
-      }
-
-      // Load transactions for all connections
-      const allTransactions: Transaction[] = [];
-
-      for (const connection of userConnections) {
-        console.log(connection, "connection");
-        const creditCardAccountFound = connection.accounts.find(
-          (acc) => acc.type === "credit",
-        );
-
-        const validatedAccountsForTransactions = creditCardAccountFound
-          ? connection.accounts.filter((acc) => acc.type === "credit")
-          : connection.accounts;
-
-        const validatedAccountIds = validatedAccountsForTransactions.map(
-          (acc) => acc.account_id,
-        );
-
-        const currentlyOwnedCards = validatedAccountsForTransactions.map(
-          (acc) => ({ account_id: acc.account_id, name: acc.name }),
-        );
-
-        // fetch plaid transaction api here
-        try {
-          const transactionResponse = await fetch("/api/plaid/transactions", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              userId: userId,
-              itemId: connection.item_id,
-              account_ids: validatedAccountIds,
-              months: 12, // Get last 12 months for better analysis
-            }),
-          });
-
-          if (transactionResponse.ok) {
-            const transactionData = await transactionResponse.json();
-            const fetchedTransactions: Transaction[] = transactionData.transactions || [];
-            console.log("Account IDs in transactions:", [
-              ...new Set(fetchedTransactions.map((t) => t.account_id)),
-            ]);
-            const transactionsByCard = groupTransactionsByCreditCard(
-              fetchedTransactions,
-              currentlyOwnedCards,
-            );
-
-            console.log(transactionsByCard, "transactions by card");
-            // Process each card's transactions
-            for (const [cardName, transactions] of Object.entries(
-              transactionsByCard,
-            )) {
-              const officialCard = await mapCardNameToOfficialCard(
-                cardName,
-                connection.institution_name,
-              );
-              if (!officialCard) continue;
-              const value = calculateCardAnnualValue(
-                officialCard,
-                transactions,
-              );
-              setOwnedCards((prev) => [
-                ...prev,
-                { ...officialCard, ...value } as unknown as CreditCardOwned,
-              ]);
-            }
-
-            allTransactions.push(...fetchedTransactions);
-          }
-        } catch (error) {
-          console.error(
-            `Error loading transactions for ${connection.institution_name}:`,
-            error,
-          );
-        }
-      }
-
-      // Remove duplicate transactions before setting state
-      const deduplicatedTransactions =
-        removeDuplicateTransactions(allTransactions);
-      setTransactions(deduplicatedTransactions);
-
-      if (deduplicatedTransactions.length > 0) {
-        // Analyze spending patterns from deduplicated transactions
-        const analysisResult = analyzeSpending(deduplicatedTransactions);
-        setAnalysis(analysisResult);
-      } else {
-        setError("No transactions found. Please sync your transactions first.");
-      }
-    } catch (error) {
-      console.error("Error loading analysis:", error);
-      setError("Failed to load spending analysis. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  // (handled via derived state check rather than a useEffect)
+  const shouldPromptPreferences =
+    !loading && transactions.length > 0 && !cardPreferences;
 
   if (loading) {
     return (
@@ -369,22 +97,18 @@ export default function AnalysisPage() {
   const handleSavePreferences = async (preferences: CardPreferences) => {
     setCardPreferences(preferences);
     setIsCardPreferencesOpen(false);
-
-    // Calculate recommendations in the background
     await calculateRecommendations({ ...preferences });
   };
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
-      {/* Card Preferences Modal */}
       <CardPreferencesModal
-        isOpen={isCardPreferencesOpen}
+        isOpen={isCardPreferencesOpen || shouldPromptPreferences}
         onClose={() => setIsCardPreferencesOpen(false)}
         onSave={handleSavePreferences}
         initialPreferences={cardPreferences || undefined}
       />
 
-      {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
@@ -401,9 +125,7 @@ export default function AnalysisPage() {
 
       {analysis && (
         <>
-          {/* Key Metrics */}
           <div className="grid md:grid-cols-3 gap-6 mb-8">
-            {/* Total Spending */}
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-6">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm text-blue-800">Total Spending</h3>
@@ -429,7 +151,6 @@ export default function AnalysisPage() {
               <p className="text-xs text-blue-700 mt-1">Last 12 months</p>
             </div>
 
-            {/* Monthly Average */}
             <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-xl p-6">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm text-green-800">Monthly Average</h3>
@@ -455,7 +176,6 @@ export default function AnalysisPage() {
               <p className="text-xs text-green-700 mt-1">Per month</p>
             </div>
 
-            {/* Top Category */}
             <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-xl p-6">
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm text-purple-800">Top Category</h3>
@@ -485,14 +205,13 @@ export default function AnalysisPage() {
             </div>
           </div>
 
-          {/* Credit Card Recommendations */}
           {recommendations.length > 0 || loadingRecommendations ? (
             <div className="mt-8">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex gap-4 items-center">
                   <h3 className="text-4xl font-bold text-gray-900 mb-1">
                     <span className="amount">{recommendations.length}</span>{" "}
-                    Recommendations Found! 🎉
+                    Recommendations Found!
                   </h3>
                 </div>
               </div>
@@ -547,7 +266,7 @@ export default function AnalysisPage() {
           ) : (
             <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 mt-8 text-center">
               <h3 className="text-xl font-bold text-gray-900 mb-2">
-                💳 Get Personalized Recommendations
+                Get Personalized Recommendations
               </h3>
               <p className="text-sm text-gray-600 mb-4">
                 Set your card preferences to see personalized recommendations
