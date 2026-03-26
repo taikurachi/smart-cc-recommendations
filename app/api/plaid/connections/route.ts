@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { storage } from "@/lib/storage";
+import { storage, PlaidConnection } from "@/lib/storage";
 import { plaidClient } from "@/lib/plaid";
+
+function stripAccessToken(conn: PlaidConnection): Omit<PlaidConnection, "access_token"> {
+  const { access_token, ...safe } = conn;
+  void access_token;
+  return safe;
+}
 
 // GET /api/plaid/connections - Get connections for a user
 export async function GET(request: NextRequest) {
@@ -18,15 +24,12 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      const { access_token, ...safeConnection } = connection;
-      return NextResponse.json({ connection: safeConnection });
+      return NextResponse.json({ connection: stripAccessToken(connection) });
     }
 
     if (userId) {
       const connections = await storage.getConnectionsByUserId(userId);
-      const safeConnections = connections.map(
-        ({ access_token, ...conn }) => conn
-      );
+      const safeConnections = connections.map(stripAccessToken);
 
       return NextResponse.json({
         connections: safeConnections,

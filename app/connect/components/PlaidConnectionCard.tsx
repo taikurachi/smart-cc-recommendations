@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { usePlaidLink } from "react-plaid-link";
-import { useRouter } from "next/navigation";
+
 import Image from "next/image";
 import Button from "@/app/components/Button";
 import { AnimatePresence, motion } from "motion/react";
@@ -35,7 +35,6 @@ export default function PlaidConnectionCard({
   setUser,
   loadData,
 }: PlaidConnectionCardProps) {
-  const router = useRouter();
   const [linkToken, setLinkToken] = useState("");
   const [plaidStateIndex, setPlaidStateIndex] = useState(0);
   const [buttonStateIndex, setButtonStateIndex] = useState(0);

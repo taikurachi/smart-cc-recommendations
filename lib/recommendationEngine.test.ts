@@ -1394,7 +1394,7 @@ async function runTests() {
       beginner_friendly: false,
     };
 
-    const [cards, message] = await testGetRecommendedCards(transactions, preferences);
+    const [cards] = await testGetRecommendedCards(transactions, preferences);
 
     if (cards.length === 0) {
       throw new Error("Expected at least 1 card from single-card mode");

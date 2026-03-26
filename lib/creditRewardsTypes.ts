@@ -1,5 +1,4 @@
-// category name is either
-[
+export const rewardCategories = [
   "travel",
   "hotels",
   "gas",
@@ -11,4 +10,6 @@
   "wholesale-clubs",
   "general",
   "streaming",
-];
+] as const;
+
+export type RewardCategory = (typeof rewardCategories)[number];

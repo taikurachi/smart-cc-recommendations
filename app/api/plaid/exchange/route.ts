@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { CountryCode } from "plaid";
 import { plaidClient } from "@/lib/plaid";
 import { storage } from "@/lib/storage";
 
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
 
     let institutionName = "Unknown Bank";
     let institutionId = "";
-    let accounts: Array<{ account_id: string; name: string; type: string; subtype: string; mask: string | null | undefined }> = [];
+    let accounts: Array<{ account_id: string; name: string; type: string; subtype: string; mask?: string }> = [];
 
     try {
       const itemResponse = await plaidClient.itemGet({
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
 
         const institutionResponse = await plaidClient.institutionsGetById({
           institution_id: institutionId,
-          country_codes: ["US"],
+          country_codes: [CountryCode.Us],
         });
 
         institutionName = institutionResponse.data.institution.name;
@@ -48,7 +49,7 @@ export async function POST(request: NextRequest) {
         name: account.name,
         type: account.type,
         subtype: account.subtype || "",
-        mask: account.mask,
+        mask: account.mask ?? undefined,
       }));
     } catch (error) {
       console.error("Error fetching institution/account details:", error);

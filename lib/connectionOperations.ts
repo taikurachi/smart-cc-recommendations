@@ -20,7 +20,7 @@ export async function deleteConnection(itemId: string): Promise<boolean> {
       throw new Error(error.error || "Failed to remove connection");
     }
 
-    const data = await response.json();
+    await response.json();
     showToast.success("Connection removed successfully!", {
       id: "delete-connection",
     });

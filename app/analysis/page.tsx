@@ -71,7 +71,6 @@ export default function AnalysisPage() {
   const [ownedCards, setOwnedCards] = useState<CreditCardOwned[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [recIndex, setRecIndex] = useState(0);
   const [isCardPreferencesOpen, setIsCardPreferencesOpen] = useState(false);
   const [recommendations, setRecommendations] = useState<
     CreditCardRecommendation[]
@@ -106,7 +105,7 @@ export default function AnalysisPage() {
   }, [transactions]);
   useEffect(() => {
     loadUserDataAndAnalysis();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // Auto-open preferences modal if no preferences exist and we have transactions
   useEffect(() => {
@@ -118,7 +117,9 @@ export default function AnalysisPage() {
   // Calculate recommendations when transactions are loaded
   // Use preferences if available, otherwise use default (all false)
 
-  const calculateRecommendations = async (preferences) => {
+  const calculateRecommendations = async (
+    preferences: Record<string, boolean>,
+  ) => {
     if (transactions.length === 0) {
       console.log("No transactions available for recommendations");
       return;
@@ -130,7 +131,10 @@ export default function AnalysisPage() {
       // This ensures we use the correct values (calculated with filtered transactions per card)
       // rather than recalculating with all transactions which would double-count
       const ownedCardsTotalAnnualValue = ownedCards.reduce(
-        (sum, card) => sum + (card.annualValue || 0),
+        (sum, card) =>
+          sum +
+          ((card as CreditCardOwned & { annualValue?: number }).annualValue ||
+            0),
         0,
       );
 
@@ -168,7 +172,7 @@ export default function AnalysisPage() {
         low_interest: false,
         beginner_friendly: false,
       };
-      calculateRecommendations(prefsToUse);
+      calculateRecommendations({ ...prefsToUse });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -197,9 +201,10 @@ export default function AnalysisPage() {
 
       const userData = await userResponse.json();
       setUser(userData.user);
-      setConnections(userData.connections || []);
+      const userConnections: Connection[] = userData.connections || [];
+      setConnections(userConnections);
 
-      if (userData.connections?.length === 0) {
+      if (userConnections.length === 0) {
         setError(
           "No bank connections found. Please connect your bank account first.",
         );
@@ -209,7 +214,7 @@ export default function AnalysisPage() {
       // Load transactions for all connections
       const allTransactions: Transaction[] = [];
 
-      for (const connection of userData.connections) {
+      for (const connection of userConnections) {
         console.log(connection, "connection");
         const creditCardAccountFound = connection.accounts.find(
           (acc) => acc.type === "credit",
@@ -242,7 +247,7 @@ export default function AnalysisPage() {
 
           if (transactionResponse.ok) {
             const transactionData = await transactionResponse.json();
-            const fetchedTransactions = transactionData.transactions || [];
+            const fetchedTransactions: Transaction[] = transactionData.transactions || [];
             console.log("Account IDs in transactions:", [
               ...new Set(fetchedTransactions.map((t) => t.account_id)),
             ]);
@@ -366,7 +371,7 @@ export default function AnalysisPage() {
     setIsCardPreferencesOpen(false);
 
     // Calculate recommendations in the background
-    await calculateRecommendations(preferences);
+    await calculateRecommendations({ ...preferences });
   };
 
   return (
@@ -384,7 +389,7 @@ export default function AnalysisPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              📊 Spending Analysis
+              Spending Analysis
             </h1>
             <p className="text-gray-600">
               Insights from {transactions.length} transactions across{" "}
