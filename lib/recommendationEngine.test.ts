@@ -1621,9 +1621,9 @@ async function runTests() {
       allCards.filter((c: CreditCardData) => (c.tags || []).includes("cashback")).map((c: CreditCardData) => c.id)
     );
 
-    const allCashback = recommendations.every((c: any) => cashbackCardIds.has(c.id));
+    const allCashback = recommendations.every((c: RecommendedCard) => cashbackCardIds.has(c.id));
     if (!allCashback) {
-      const nonCashback = recommendations.filter((c: any) => !cashbackCardIds.has(c.id)).map((c: any) => c.name);
+      const nonCashback = recommendations.filter((c: RecommendedCard) => !cashbackCardIds.has(c.id)).map((c: RecommendedCard) => c.name);
       throw new Error(`Non-cashback cards in results: ${nonCashback.join(", ")}`);
     }
 
