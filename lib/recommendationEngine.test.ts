@@ -1515,7 +1515,7 @@ async function runTests() {
 
     // Amex Platinum should NOT be in a combo that has only no_annual_fee cards
     // (it has travel tag but NOT no_annual_fee)
-    const allNoFee = recommendations.every((c: any) => c.annual_fee === 0);
+    const allNoFee = recommendations.every((c: RecommendedCard) => c.annual_fee === 0);
     console.log(
       `   ✅ Test #23: travel + no_annual_fee → ${recommendations.length} cards` +
       `${allNoFee ? " (all $0 fee)" : ""}, Chase Freedom Unlimited included`
@@ -1618,7 +1618,7 @@ async function runTests() {
     // (since strict/partial match should find cashback-tagged cards)
     const allCards = loadCreditCardDataDirect();
     const cashbackCardIds = new Set(
-      allCards.filter((c: any) => (c.tags || []).includes("cashback")).map((c: any) => c.id)
+      allCards.filter((c: CreditCardData) => (c.tags || []).includes("cashback")).map((c: CreditCardData) => c.id)
     );
 
     const allCashback = recommendations.every((c: any) => cashbackCardIds.has(c.id));
