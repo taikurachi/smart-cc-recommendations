@@ -1,13 +1,15 @@
 import { loadCreditCardData } from "../creditCardData";
 import { CreditCardData, SpendingAllocation, Transaction } from "./types";
-import { calculateCardAnnualValue } from "./cardValueCalculator";
-import { calculateCardAnnualValueFromRewards } from "./cardValueCalculator";
+import {
+  calculateCardAnnualValue,
+  calculateCardAnnualValueFromRewards,
+} from "./cardValueCalculator";
 import { evaluateCardCombination } from "./spendingAllocator";
 import { filterByPreferences, isCardOwned } from "./cardFilter";
 import { calculateTransactionRewards } from "./rewardsCalculator";
 import { calculateCreditsValue } from "./creditsCalculator";
 import { calculateBenefitsValue } from "./benefitsCalculator";
-import { mapCardNameToOfficialCard } from "../generalHelpers";
+import { mapCardNameToOfficialCard } from "../cardMatcher";
 
 export {
   calculateCardAnnualValue,

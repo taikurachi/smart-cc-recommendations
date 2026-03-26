@@ -581,7 +581,7 @@ async function runTests() {
     const { calculateCardAnnualValue } = await import(
       "./recommendation"
     );
-    const { mapCardNameToOfficialCard } = await import("./generalHelpers");
+    const { mapCardNameToOfficialCard } = await import("./cardMatcher");
 
     let totalAnnualValue = 0;
 

@@ -49,19 +49,13 @@ export function calculateTransactionRewards(
     if (transaction.amount <= 0) return;
 
     const amount = Math.abs(transaction.amount);
-    const rewardCategories = mapTransactionCategoryToRewardCategory(
+    const rewardCategory = mapTransactionCategoryToRewardCategory(
       transaction.personal_finance_category
     );
 
-    const matchedCategories = rewardCategories.filter(
-      (cat) => cat !== "general" && cardRewardCategories.has(cat)
-    );
-
-    if (matchedCategories.length > 0) {
-      matchedCategories.forEach((rewardCategory) => {
-        categorySpending[rewardCategory] =
-          (categorySpending[rewardCategory] || 0) + amount;
-      });
+    if (rewardCategory !== "general" && cardRewardCategories.has(rewardCategory)) {
+      categorySpending[rewardCategory] =
+        (categorySpending[rewardCategory] || 0) + amount;
     } else if (hasGeneralCategory) {
       categorySpending["general"] =
         (categorySpending["general"] || 0) + amount;

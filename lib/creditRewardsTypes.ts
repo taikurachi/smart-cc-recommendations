@@ -5,7 +5,6 @@ export const rewardCategories = [
   "grocery",
   "drugstores",
   "online-shopping",
-  "online-groceries",
   "dining",
   "wholesale-clubs",
   "general",

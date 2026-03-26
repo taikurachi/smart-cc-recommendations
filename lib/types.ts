@@ -53,18 +53,6 @@ export interface CreditCardOwned extends CreditCard {
   mask?: string;
 }
 
-export interface CreditCardRecommendation extends CreditCard {
-  rating: string;
-  annualFee: string;
-  rewards: string;
-  introOffer?: string;
-  matchScore: number;
-  matchReasons: string[];
-  estimatedValue?: number;
-  annual_fee: number;
-  estimatedRewards: number;
-}
-
 export type CardPreference =
   | "travel"
   | "cashback"

@@ -78,10 +78,9 @@ export function allocateSpendingToCards(
   transactions.forEach((transaction) => {
     if (transaction.amount <= 0) return;
     const amount = Math.abs(transaction.amount);
-    const rewardCategories = mapTransactionCategoryToRewardCategory(
+    const primaryCategory = mapTransactionCategoryToRewardCategory(
       transaction.personal_finance_category
     );
-    const primaryCategory = rewardCategories[0] || "general";
     categorySpending[primaryCategory] =
       (categorySpending[primaryCategory] || 0) + amount;
   });

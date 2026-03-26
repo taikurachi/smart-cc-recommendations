@@ -72,3 +72,8 @@ export interface MultiCardRecommendation {
 }
 
 export type CreditCardWithValue = CreditCardData & CardValueResult;
+
+export interface RecommendationResult {
+  cards: CreditCardWithValue[];
+  message?: string;
+}
