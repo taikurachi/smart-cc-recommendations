@@ -8,9 +8,9 @@
 import fs from "fs";
 import path from "path";
 import type { Transaction } from "./types";
-import type { CreditCardData, CardValueResult } from "./recommendation/types";
+import type { CreditCardData, CardValueResult, SpendingAllocation } from "./recommendation/types";
 
-type RecommendedCard = CreditCardData & CardValueResult;
+type RecommendedCard = CreditCardData & CardValueResult & { allocation?: SpendingAllocation[] };
 
 function loadCreditCardDataDirect(): CreditCardData[] {
   try {
@@ -587,7 +587,7 @@ async function runTests() {
 
     for (const ownedCard of ownedCards) {
       const officialCard = await mapCardNameToOfficialCard(
-        ownedCard.name,
+        ownedCard.name || "",
         ownedCard.institution_name,
         _cards
       );
