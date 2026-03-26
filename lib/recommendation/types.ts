@@ -32,6 +32,7 @@ export interface Reward {
   rate: number;
   unit: "points" | "cash";
   cap?: RewardCap;
+  pointsMultiplier?: number;
 }
 
 export interface Credit {

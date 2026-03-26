@@ -50,6 +50,7 @@ export {
   evaluateCardCombination,
 } from "./spendingAllocator";
 export { filterByPreferences, isCardOwned } from "./cardFilter";
+export { isSpendingTransaction, getAnnualizationFactor } from "./utils";
 export type {
   CreditCardData,
   CreditCardWithValue,
@@ -114,9 +115,15 @@ function findBestCombination(
   }
 
   if (bestCombo.length === 0 && cards.length > 0) {
-    const singleCardEval = evaluateCardCombination([cards[0]], transactions);
-    bestCombo = [cards[0]];
-    bestAllocation = singleCardEval.allocation;
+    let bestSingleValue = -Infinity;
+    for (const card of cards) {
+      const evaluation = evaluateCardCombination([card], transactions);
+      if (evaluation.totalAnnualValue > bestSingleValue) {
+        bestSingleValue = evaluation.totalAnnualValue;
+        bestCombo = [card];
+        bestAllocation = evaluation.allocation;
+      }
+    }
   }
 
   if (bestCombo.length === 0) return null;
@@ -158,7 +165,7 @@ async function computeOwnedCardsValue(
 ): Promise<number> {
   if (ownedCardsAnnualValue !== undefined) return ownedCardsAnnualValue;
 
-  let total = 0;
+  const resolvedCards: CreditCardData[] = [];
   for (const ownedCard of ownedCards) {
     const officialCard = await mapCardNameToOfficialCard(
       ownedCard.name || "",
@@ -166,11 +173,14 @@ async function computeOwnedCardsValue(
       allCards,
     );
     if (officialCard) {
-      const value = calculateCardAnnualValue(officialCard, transactions);
-      total += value.annualValue;
+      resolvedCards.push(officialCard);
     }
   }
-  return total;
+
+  if (resolvedCards.length === 0) return 0;
+
+  const evaluation = evaluateCardCombination(resolvedCards, transactions);
+  return evaluation.totalAnnualValue;
 }
 
 /**

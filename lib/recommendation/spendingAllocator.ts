@@ -5,37 +5,44 @@ import {
   Transaction,
 } from "./types";
 import { mapTransactionCategoryToRewardCategory } from "./categoryMapper";
-import { applyCap, computeRewardValue, getEffectiveRate } from "./rewardsCalculator";
+import {
+  applyCap,
+  computeRewardValue,
+  getEffectiveRate,
+} from "./rewardsCalculator";
 import { calculateCreditsValue } from "./creditsCalculator";
 import { calculateBenefitsValue } from "./benefitsCalculator";
-import { getCardId } from "./utils";
+import {
+  getCardId,
+  isSpendingTransaction,
+  getAnnualizationFactor,
+} from "./utils";
 
 /**
  * Find the card with the highest effective reward rate for a given category.
- * Falls back to "general" if no card has a specific tier for the category.
+ * Considers both the specific category tier AND the general tier on every card
+ * so a high general rate isn't overlooked when another card has a low specific tier.
  */
 function findBestCardForCategory(
   cards: CreditCardData[],
-  category: string
+  category: string,
 ): { card: CreditCardData; reward: Reward; rate: number } | null {
   let bestCard: CreditCardData | null = null;
   let bestRate = 0;
   let bestReward: Reward | null = null;
 
   for (const card of cards) {
-    const reward = card.rewards?.[category];
-    if (reward) {
-      const rate = getEffectiveRate(reward);
+    const specificReward = card.rewards?.[category];
+    if (specificReward) {
+      const rate = getEffectiveRate(specificReward);
       if (rate > bestRate) {
         bestRate = rate;
         bestCard = card;
-        bestReward = reward;
+        bestReward = specificReward;
       }
     }
-  }
 
-  if (!bestCard || !bestReward) {
-    for (const card of cards) {
+    if (category !== "general") {
       const generalReward = card.rewards?.["general"];
       if (generalReward) {
         const rate = getEffectiveRate(generalReward);
@@ -57,56 +64,60 @@ function findBestCardForCategory(
 /**
  * Allocates spending optimally across multiple cards.
  * For each reward category, assigns spending to the card with the highest rate.
- * When a cap is hit, overflow goes to the next-best card.
+ * When a cap is hit, overflow waterfalls to the next-best card until all
+ * spending is allocated or all cards are exhausted.
+ *
+ * Non-spending transactions (transfers, loan payments, etc.) are excluded.
+ * Partial-year data is annualized so allocations reflect a full year.
  */
 export function allocateSpendingToCards(
   cards: CreditCardData[],
-  transactions: Transaction[]
+  transactions: Transaction[],
 ): SpendingAllocation[] {
   const allocation: SpendingAllocation[] = [];
+  const spendingTxs = transactions.filter(isSpendingTransaction);
   const categorySpending: Record<string, number> = {};
+  const annualizationFactor = getAnnualizationFactor(spendingTxs);
 
-  transactions.forEach((transaction) => {
-    if (transaction.amount <= 0) return;
+  spendingTxs.forEach((transaction) => {
     const amount = Math.abs(transaction.amount);
     const primaryCategory = mapTransactionCategoryToRewardCategory(
-      transaction.personal_finance_category
+      transaction.personal_finance_category,
     );
     categorySpending[primaryCategory] =
       (categorySpending[primaryCategory] || 0) + amount;
   });
 
+  for (const category of Object.keys(categorySpending)) {
+    categorySpending[category] *= annualizationFactor;
+  }
+
   Object.entries(categorySpending).forEach(([category, totalSpending]) => {
-    const best = findBestCardForCategory(cards, category);
-    if (!best) return;
+    let remainingSpending = totalSpending;
+    const usedCardIds = new Set<string>();
 
-    const cappedSpending = applyCap(totalSpending, best.reward);
-    const remainingSpending = totalSpending - cappedSpending;
-
-    allocation.push({
-      cardId: getCardId(best.card),
-      cardName: best.card.name,
-      category,
-      amount: cappedSpending,
-      rewardRate: best.rate,
-      rewardValue: computeRewardValue(cappedSpending, best.reward),
-    });
-
-    if (remainingSpending > 0) {
-      const remainingCards = cards.filter(
-        (c) => getCardId(c) !== getCardId(best.card),
+    while (remainingSpending > 0.01) {
+      const availableCards = cards.filter(
+        (c) => !usedCardIds.has(getCardId(c)),
       );
-      const nextBest = findBestCardForCategory(remainingCards, category);
-      if (nextBest) {
-        allocation.push({
-          cardId: getCardId(nextBest.card),
-          cardName: nextBest.card.name,
-          category,
-          amount: remainingSpending,
-          rewardRate: nextBest.rate,
-          rewardValue: computeRewardValue(remainingSpending, nextBest.reward),
-        });
-      }
+      if (availableCards.length === 0) break;
+
+      const best = findBestCardForCategory(availableCards, category);
+      if (!best) break;
+
+      const cappedSpending = applyCap(remainingSpending, best.reward);
+
+      allocation.push({
+        cardId: getCardId(best.card),
+        cardName: best.card.name,
+        category,
+        amount: cappedSpending,
+        rewardRate: best.rate,
+        rewardValue: computeRewardValue(cappedSpending, best.reward),
+      });
+
+      usedCardIds.add(getCardId(best.card));
+      remainingSpending -= cappedSpending;
     }
   });
 
@@ -119,7 +130,7 @@ export function allocateSpendingToCards(
  */
 export function evaluateCardCombination(
   cards: CreditCardData[],
-  transactions: Transaction[]
+  transactions: Transaction[],
 ): {
   totalAnnualValue: number;
   totalRewards: number;
@@ -130,7 +141,7 @@ export function evaluateCardCombination(
 
   const totalRewardsFromAllocation = allocation.reduce(
     (sum, alloc) => sum + alloc.rewardValue,
-    0
+    0,
   );
 
   let totalCredits = 0;
@@ -143,7 +154,7 @@ export function evaluateCardCombination(
 
   const totalFees = cards.reduce(
     (sum, card) => sum + (card.annual_fee || 0),
-    0
+    0,
   );
 
   const totalRewards =

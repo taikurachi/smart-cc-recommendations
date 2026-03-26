@@ -5,6 +5,10 @@ import { DEFAULT_REWARD_CATEGORY } from "./constants";
  * Map a Plaid personal_finance_category to the single best-matching reward category.
  * Uses the newer personal_finance_category taxonomy (primary + detailed).
  * See: https://plaid.com/documents/transactions-personal-finance-category-taxonomy.csv
+ *
+ * Non-spending primaries (INCOME, TRANSFER_IN/OUT, LOAN_PAYMENTS, BANK_FEES)
+ * are filtered upstream by isSpendingTransaction and should never reach here,
+ * but they return "general" defensively.
  */
 export function mapTransactionCategoryToRewardCategory(
   pfc?: PersonalFinanceCategory,
@@ -25,6 +29,7 @@ export function mapTransactionCategoryToRewardCategory(
 
   if (primary === "TRANSPORTATION") {
     if (detailed === "TRANSPORTATION_GAS") return "gas";
+    if (detailed === "TRANSPORTATION_CAR_RENTAL") return "travel";
     if (
       detailed === "TRANSPORTATION_TAXIS_AND_RIDE_SHARES" ||
       detailed === "TRANSPORTATION_PUBLIC_TRANSIT" ||
@@ -66,6 +71,16 @@ export function mapTransactionCategoryToRewardCategory(
     ) {
       return "streaming";
     }
+    return DEFAULT_REWARD_CATEGORY;
+  }
+
+  if (
+    primary === "HOME_IMPROVEMENT" ||
+    primary === "MEDICAL" ||
+    primary === "PERSONAL_CARE" ||
+    primary === "GENERAL_SERVICES" ||
+    primary === "GOVERNMENT_AND_NON_PROFIT"
+  ) {
     return DEFAULT_REWARD_CATEGORY;
   }
 
