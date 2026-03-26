@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { storage } from "@/lib/storage";
+import { storage } from "@/lib/db/storage";
 
 // GET /api/users - List all users or get user by ID
 export async function GET(request: NextRequest) {

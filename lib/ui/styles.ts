@@ -21,4 +21,3 @@ export const TEXT_STYLES = {
   TRANSACTION_NAME: "font-medium text-gray-900",
   TRANSACTION_DATE: "text-xs text-gray-600",
 } as const;
-

@@ -7,9 +7,9 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "test:units": "npx tsx lib/recommendation/categoryMapper.test.ts && npx tsx lib/recommendation/creditsCalculator.test.ts && npx tsx lib/recommendation/benefitsCalculator.test.ts && npx tsx lib/recommendation/rewardsCalculator.test.ts && npx tsx lib/recommendation/cardValueCalculator.test.ts && npx tsx lib/recommendation/spendingAllocator.test.ts && npx tsx lib/recommendation/cardFilter.test.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "test:engine": "npx tsx lib/recommendationEngine.test.ts",
-    "test:all": "npm run test:units && npm run test:engine",
     "research:cards": "npx tsx scripts/research-cards.ts",
     "normalize:cards": "npx tsx scripts/normalize-cards.ts",
     "validate:cards": "npx tsx scripts/validate-card.ts",
@@ -44,6 +44,7 @@
     "openai": "^6.24.0",
     "tailwindcss": "^4",
     "tsx": "^4.20.6",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^2"
   }
 }

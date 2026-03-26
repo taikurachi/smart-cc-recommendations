@@ -1,6 +1,6 @@
 #!/usr/bin/env npx tsx
 
-import { storage } from "../lib/storage";
+import { storage } from "../lib/db/storage";
 
 function printHelp() {
   console.log(`

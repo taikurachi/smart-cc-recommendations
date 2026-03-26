@@ -3,7 +3,7 @@ import { Raleway, Outfit } from "next/font/google";
 import "./globals.css";
 import Navigation from "./components/Navigation";
 import { Toaster } from "react-hot-toast";
-import { AppProvider } from "@/lib/AppContext";
+import { AppProvider } from "@/lib/ui/AppContext";
 
 const raleway = Raleway({
   variable: "--font-raleway",

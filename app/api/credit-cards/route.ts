@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getDb } from "@/lib/db";
+import { getDb } from "@/lib/db/connection";
 import { creditCards as creditCardsTable } from "@/drizzle/schema";
 
 export async function GET() {

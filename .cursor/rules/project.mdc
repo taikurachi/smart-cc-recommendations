@@ -1,0 +1,89 @@
+---
+description: Project conventions and architecture for Smart Credit Card Recommendations
+globs: **/*.{ts,tsx}
+---
+
+# Smart Credit Card Recommendations
+
+A Next.js 15 app that analyzes user spending via Plaid and recommends optimal credit cards.
+
+## Tech Stack
+
+- **Framework**: Next.js 15 (App Router, Turbopack)
+- **Database**: PostgreSQL via Neon (serverless) + Drizzle ORM
+- **Banking API**: Plaid (sandbox/production)
+- **Styling**: Tailwind CSS v4 (CSS-first config in `globals.css`, no `tailwind.config`)
+- **Animations**: Motion (Framer Motion) via `motion/react`
+- **Icons**: `lucide-react`
+- **Testing**: Hand-rolled runner in `lib/recommendation/testUtils.ts` (migration to Vitest planned)
+
+## Architecture
+
+```
+app/                     # Next.js App Router pages + API routes
+  analysis/              # Spending analysis + recommendations page
+  connect/               # Plaid bank connection flow
+  manage/                # Connection management
+  components/            # Shared UI components
+  api/                   # REST API route handlers
+
+lib/                     # Shared logic (server + client)
+  db/                    # Database layer
+    connection.ts        # Neon/Drizzle singleton
+    storage.ts           # Persistence layer (users, connections)
+  plaid/                 # Plaid API integration
+    client.ts            # PlaidApi client (lazy-initialized)
+    operations.ts        # Link token, exchange, fetch transactions
+    connectionOperations.ts  # Connection delete flow
+  recommendation/        # Core recommendation engine (pure functions)
+  data/                  # Data loading and transformation
+    creditCardData.ts    # Credit card data loader (DB or API)
+    cardMatcher.ts       # Card name -> official card matching
+    transactionHelpers.ts  # Transaction formatting and dedup
+    spendingAnalyzer.ts  # Spending category analysis
+  ui/                    # Client-side UI utilities
+    AppContext.tsx        # Global React context provider
+    toastUtils.tsx       # Toast notification helpers
+  types.ts               # App-wide type definitions
+  creditRewardsTypes.ts  # Reward category union type
+  constants.ts           # Shared constants
+
+drizzle/
+  schema.ts              # Database schema (users, plaid_connections, credit_cards)
+```
+
+## Recommendation Engine Pipeline
+
+The engine lives in `lib/recommendation/` and follows this pipeline:
+
+1. **cardFilter** - Filter cards by user preference tags (travel, cashback, etc.)
+2. **categoryMapper** - Map Plaid transaction categories to reward categories
+3. **rewardsCalculator** - Calculate transaction-based reward value with spending caps
+4. **creditsCalculator** - Value annual statement credits
+5. **benefitsCalculator** - Value card benefits and intro bonuses
+6. **cardValueCalculator** - Composite annual value per card
+7. **spendingAllocator** - Multi-card spending allocation optimizer
+8. **index.ts** - Orchestrates pipeline via `getRecommendedCards` and `getMultiCardRecommendations`
+
+## Conventions
+
+- Import from `@/lib/recommendation` (barrel), not individual sub-modules
+- Types: app-level in `lib/types.ts`, recommendation-specific in `lib/recommendation/types.ts`
+- API routes return `{ error: string }` on failure with appropriate HTTP status
+- Credit card data is loaded via `loadCreditCardData()` which caches in memory
+- Card preferences stored in `localStorage` under key `cardPreferences`
+- User ID stored in `localStorage` under key `userId`
+
+## Required Environment Variables
+
+See `.env.example` for the full list. Key vars:
+- `DATABASE_URL` - Neon PostgreSQL connection string
+- `PLAID_CLIENT_ID`, `PLAID_SECRET` or `PLAID_SANDBOX_SECRET` - Plaid API credentials
+- `PLAID_ENV` - Plaid environment (`sandbox` or `production`)
+
+## Common Gotchas
+
+- `lib/plaid.ts` uses lazy initialization; the client is created on first use
+- Tailwind v4 uses `@theme inline {}` in `globals.css` for design tokens, not a config file
+- `drizzle-kit` requires manual `.env.local` loading (see `drizzle.config.ts`)
+- The `data/` directory is gitignored; seed data lives there locally but not in the repo

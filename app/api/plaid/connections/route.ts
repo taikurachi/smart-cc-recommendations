@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { storage, PlaidConnection } from "@/lib/storage";
-import { plaidClient } from "@/lib/plaid";
+import { storage, PlaidConnection } from "@/lib/db/storage";
+import { getPlaidClient } from "@/lib/plaid/client";
 
 function stripAccessToken(conn: PlaidConnection): Omit<PlaidConnection, "access_token"> {
   const { access_token, ...safe } = conn;
@@ -71,7 +71,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     try {
-      await plaidClient.itemRemove({
+      await getPlaidClient().itemRemove({
         access_token: connection.access_token,
       });
     } catch (plaidError) {

@@ -10,7 +10,7 @@ import { User } from "@/lib/types";
 import {
   createLinkToken,
   exchangePublicToken,
-} from "@/lib/plaidOperations";
+} from "@/lib/plaid/operations";
 import { useConfetti } from "../hooks/useConfetti";
 
 interface PlaidConnectionCardProps {

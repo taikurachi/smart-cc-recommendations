@@ -1,10 +1,16 @@
-import { eq, and } from "drizzle-orm";
-import { getDb } from "./db";
+/**
+ * Persistence layer for users and Plaid connections.
+ * Wraps Drizzle ORM queries against the Neon PostgreSQL database.
+ * Exported as a singleton: `storage`.
+ */
+
+import { eq, and, count } from "drizzle-orm";
+import { getDb } from "./connection";
 import {
   users as usersTable,
   plaidConnections as connectionsTable,
-} from "../drizzle/schema";
-import { User } from "./types";
+} from "../../drizzle/schema";
+import { User } from "../types";
 
 type UserRow = typeof usersTable.$inferSelect;
 type ConnectionRow = typeof connectionsTable.$inferSelect;
@@ -201,12 +207,21 @@ class Storage {
     totalConnections: number;
     activeConnections: number;
   }> {
-    const users = await this.getUsers();
-    const connections = await this.getPlaidConnections();
+    const [usersCount] = await this.db
+      .select({ value: count() })
+      .from(usersTable);
+    const [connectionsCount] = await this.db
+      .select({ value: count() })
+      .from(connectionsTable);
+    const [activeCount] = await this.db
+      .select({ value: count() })
+      .from(connectionsTable)
+      .where(eq(connectionsTable.is_active, true));
+
     return {
-      totalUsers: users.length,
-      totalConnections: connections.length,
-      activeConnections: connections.filter((c) => c.is_active).length,
+      totalUsers: usersCount.value,
+      totalConnections: connectionsCount.value,
+      activeConnections: activeCount.value,
     };
   }
 }

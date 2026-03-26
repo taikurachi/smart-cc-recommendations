@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { CountryCode } from "plaid";
-import { plaidClient } from "@/lib/plaid";
-import { storage } from "@/lib/storage";
+import { getPlaidClient } from "@/lib/plaid/client";
+import { storage } from "@/lib/db/storage";
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,7 +14,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const exchangeResponse = await plaidClient.itemPublicTokenExchange({
+    const plaid = getPlaidClient();
+    const exchangeResponse = await plaid.itemPublicTokenExchange({
       public_token: publicToken,
     });
 
@@ -25,14 +26,14 @@ export async function POST(request: NextRequest) {
     let accounts: Array<{ account_id: string; name: string; type: string; subtype: string; mask?: string }> = [];
 
     try {
-      const itemResponse = await plaidClient.itemGet({
+      const itemResponse = await plaid.itemGet({
         access_token: access_token,
       });
 
       if (itemResponse.data.item.institution_id) {
         institutionId = itemResponse.data.item.institution_id;
 
-        const institutionResponse = await plaidClient.institutionsGetById({
+        const institutionResponse = await plaid.institutionsGetById({
           institution_id: institutionId,
           country_codes: [CountryCode.Us],
         });
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest) {
         institutionName = institutionResponse.data.institution.name;
       }
 
-      const accountsResponse = await plaidClient.accountsGet({
+      const accountsResponse = await plaid.accountsGet({
         access_token: access_token,
       });
 

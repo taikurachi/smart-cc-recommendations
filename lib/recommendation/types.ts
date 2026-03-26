@@ -1,3 +1,9 @@
+/**
+ * Type definitions for the recommendation engine.
+ * Covers credit card data shapes, reward structures, spending allocations,
+ * and the composite value results returned by the engine.
+ */
+
 export type { Transaction, PersonalFinanceCategory } from "../types";
 
 export interface RewardCap {

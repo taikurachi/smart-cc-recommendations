@@ -1,4 +1,4 @@
-import { showToast } from "./toastUtils";
+import { showToast } from "../ui/toastUtils";
 
 /**
  * Delete a connection from both the server and Plaid

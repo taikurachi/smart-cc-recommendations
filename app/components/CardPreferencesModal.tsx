@@ -139,11 +139,11 @@ export default function CardPreferencesModal({
     onClose();
   };
 
-  if (!isOpen) return null;
-
   return (
     <AnimatePresence>
-      <motion.div
+      {isOpen && (
+        <motion.div
+          key="modal-backdrop"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -158,7 +158,6 @@ export default function CardPreferencesModal({
             className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[85vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
             <div className="relative p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
               <button
                 onClick={onClose}
@@ -174,7 +173,6 @@ export default function CardPreferencesModal({
               </p>
             </div>
 
-            {/* Content */}
             <div className="p-6 overflow-y-auto max-h-[calc(85vh-200px)]">
               <div className="grid md:grid-cols-2 gap-4">
                 {preferenceOptions.map((option) => {
@@ -197,7 +195,6 @@ export default function CardPreferencesModal({
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                     >
-                      {/* Selection Checkmark */}
                       {isSelected && (
                         <motion.div
                           initial={{ scale: 0 }}
@@ -208,12 +205,10 @@ export default function CardPreferencesModal({
                         </motion.div>
                       )}
 
-                      {/* Icon */}
                       <div className="mb-3">
                         <IconComponent size={32} className={colors.icon} />
                       </div>
 
-                      {/* Title & Description */}
                       <h3 className="font-semibold text-gray-900 mb-1">
                         {option.title}
                       </h3>
@@ -226,7 +221,6 @@ export default function CardPreferencesModal({
               </div>
             </div>
 
-            {/* Footer */}
             <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
               <Button
                 onClick={handleSkip}
@@ -242,6 +236,7 @@ export default function CardPreferencesModal({
             </div>
           </motion.div>
         </motion.div>
+      )}
     </AnimatePresence>
   );
 }

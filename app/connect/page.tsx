@@ -1,5 +1,5 @@
 "use client";
-import { useApp } from "@/lib/AppContext";
+import { useApp } from "@/lib/ui/AppContext";
 import PlaidConnectionCard from "./components/PlaidConnectionCard";
 
 export default function ConnectPage() {

@@ -1,3 +1,8 @@
+/**
+ * App-wide type definitions for users, connections, transactions, and UI models.
+ * Recommendation-engine-specific types live in lib/recommendation/types.ts.
+ */
+
 export interface User {
   id: string;
   email?: string;

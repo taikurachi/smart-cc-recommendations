@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { plaidClient } from "@/lib/plaid";
-import { storage } from "@/lib/storage";
+import { getPlaidClient } from "@/lib/plaid/client";
+import { storage } from "@/lib/db/storage";
 
 // GET /api/plaid/accounts - Get detailed account information including credit cards
 export async function GET(request: NextRequest) {
@@ -60,7 +60,7 @@ export async function GET(request: NextRequest) {
     for (const connection of connectionsToFetch) {
       try {
         // Fetch full account details from Plaid
-        const accountsResponse = await plaidClient.accountsGet({
+        const accountsResponse = await getPlaidClient().accountsGet({
           access_token: connection.access_token,
         });
 

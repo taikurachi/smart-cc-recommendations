@@ -1,6 +1,6 @@
 "use client";
-import { useApp } from "@/lib/AppContext";
-import { deleteConnection } from "@/lib/connectionOperations";
+import { useApp } from "@/lib/ui/AppContext";
+import { deleteConnection } from "@/lib/plaid/connectionOperations";
 import { X } from "lucide-react";
 
 export default function ManagePage() {

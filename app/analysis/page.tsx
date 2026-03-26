@@ -2,18 +2,23 @@
 import { useState } from "react";
 import Link from "next/link";
 
-import { useApp } from "@/lib/AppContext";
+import { useApp } from "@/lib/ui/AppContext";
 import CardPreferencesModal from "../components/CardPreferencesModal";
 import { CardPreferences } from "@/lib/types";
 
 import {
+  AlertTriangle,
+  ArrowLeft,
+  Award,
+  BarChart3,
   Columns3Cog,
   CopyPlus,
+  DollarSign,
   ListFilterPlus,
   SquarePlus,
 } from "lucide-react";
 import CreditCardComponent from "./components/CreditCard";
-import { formatCurrency } from "@/lib/transactionHelpers";
+import { formatCurrency } from "@/lib/data/transactionHelpers";
 import Button from "../components/Button";
 import { useAnalysisData } from "./hooks/useAnalysisData";
 import { useRecommendations } from "./hooks/useRecommendations";
@@ -29,8 +34,6 @@ export default function AnalysisPage() {
   const [recommendationFilterModalOn, setRecommendationFilterModalOn] =
     useState(false);
 
-  // Auto-open preferences modal if no preferences exist and we have transactions
-  // (handled via derived state check rather than a useEffect)
   const shouldPromptPreferences =
     !loading && transactions.length > 0 && !cardPreferences;
 
@@ -52,19 +55,7 @@ export default function AnalysisPage() {
       <div className="p-8 max-w-6xl mx-auto">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
           <div className="text-red-600 mb-4">
-            <svg
-              className="w-12 h-12 mx-auto mb-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
-              />
-            </svg>
+            <AlertTriangle className="w-12 h-12 mx-auto mb-2" />
           </div>
           <h2 className="text-xl font-semibold text-red-800 mb-2">
             Analysis Not Available
@@ -74,19 +65,7 @@ export default function AnalysisPage() {
             href="/connect"
             className="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
           >
-            <svg
-              className="w-4 h-4 mr-2"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M10 19l-7-7m0 0l7-7m-7 7h18"
-              />
-            </svg>
+            <ArrowLeft className="w-4 h-4 mr-2" />
             Connect Bank Account
           </Link>
         </div>
@@ -130,19 +109,7 @@ export default function AnalysisPage() {
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm text-blue-800">Total Spending</h3>
                 <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-4 h-4 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
-                    />
-                  </svg>
+                  <DollarSign className="w-4 h-4 text-white" />
                 </div>
               </div>
               <p className="text-2xl font-bold text-blue-900">
@@ -155,19 +122,7 @@ export default function AnalysisPage() {
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm text-green-800">Monthly Average</h3>
                 <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-4 h-4 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
+                  <BarChart3 className="w-4 h-4 text-white" />
                 </div>
               </div>
               <p className="text-2xl font-bold text-green-900">
@@ -180,19 +135,7 @@ export default function AnalysisPage() {
               <div className="flex items-center justify-between mb-2">
                 <h3 className="text-sm text-purple-800">Top Category</h3>
                 <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-4 h-4 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
-                    />
-                  </svg>
+                  <Award className="w-4 h-4 text-white" />
                 </div>
               </div>
               <p className="text-lg font-bold text-purple-900">

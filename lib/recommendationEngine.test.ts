@@ -32,7 +32,7 @@ async function testGetMultiCardRecommendations(
   transactions: Transaction[],
   preferences: Record<string, boolean>,
   ownedCards: OwnedCard[] = []
-): Promise<[RecommendedCard[], string | undefined]> {
+): Promise<{ cards: RecommendedCard[]; message?: string }> {
   const recModule = await import("./recommendation");
   return recModule.getMultiCardRecommendations(
     transactions,
@@ -40,15 +40,15 @@ async function testGetMultiCardRecommendations(
     ownedCards,
     undefined,
     _cards
-  ) as Promise<[RecommendedCard[], string | undefined]>;
+  ) as Promise<{ cards: RecommendedCard[]; message?: string }>;
 }
 
 async function testGetRecommendedCards(
   transactions: Transaction[],
   preferences: Record<string, boolean>
-): Promise<[RecommendedCard[], string | undefined]> {
+): Promise<{ cards: RecommendedCard[]; message?: string }> {
   const recModule = await import("./recommendation");
-  return recModule.getRecommendedCards(transactions, preferences, _cards) as Promise<[RecommendedCard[], string | undefined]>;
+  return recModule.getRecommendedCards(transactions, preferences, _cards) as Promise<{ cards: RecommendedCard[]; message?: string }>;
 }
 
 interface TestResult {
@@ -117,7 +117,7 @@ async function runTests() {
       beginner_friendly: false,
     };
 
-    const [recommendations] = await testGetMultiCardRecommendations(
+    const { cards: recommendations } = await testGetMultiCardRecommendations(
       transactions,
       preferences,
       []
@@ -154,7 +154,7 @@ async function runTests() {
       beginner_friendly: false,
     };
 
-    const [recommendations] = await testGetMultiCardRecommendations(
+    const { cards: recommendations } = await testGetMultiCardRecommendations(
       transactions,
       preferences,
       []
@@ -206,7 +206,7 @@ async function runTests() {
       },
     ];
 
-    const [recommendations] = await testGetMultiCardRecommendations(
+    const { cards: recommendations } = await testGetMultiCardRecommendations(
       transactions,
       preferences,
       ownedCards
@@ -242,7 +242,7 @@ async function runTests() {
       beginner_friendly: false,
     };
 
-    const [recommendations] = await testGetMultiCardRecommendations(
+    const { cards: recommendations } = await testGetMultiCardRecommendations(
       transactions,
       preferences,
       []
@@ -289,7 +289,7 @@ async function runTests() {
       beginner_friendly: false,
     };
 
-    const [recommendations] = await testGetMultiCardRecommendations(
+    const { cards: recommendations } = await testGetMultiCardRecommendations(
       transactions,
       preferences,
       []
@@ -343,7 +343,7 @@ async function runTests() {
       beginner_friendly: false,
     };
 
-    const [recommendations] = await testGetMultiCardRecommendations(
+    const { cards: recommendations } = await testGetMultiCardRecommendations(
       transactions,
       preferences,
       []
@@ -375,7 +375,7 @@ async function runTests() {
       beginner_friendly: false,
     };
 
-    const [recommendations] = await testGetMultiCardRecommendations(
+    const { cards: recommendations } = await testGetMultiCardRecommendations(
       [],
       preferences,
       []
@@ -416,7 +416,7 @@ async function runTests() {
       institution_name: card.institution_name,
     }));
 
-    const [recommendations, message] = await testGetMultiCardRecommendations(
+    const { cards: recommendations, message } = await testGetMultiCardRecommendations(
       transactions,
       preferences,
       ownedCards
@@ -474,7 +474,7 @@ async function runTests() {
       beginner_friendly: false,
     };
 
-    const [recommendations] = await testGetMultiCardRecommendations(
+    const { cards: recommendations } = await testGetMultiCardRecommendations(
       transactions,
       preferences,
       []
@@ -548,7 +548,7 @@ async function runTests() {
       beginner_friendly: false,
     };
 
-    const [recommendations] = await testGetMultiCardRecommendations(
+    const { cards: recommendations } = await testGetMultiCardRecommendations(
       transactions,
       preferences,
       []
@@ -581,7 +581,7 @@ async function runTests() {
     const { calculateCardAnnualValue } = await import(
       "./recommendation"
     );
-    const { mapCardNameToOfficialCard } = await import("./cardMatcher");
+    const { mapCardNameToOfficialCard } = await import("./data/cardMatcher");
 
     let totalAnnualValue = 0;
 
@@ -646,7 +646,7 @@ async function runTests() {
       ownedCards,
       transactions
     );
-    const [recommendations] = await testGetMultiCardRecommendations(
+    const { cards: recommendations } = await testGetMultiCardRecommendations(
       transactions,
       preferences,
       ownedCards
@@ -716,7 +716,7 @@ async function runTests() {
       ownedCards,
       transactions
     );
-    const [recommendations, message] = await testGetMultiCardRecommendations(
+    const { cards: recommendations, message } = await testGetMultiCardRecommendations(
       transactions,
       preferences,
       ownedCards
@@ -809,7 +809,7 @@ async function runTests() {
       ownedCards,
       transactions
     );
-    const [recommendations] = await testGetMultiCardRecommendations(
+    const { cards: recommendations } = await testGetMultiCardRecommendations(
       transactions,
       preferences,
       ownedCards
@@ -870,7 +870,7 @@ async function runTests() {
       ownedCards,
       transactions
     );
-    const [recommendations] = await testGetMultiCardRecommendations(
+    const { cards: recommendations } = await testGetMultiCardRecommendations(
       transactions,
       preferences,
       ownedCards
@@ -941,7 +941,7 @@ async function runTests() {
       ownedCards,
       transactions
     );
-    const [recommendations] = await testGetMultiCardRecommendations(
+    const { cards: recommendations } = await testGetMultiCardRecommendations(
       transactions,
       preferences,
       ownedCards
@@ -1029,7 +1029,7 @@ async function runTests() {
       ownedCards,
       transactions
     );
-    const [recommendations] = await testGetMultiCardRecommendations(
+    const { cards: recommendations } = await testGetMultiCardRecommendations(
       transactions,
       preferences,
       ownedCards
@@ -1101,7 +1101,7 @@ async function runTests() {
       ownedCards,
       transactions
     );
-    const [recommendations] = await testGetMultiCardRecommendations(
+    const { cards: recommendations } = await testGetMultiCardRecommendations(
       transactions,
       preferences,
       ownedCards
@@ -1167,7 +1167,7 @@ async function runTests() {
       ownedCards,
       transactions
     );
-    const [recommendations, message] = await testGetMultiCardRecommendations(
+    const { cards: recommendations, message } = await testGetMultiCardRecommendations(
       transactions,
       preferences,
       ownedCards
@@ -1251,7 +1251,7 @@ async function runTests() {
       ownedCards,
       transactions
     );
-    const [recommendations] = await testGetMultiCardRecommendations(
+    const { cards: recommendations } = await testGetMultiCardRecommendations(
       transactions,
       preferences,
       ownedCards
@@ -1316,7 +1316,7 @@ async function runTests() {
       ownedCards,
       transactions
     );
-    const [recommendations, message] = await testGetMultiCardRecommendations(
+    const { cards: recommendations, message } = await testGetMultiCardRecommendations(
       transactions,
       preferences,
       ownedCards
@@ -1394,7 +1394,7 @@ async function runTests() {
       beginner_friendly: false,
     };
 
-    const [cards] = await testGetRecommendedCards(transactions, preferences);
+    const { cards } = await testGetRecommendedCards(transactions, preferences);
 
     if (cards.length === 0) {
       throw new Error("Expected at least 1 card from single-card mode");
@@ -1443,7 +1443,7 @@ async function runTests() {
       beginner_friendly: false,
     };
 
-    const [recommendations] = await testGetMultiCardRecommendations(
+    const { cards: recommendations } = await testGetMultiCardRecommendations(
       transactions,
       preferences,
       []
@@ -1492,7 +1492,7 @@ async function runTests() {
       beginner_friendly: false,
     };
 
-    const [recommendations] = await testGetMultiCardRecommendations(
+    const { cards: recommendations } = await testGetMultiCardRecommendations(
       transactions,
       travelNoFeePrefs,
       []
@@ -1562,7 +1562,7 @@ async function runTests() {
       beginner_friendly: false,
     };
 
-    const [recommendations] = await testGetMultiCardRecommendations(
+    const { cards: recommendations } = await testGetMultiCardRecommendations(
       refundTransactions,
       preferences,
       []
@@ -1604,7 +1604,7 @@ async function runTests() {
       beginner_friendly: false,
     };
 
-    const [recommendations] = await testGetMultiCardRecommendations(
+    const { cards: recommendations } = await testGetMultiCardRecommendations(
       transactions,
       cashbackPrefs,
       []

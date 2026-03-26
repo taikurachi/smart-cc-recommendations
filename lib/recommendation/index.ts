@@ -1,5 +1,27 @@
-import { loadCreditCardData } from "../creditCardData";
-import { CreditCardData, SpendingAllocation, Transaction } from "./types";
+/**
+ * Recommendation engine entry point.
+ *
+ * Pipeline: filter cards by preferences -> map transaction categories ->
+ * calculate per-card rewards/credits/benefits -> score cards ->
+ * find optimal multi-card combinations.
+ *
+ * Sub-modules:
+ *   cardFilter        – filter cards by user preference tags
+ *   categoryMapper    – Plaid PFC -> reward category mapping
+ *   rewardsCalculator – transaction-based reward value with caps
+ *   creditsCalculator – annual statement credits valuation
+ *   benefitsCalculator – card benefits & intro bonus valuation
+ *   cardValueCalculator – composite annual value per card
+ *   spendingAllocator – multi-card spending allocation optimizer
+ */
+
+import { loadCreditCardData } from "../data/creditCardData";
+import {
+  CreditCardData,
+  RecommendationResult,
+  SpendingAllocation,
+  Transaction,
+} from "./types";
 import {
   calculateCardAnnualValue,
   calculateCardAnnualValueFromRewards,
@@ -9,7 +31,7 @@ import { filterByPreferences, isCardOwned } from "./cardFilter";
 import { calculateTransactionRewards } from "./rewardsCalculator";
 import { calculateCreditsValue } from "./creditsCalculator";
 import { calculateBenefitsValue } from "./benefitsCalculator";
-import { mapCardNameToOfficialCard } from "../cardMatcher";
+import { mapCardNameToOfficialCard } from "../data/cardMatcher";
 
 export {
   calculateCardAnnualValue,
@@ -30,6 +52,7 @@ export { filterByPreferences, isCardOwned } from "./cardFilter";
 export type {
   CreditCardData,
   CreditCardWithValue,
+  RecommendationResult,
   Reward,
   Credit,
   Benefit,
@@ -69,7 +92,7 @@ export async function getRecommendedCards(
   transactions: Transaction[],
   preferences: Record<string, boolean>,
   providedCards?: CreditCardData[],
-): Promise<[CreditCardData[], string | undefined]> {
+): Promise<RecommendationResult> {
   const creditCards = providedCards ?? (await loadCreditCardData());
   const [cardsToProcess, message] = filterByPreferences(
     creditCards,
@@ -82,7 +105,7 @@ export async function getRecommendedCards(
   });
 
   recommendedCards.sort((a, b) => b.annualValue - a.annualValue);
-  return [recommendedCards, message];
+  return { cards: recommendedCards, message };
 }
 
 /**
@@ -99,7 +122,7 @@ export async function getMultiCardRecommendations(
   }> = [],
   ownedCardsAnnualValue?: number,
   providedCards?: CreditCardData[],
-): Promise<[CreditCardData[], string | undefined]> {
+): Promise<RecommendationResult> {
   const creditCards = providedCards ?? (await loadCreditCardData());
   const [filteredCards, filterMessage] = filterByPreferences(
     creditCards,
@@ -111,10 +134,10 @@ export async function getMultiCardRecommendations(
   );
 
   if (availableCards.length === 0) {
-    return [
-      [],
-      "All recommended cards are already owned. Your cards are optimized!",
-    ];
+    return {
+      cards: [],
+      message: "All recommended cards are already owned. Your cards are optimized!",
+    };
   }
 
   let bestCombination: CreditCardData[] = [];
@@ -144,7 +167,7 @@ export async function getMultiCardRecommendations(
   }
 
   if (bestCombination.length === 0) {
-    return [[], "No suitable card combinations found."];
+    return { cards: [], message: "No suitable card combinations found." };
   }
 
   const recommendedCards = bestCombination.map((card) => {
@@ -195,12 +218,12 @@ export async function getMultiCardRecommendations(
     }
 
     if (recommendedTotalAnnualValue < ownedCardsTotalAnnualValue) {
-      return [
-        [],
-        "Your current cards already provide the best value. No better recommendations found.",
-      ];
+      return {
+        cards: [],
+        message: "Your current cards already provide the best value. No better recommendations found.",
+      };
     }
   }
 
-  return [recommendedCards, filterMessage];
+  return { cards: recommendedCards, message: filterMessage };
 }

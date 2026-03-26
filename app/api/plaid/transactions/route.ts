@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Transaction as PlaidTransaction, AccountBase } from "plaid";
-import { plaidClient } from "@/lib/plaid";
-import { storage } from "@/lib/storage";
+import { getPlaidClient } from "@/lib/plaid/client";
+import { storage } from "@/lib/db/storage";
 
 export async function POST(request: NextRequest) {
   try {
@@ -66,7 +66,8 @@ export async function POST(request: NextRequest) {
     let totalTransactions = 0;
     let requestId = "";
 
-    const response = await plaidClient.transactionsGet({
+    const plaid = getPlaidClient();
+    const response = await plaid.transactionsGet({
       access_token: finalAccessToken,
       start_date: startDateStr,
       end_date: endDate,
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
     requestId = response.data.request_id;
 
     while (allTransactions.length < totalTransactions) {
-      const paginatedResponse = await plaidClient.transactionsGet({
+      const paginatedResponse = await plaid.transactionsGet({
         access_token: finalAccessToken,
         start_date: startDateStr,
         end_date: endDate,

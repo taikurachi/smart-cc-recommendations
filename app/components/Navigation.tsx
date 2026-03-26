@@ -1,8 +1,8 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
 import { Home, Link2, BarChart3, Settings, type LucideIcon } from "lucide-react";
+import { useApp } from "@/lib/ui/AppContext";
 
 interface NavItem {
   href: string;
@@ -19,6 +19,7 @@ const navItems: NavItem[] = [
 
 export default function Navigation() {
   const pathname = usePathname();
+  const { user } = useApp();
 
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -57,47 +58,14 @@ export default function Navigation() {
 
           <div className="flex items-center space-x-3">
             <div className="text-sm text-gray-600">
-              <UserStatus />
+              <div className="flex items-center space-x-2">
+                <div className={`w-2 h-2 rounded-full ${user ? "bg-green-400" : "bg-gray-400"}`}></div>
+                <span className="text-xs">{user ? "Connected" : "Not Connected"}</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </nav>
-  );
-}
-
-function UserStatus() {
-  const [userId, setUserId] = useState<string | null>(null);
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-    const storedUserId = localStorage.getItem("userId");
-    setUserId(storedUserId);
-  }, []);
-
-  if (!isClient) {
-    return (
-      <div className="flex items-center space-x-2">
-        <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-        <span className="text-xs">Not Connected</span>
-      </div>
-    );
-  }
-
-  if (userId) {
-    return (
-      <div className="flex items-center space-x-2">
-        <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-        <span className="text-xs">Connected</span>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-center space-x-2">
-      <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-      <span className="text-xs">Not Connected</span>
-    </div>
   );
 }

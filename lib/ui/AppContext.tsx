@@ -8,8 +8,8 @@ import {
   Dispatch,
   SetStateAction,
 } from "react";
-import { User, Connection, CardPreferences } from "./types";
-import { loadUserData } from "./userOperations";
+import { User, Connection, CardPreferences } from "../types";
+import { loadUserData } from "../userOperations";
 
 interface AppContextType {
   user: User | null;
