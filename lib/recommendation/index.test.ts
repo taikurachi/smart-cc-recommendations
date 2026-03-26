@@ -114,6 +114,61 @@ describe("getRecommendedCards", () => {
     expect(diningResult).toBeDefined();
     expect(diningResult!.creditsValue).toBeGreaterThan(0);
   });
+
+  it("non-spending transactions do not inflate card rewards", async () => {
+    const txsWithNonSpending: Transaction[] = [
+      makeTx({
+        transaction_id: "t1",
+        amount: 500,
+        personal_finance_category: {
+          primary: "FOOD_AND_DRINK",
+          detailed: "FOOD_AND_DRINK_RESTAURANT",
+          confidence_level: "VERY_HIGH",
+        },
+      }),
+      makeTx({
+        transaction_id: "t2",
+        amount: 10000,
+        personal_finance_category: {
+          primary: "LOAN_PAYMENTS",
+          detailed: "LOAN_PAYMENTS_MORTGAGE_PAYMENT",
+          confidence_level: "VERY_HIGH",
+        },
+      }),
+    ];
+
+    const resultWithNonSpending = await getRecommendedCards(
+      txsWithNonSpending,
+      {},
+      testCards,
+    );
+
+    const txsSpendingOnly: Transaction[] = [
+      makeTx({
+        transaction_id: "t1",
+        amount: 500,
+        personal_finance_category: {
+          primary: "FOOD_AND_DRINK",
+          detailed: "FOOD_AND_DRINK_RESTAURANT",
+          confidence_level: "VERY_HIGH",
+        },
+      }),
+    ];
+
+    const resultSpendingOnly = await getRecommendedCards(
+      txsSpendingOnly,
+      {},
+      testCards,
+    );
+
+    const cardA = resultWithNonSpending.cards.find(
+      (c) => c.id === "general_card",
+    );
+    const cardB = resultSpendingOnly.cards.find(
+      (c) => c.id === "general_card",
+    );
+    expect(cardA!.estimatedRewards).toBeCloseTo(cardB!.estimatedRewards, 3);
+  });
 });
 
 describe("getMultiCardRecommendations", () => {
@@ -190,5 +245,111 @@ describe("getMultiCardRecommendations", () => {
     );
     expect(result.cards.length).toBe(1);
     expect(result.cards[0].id).toBe("general_card");
+  });
+
+  it("single-card fallback picks the BEST card, not first", async () => {
+    const weakCard = makeCard({
+      id: "weak",
+      name: "Weak Card",
+      annual_fee: 0,
+      rewards: { general: { rate: 0.005, unit: "cash" } },
+    });
+    const strongCard = makeCard({
+      id: "strong",
+      name: "Strong Card",
+      annual_fee: 0,
+      rewards: { general: { rate: 0.03, unit: "cash" } },
+    });
+
+    const result = await getMultiCardRecommendations(
+      sampleTransactions,
+      {},
+      [],
+      0,
+      [weakCard, strongCard],
+    );
+    expect(result.cards.length).toBe(2);
+
+    const resultSingle = await getMultiCardRecommendations(
+      sampleTransactions,
+      {},
+      [{ id: "weak", name: "Weak Card" }],
+      0,
+      [weakCard, strongCard],
+    );
+    expect(resultSingle.cards.length).toBe(1);
+    expect(resultSingle.cards[0].id).toBe("strong");
+  });
+
+  it("empty transactions returns cards ranked by credits/benefits", async () => {
+    const result = await getMultiCardRecommendations(
+      [],
+      {},
+      [],
+      undefined,
+      testCards,
+    );
+    expect(result.cards.length).toBeGreaterThan(0);
+    const topCard = result.cards[0];
+    expect(topCard.estimatedRewards).toBeCloseTo(0, 3);
+    expect(topCard.creditsValue + topCard.benefitsValue).toBeGreaterThanOrEqual(0);
+  });
+
+  it("all cards identical returns valid combo", async () => {
+    const identicalCards = [
+      makeCard({ id: "a", name: "Card A", rewards: { general: { rate: 0.02, unit: "cash" } } }),
+      makeCard({ id: "b", name: "Card B", rewards: { general: { rate: 0.02, unit: "cash" } } }),
+      makeCard({ id: "c", name: "Card C", rewards: { general: { rate: 0.02, unit: "cash" } } }),
+    ];
+
+    const result = await getMultiCardRecommendations(
+      sampleTransactions,
+      {},
+      [],
+      undefined,
+      identicalCards,
+    );
+    expect(result.cards.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("non-spending transactions excluded from multi-card evaluation", async () => {
+    const txsWithLoan: Transaction[] = [
+      ...sampleTransactions,
+      makeTx({
+        transaction_id: "loan",
+        amount: 50000,
+        personal_finance_category: {
+          primary: "LOAN_PAYMENTS",
+          detailed: "LOAN_PAYMENTS_MORTGAGE_PAYMENT",
+          confidence_level: "VERY_HIGH",
+        },
+      }),
+    ];
+
+    const resultWithLoan = await getMultiCardRecommendations(
+      txsWithLoan,
+      {},
+      [],
+      undefined,
+      testCards,
+    );
+
+    const resultWithout = await getMultiCardRecommendations(
+      sampleTransactions,
+      {},
+      [],
+      undefined,
+      testCards,
+    );
+
+    const totalWithLoan = resultWithLoan.cards.reduce(
+      (sum, c) => sum + c.annualValue,
+      0,
+    );
+    const totalWithout = resultWithout.cards.reduce(
+      (sum, c) => sum + c.annualValue,
+      0,
+    );
+    expect(totalWithLoan).toBeCloseTo(totalWithout, 0);
   });
 });

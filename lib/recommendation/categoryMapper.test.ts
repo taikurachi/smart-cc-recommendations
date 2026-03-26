@@ -21,6 +21,18 @@ describe("categoryMapper", () => {
     ).toBe("dining");
   });
 
+  it("FOOD_AND_DRINK_FAST_FOOD maps to dining", () => {
+    expect(
+      mapTransactionCategoryToRewardCategory({ primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_FAST_FOOD", confidence_level: "VERY_HIGH" }),
+    ).toBe("dining");
+  });
+
+  it("FOOD_AND_DRINK_BEER_WINE_AND_LIQUOR maps to dining", () => {
+    expect(
+      mapTransactionCategoryToRewardCategory({ primary: "FOOD_AND_DRINK", detailed: "FOOD_AND_DRINK_BEER_WINE_AND_LIQUOR", confidence_level: "HIGH" }),
+    ).toBe("dining");
+  });
+
   // --- TRAVEL ---
   it("TRAVEL primary maps to travel", () => {
     expect(
@@ -34,11 +46,23 @@ describe("categoryMapper", () => {
     ).toBe("hotels");
   });
 
+  it("TRAVEL_CAR_AND_TRUCK_RENTALS maps to travel", () => {
+    expect(
+      mapTransactionCategoryToRewardCategory({ primary: "TRAVEL", detailed: "TRAVEL_CAR_AND_TRUCK_RENTALS", confidence_level: "HIGH" }),
+    ).toBe("travel");
+  });
+
   // --- TRANSPORTATION ---
   it("TRANSPORTATION_GAS maps to gas", () => {
     expect(
       mapTransactionCategoryToRewardCategory({ primary: "TRANSPORTATION", detailed: "TRANSPORTATION_GAS", confidence_level: "VERY_HIGH" }),
     ).toBe("gas");
+  });
+
+  it("TRANSPORTATION_CAR_RENTAL maps to travel", () => {
+    expect(
+      mapTransactionCategoryToRewardCategory({ primary: "TRANSPORTATION", detailed: "TRANSPORTATION_CAR_RENTAL", confidence_level: "HIGH" }),
+    ).toBe("travel");
   });
 
   it("TRANSPORTATION_TAXIS_AND_RIDE_SHARES maps to transit", () => {
@@ -102,6 +126,18 @@ describe("categoryMapper", () => {
     ).toBe("general");
   });
 
+  it("GENERAL_MERCHANDISE_ELECTRONICS falls back to general", () => {
+    expect(
+      mapTransactionCategoryToRewardCategory({ primary: "GENERAL_MERCHANDISE", detailed: "GENERAL_MERCHANDISE_ELECTRONICS", confidence_level: "HIGH" }),
+    ).toBe("general");
+  });
+
+  it("GENERAL_MERCHANDISE_DEPARTMENT_STORES falls back to general", () => {
+    expect(
+      mapTransactionCategoryToRewardCategory({ primary: "GENERAL_MERCHANDISE", detailed: "GENERAL_MERCHANDISE_DEPARTMENT_STORES", confidence_level: "HIGH" }),
+    ).toBe("general");
+  });
+
   // --- ENTERTAINMENT ---
   it("ENTERTAINMENT_MUSIC_AND_AUDIO maps to streaming", () => {
     expect(
@@ -127,6 +163,12 @@ describe("categoryMapper", () => {
     ).toBe("entertainment");
   });
 
+  it("ENTERTAINMENT_CASINOS_AND_GAMBLING maps to entertainment", () => {
+    expect(
+      mapTransactionCategoryToRewardCategory({ primary: "ENTERTAINMENT", detailed: "ENTERTAINMENT_CASINOS_AND_GAMBLING", confidence_level: "HIGH" }),
+    ).toBe("entertainment");
+  });
+
   // --- RENT_AND_UTILITIES ---
   it("RENT_AND_UTILITIES_INTERNET_AND_CABLE maps to streaming", () => {
     expect(
@@ -146,6 +188,88 @@ describe("categoryMapper", () => {
     ).toBe("general");
   });
 
+  it("RENT_AND_UTILITIES_GAS_AND_ELECTRICITY falls back to general", () => {
+    expect(
+      mapTransactionCategoryToRewardCategory({ primary: "RENT_AND_UTILITIES", detailed: "RENT_AND_UTILITIES_GAS_AND_ELECTRICITY", confidence_level: "HIGH" }),
+    ).toBe("general");
+  });
+
+  it("RENT_AND_UTILITIES_WATER falls back to general", () => {
+    expect(
+      mapTransactionCategoryToRewardCategory({ primary: "RENT_AND_UTILITIES", detailed: "RENT_AND_UTILITIES_WATER", confidence_level: "HIGH" }),
+    ).toBe("general");
+  });
+
+  // --- Explicitly handled primaries that map to general ---
+
+  it("HOME_IMPROVEMENT maps to general", () => {
+    expect(
+      mapTransactionCategoryToRewardCategory({ primary: "HOME_IMPROVEMENT", detailed: "HOME_IMPROVEMENT_HARDWARE", confidence_level: "HIGH" }),
+    ).toBe("general");
+  });
+
+  it("MEDICAL maps to general", () => {
+    expect(
+      mapTransactionCategoryToRewardCategory({ primary: "MEDICAL", detailed: "MEDICAL_DENTIST", confidence_level: "HIGH" }),
+    ).toBe("general");
+  });
+
+  it("MEDICAL_VETERINARY_SERVICES maps to general", () => {
+    expect(
+      mapTransactionCategoryToRewardCategory({ primary: "MEDICAL", detailed: "MEDICAL_VETERINARY_SERVICES", confidence_level: "HIGH" }),
+    ).toBe("general");
+  });
+
+  it("PERSONAL_CARE maps to general", () => {
+    expect(
+      mapTransactionCategoryToRewardCategory({ primary: "PERSONAL_CARE", detailed: "PERSONAL_CARE_HAIR_AND_BEAUTY", confidence_level: "HIGH" }),
+    ).toBe("general");
+  });
+
+  it("GENERAL_SERVICES maps to general", () => {
+    expect(
+      mapTransactionCategoryToRewardCategory({ primary: "GENERAL_SERVICES", detailed: "GENERAL_SERVICES_CONSULTING_AND_LEGAL", confidence_level: "HIGH" }),
+    ).toBe("general");
+  });
+
+  it("GOVERNMENT_AND_NON_PROFIT maps to general", () => {
+    expect(
+      mapTransactionCategoryToRewardCategory({ primary: "GOVERNMENT_AND_NON_PROFIT", detailed: "GOVERNMENT_AND_NON_PROFIT_TAX_PAYMENT", confidence_level: "HIGH" }),
+    ).toBe("general");
+  });
+
+  // --- Non-spending primaries (filtered upstream, but still return general defensively) ---
+
+  it("INCOME maps to general (filtered upstream)", () => {
+    expect(
+      mapTransactionCategoryToRewardCategory({ primary: "INCOME", detailed: "INCOME_WAGES", confidence_level: "VERY_HIGH" }),
+    ).toBe("general");
+  });
+
+  it("LOAN_PAYMENTS maps to general (filtered upstream)", () => {
+    expect(
+      mapTransactionCategoryToRewardCategory({ primary: "LOAN_PAYMENTS", detailed: "LOAN_PAYMENTS_MORTGAGE_PAYMENT", confidence_level: "VERY_HIGH" }),
+    ).toBe("general");
+  });
+
+  it("TRANSFER_IN maps to general (filtered upstream)", () => {
+    expect(
+      mapTransactionCategoryToRewardCategory({ primary: "TRANSFER_IN", detailed: "TRANSFER_IN_DEPOSIT", confidence_level: "VERY_HIGH" }),
+    ).toBe("general");
+  });
+
+  it("TRANSFER_OUT maps to general (filtered upstream)", () => {
+    expect(
+      mapTransactionCategoryToRewardCategory({ primary: "TRANSFER_OUT", detailed: "TRANSFER_OUT_ACCOUNT_TRANSFER", confidence_level: "VERY_HIGH" }),
+    ).toBe("general");
+  });
+
+  it("BANK_FEES maps to general (filtered upstream)", () => {
+    expect(
+      mapTransactionCategoryToRewardCategory({ primary: "BANK_FEES", detailed: "BANK_FEES_ATM_FEES", confidence_level: "VERY_HIGH" }),
+    ).toBe("general");
+  });
+
   // --- Edge cases ---
   it("undefined input returns general", () => {
     expect(mapTransactionCategoryToRewardCategory(undefined)).toBe("general");
@@ -153,7 +277,13 @@ describe("categoryMapper", () => {
 
   it("unknown primary returns general", () => {
     expect(
-      mapTransactionCategoryToRewardCategory({ primary: "MEDICAL", detailed: "MEDICAL_DENTIST", confidence_level: "HIGH" }),
+      mapTransactionCategoryToRewardCategory({ primary: "TOTALLY_UNKNOWN", detailed: "TOTALLY_UNKNOWN_THING", confidence_level: "HIGH" }),
+    ).toBe("general");
+  });
+
+  it("empty strings return general", () => {
+    expect(
+      mapTransactionCategoryToRewardCategory({ primary: "", detailed: "", confidence_level: "" }),
     ).toBe("general");
   });
 });
