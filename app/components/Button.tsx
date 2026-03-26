@@ -4,7 +4,7 @@ import { ButtonHTMLAttributes, ReactNode } from "react";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
-  color?: string;
+  color?: "purple" | "green" | "light-green" | "blue" | "gray" | "gray-light" | "red";
   variant?: "solid" | "outline";
   size?: "sm" | "md" | "lg";
   showArrow?: boolean;
@@ -45,6 +45,7 @@ export default function Button({
       "border-2 border-light-green text-light-green hover:bg-light-green hover:text-white active:scale-[0.98]",
     blue: "border-2 border-blue text-blue hover:bg-blue hover:text-white active:scale-[0.98]",
     gray: "border-2 border-gray",
+    "gray-light": "border-2 border-gray-light",
     red: "border-2 border-red",
   };
 

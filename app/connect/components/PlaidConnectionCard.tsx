@@ -21,13 +21,13 @@ interface PlaidConnectionCardProps {
 }
 
 const buttonStates = [
-  { title: "Connect", icon: null, bgColor: "purple" },
+  { title: "Connect", icon: null, bgColor: "purple" as const },
   {
     title: "Creating Token",
     icon: <Loader size={15} className="animate-spin" />,
-    bgColor: "gray",
+    bgColor: "gray" as const,
   },
-  { title: "Success", icon: <Check size={15} />, bgColor: "green" },
+  { title: "Success", icon: <Check size={15} />, bgColor: "green" as const },
 ];
 
 export default function PlaidConnectionCard({
