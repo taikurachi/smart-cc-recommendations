@@ -4,22 +4,20 @@ import {
   useContext,
   useState,
   useEffect,
+  useCallback,
   ReactNode,
-  Dispatch,
-  SetStateAction,
 } from "react";
 import { User, Connection, CardPreferences } from "../types";
 import { loadUserData } from "../userOperations";
+import { getStoredCardPreferences } from "../clientStorage";
 
 interface AppContextType {
   user: User | null;
-  setUser: Dispatch<SetStateAction<User | null>>;
   connections: Connection[];
-  setConnections: Dispatch<SetStateAction<Connection[]>>;
   loading: boolean;
-  setLoading: Dispatch<SetStateAction<boolean>>;
   cardPreferences: CardPreferences | null;
-  setCardPreferences: Dispatch<SetStateAction<CardPreferences | null>>;
+  updateUser: (user: User | null) => void;
+  updatePreferences: (prefs: CardPreferences) => void;
   loadData: () => Promise<void>;
 }
 
@@ -32,36 +30,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [cardPreferences, setCardPreferences] =
     useState<CardPreferences | null>(null);
 
-  const loadData = async () => {
-    const data = await loadUserData();
-    setUser(data.user);
-    setConnections(data.connections || []);
+  const updateUser = useCallback((u: User | null) => setUser(u), []);
 
-    const savedPreferences = localStorage.getItem("cardPreferences");
-    if (savedPreferences) {
-      try {
-        setCardPreferences(JSON.parse(savedPreferences));
-      } catch {
-        localStorage.removeItem("cardPreferences");
+  const updatePreferences = useCallback(
+    (prefs: CardPreferences) => setCardPreferences(prefs),
+    [],
+  );
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await loadUserData();
+      setUser(data.user);
+      setConnections(data.connections || []);
+
+      const savedPreferences = getStoredCardPreferences();
+      if (savedPreferences) {
+        setCardPreferences(savedPreferences);
       }
+    } finally {
+      setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [loadData]);
 
   return (
     <AppContext.Provider
       value={{
         user,
-        setUser,
         connections,
-        setConnections,
         loading,
-        setLoading,
         cardPreferences,
-        setCardPreferences,
+        updateUser,
+        updatePreferences,
         loadData,
       }}
     >

@@ -1,4 +1,5 @@
-import { CreditCardData } from "./types";
+import { CreditCardData, OwnedCardRef } from "./types";
+import { MESSAGES } from "./constants";
 
 /**
  * Filter cards by user preferences. Tries strict match (all preferences) first,
@@ -30,10 +31,7 @@ export function filterByPreferences(
   }
 
   if (filtered.length === 0) {
-    return [
-      cards,
-      "There were no matches. Recommending you best value cards.",
-    ];
+    return [cards, MESSAGES.NO_MATCHES];
   }
 
   return [filtered, undefined];
@@ -44,7 +42,7 @@ export function filterByPreferences(
  */
 export function isCardOwned(
   card: CreditCardData,
-  ownedCards: Array<{ id?: string; name?: string }>
+  ownedCards: OwnedCardRef[],
 ): boolean {
   if (!ownedCards || ownedCards.length === 0) return false;
 

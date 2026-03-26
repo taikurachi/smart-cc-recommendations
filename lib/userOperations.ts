@@ -1,11 +1,12 @@
 import { User, Connection } from "./types";
+import { getStoredUserId } from "./clientStorage";
 
 export async function loadUserData(): Promise<{
   user: User | null;
   connections: Connection[];
 }> {
   try {
-    const userId = localStorage.getItem("userId");
+    const userId = getStoredUserId();
 
     if (userId) {
       const response = await fetch(`/api/users?userId=${userId}`);

@@ -1,4 +1,5 @@
 import { Benefit } from "./types";
+import { INTRO_BONUS_KEY } from "./constants";
 
 /**
  * Calculate the usage-ease-adjusted value of a card's benefits,
@@ -7,7 +8,7 @@ import { Benefit } from "./types";
 export function calculateBenefitsValue(benefits: Benefit[]): number {
   if (!benefits || benefits.length === 0) return 0;
   return benefits
-    .filter((b) => b.name !== "intro-bonus")
+    .filter((b) => b.name !== INTRO_BONUS_KEY)
     .reduce((sum, b) => sum + b.value * (b.usage_ease || 0), 0);
 }
 
@@ -17,7 +18,7 @@ export function calculateBenefitsValue(benefits: Benefit[]): number {
  */
 export function calculateIntroBonusValue(benefits: Benefit[]): number {
   if (!benefits || benefits.length === 0) return 0;
-  const introBonus = benefits.find((b) => b.name === "intro-bonus");
+  const introBonus = benefits.find((b) => b.name === INTRO_BONUS_KEY);
   if (!introBonus) return 0;
   return introBonus.value * (introBonus.usage_ease || 0);
 }

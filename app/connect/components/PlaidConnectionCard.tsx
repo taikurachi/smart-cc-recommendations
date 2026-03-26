@@ -12,10 +12,11 @@ import {
   exchangePublicToken,
 } from "@/lib/plaid/operations";
 import { useConfetti } from "../hooks/useConfetti";
+import { setStoredConnectionMethod } from "@/lib/clientStorage";
 
 interface PlaidConnectionCardProps {
   user: User | null;
-  setUser: React.Dispatch<React.SetStateAction<User | null>>;
+  updateUser: (user: User | null) => void;
   loadData: () => Promise<void>;
 }
 
@@ -31,7 +32,7 @@ const buttonStates = [
 
 export default function PlaidConnectionCard({
   user,
-  setUser,
+  updateUser,
   loadData,
 }: PlaidConnectionCardProps) {
   const [linkToken, setLinkToken] = useState("");
@@ -47,7 +48,7 @@ export default function PlaidConnectionCard({
       await exchangePublicToken(public_token, user?.id, loadData);
 
       // Set connection method to 'plaid'
-      localStorage.setItem("connectionMethod", "plaid");
+      setStoredConnectionMethod("plaid");
 
       // Show success state and fire confetti
       setPlaidStateIndex(2);
@@ -89,7 +90,7 @@ export default function PlaidConnectionCard({
         <Button
           onClick={async () => {
             setButtonStateIndex((prev) => prev + 1);
-            const token = await createLinkToken(user, setUser);
+            const token = await createLinkToken(user, updateUser);
             if (token) {
               setLinkToken(token);
               setButtonStateIndex((prev) => prev + 1);

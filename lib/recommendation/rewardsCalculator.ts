@@ -2,18 +2,23 @@ import { CreditCardData, Reward, Transaction } from "./types";
 import { mapTransactionCategoryToRewardCategory } from "./categoryMapper";
 
 /**
+ * Get the cash-back-equivalent rate for a reward tier.
+ * Points: rate * 100 points/dollar * $0.01/point = rate.
+ * Cash: rate is already the cash-back rate.
+ */
+export function getEffectiveRate(reward: Reward): number {
+  return reward.rate;
+}
+
+/**
  * Compute the cash value produced by a single reward tier for a given spending amount.
  * Points are valued at $0.01 each (rate * 100 = points-per-dollar).
  */
 export function computeRewardValue(
   spending: number,
-  reward: Reward
+  reward: Reward,
 ): number {
-  if (reward.unit === "points") {
-    const pointsPerDollar = reward.rate * 100;
-    return spending * pointsPerDollar * 0.01;
-  }
-  return spending * reward.rate;
+  return spending * getEffectiveRate(reward);
 }
 
 /**

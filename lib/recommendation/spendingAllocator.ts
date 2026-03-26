@@ -5,19 +5,10 @@ import {
   Transaction,
 } from "./types";
 import { mapTransactionCategoryToRewardCategory } from "./categoryMapper";
-import { applyCap, computeRewardValue } from "./rewardsCalculator";
+import { applyCap, computeRewardValue, getEffectiveRate } from "./rewardsCalculator";
 import { calculateCreditsValue } from "./creditsCalculator";
 import { calculateBenefitsValue } from "./benefitsCalculator";
-
-/**
- * Compute the effective cash-back-equivalent rate for a reward tier.
- */
-function effectiveRate(reward: Reward): number {
-  if (reward.unit === "points") {
-    return reward.rate * 100 * 0.01;
-  }
-  return reward.rate;
-}
+import { getCardId } from "./utils";
 
 /**
  * Find the card with the highest effective reward rate for a given category.
@@ -34,7 +25,7 @@ function findBestCardForCategory(
   for (const card of cards) {
     const reward = card.rewards?.[category];
     if (reward) {
-      const rate = effectiveRate(reward);
+      const rate = getEffectiveRate(reward);
       if (rate > bestRate) {
         bestRate = rate;
         bestCard = card;
@@ -47,7 +38,7 @@ function findBestCardForCategory(
     for (const card of cards) {
       const generalReward = card.rewards?.["general"];
       if (generalReward) {
-        const rate = effectiveRate(generalReward);
+        const rate = getEffectiveRate(generalReward);
         if (rate > bestRate) {
           bestRate = rate;
           bestCard = card;
@@ -93,7 +84,7 @@ export function allocateSpendingToCards(
     const remainingSpending = totalSpending - cappedSpending;
 
     allocation.push({
-      cardId: best.card.id || best.card.name,
+      cardId: getCardId(best.card),
       cardName: best.card.name,
       category,
       amount: cappedSpending,
@@ -103,12 +94,12 @@ export function allocateSpendingToCards(
 
     if (remainingSpending > 0) {
       const remainingCards = cards.filter(
-        (c) => (c.id || c.name) !== (best.card.id || best.card.name)
+        (c) => getCardId(c) !== getCardId(best.card),
       );
       const nextBest = findBestCardForCategory(remainingCards, category);
       if (nextBest) {
         allocation.push({
-          cardId: nextBest.card.id || nextBest.card.name,
+          cardId: getCardId(nextBest.card),
           cardName: nextBest.card.name,
           category,
           amount: remainingSpending,

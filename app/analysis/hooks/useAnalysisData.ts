@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 
 import { Connection, SpendingAnalysis, Transaction } from "@/lib/types";
 import { calculateCardAnnualValue, CreditCardWithValue } from "@/lib/recommendation";
+import { getStoredUserId } from "@/lib/clientStorage";
 import {
   groupTransactionsByCreditCard,
   removeDuplicateTransactions,
@@ -31,7 +32,7 @@ export function useAnalysisData(): AnalysisData {
   const loadUserDataAndAnalysis = useCallback(async () => {
     try {
       setLoading(true);
-      const userId = localStorage.getItem("userId");
+      const userId = getStoredUserId();
 
       if (!userId) {
         setError("No user found. Please connect your bank account first.");

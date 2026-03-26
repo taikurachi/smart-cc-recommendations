@@ -13,6 +13,10 @@ import {
 import Button from "./Button";
 import { CardPreferences } from "@/lib/types";
 import { DEFAULT_CARD_PREFERENCES } from "@/lib/constants";
+import {
+  getStoredCardPreferences,
+  setStoredCardPreferences,
+} from "@/lib/clientStorage";
 
 interface CardPreferencesModalProps {
   isOpen: boolean;
@@ -108,14 +112,9 @@ export default function CardPreferencesModal({
       if (initialPreferences) {
         setPreferences(initialPreferences);
       } else {
-        // Load from localStorage
-        const saved = localStorage.getItem("cardPreferences");
+        const saved = getStoredCardPreferences();
         if (saved) {
-          try {
-            setPreferences(JSON.parse(saved));
-          } catch {
-            localStorage.removeItem("cardPreferences");
-          }
+          setPreferences(saved);
         }
       }
     }
@@ -129,8 +128,7 @@ export default function CardPreferencesModal({
   };
 
   const handleSave = () => {
-    // Save to localStorage
-    localStorage.setItem("cardPreferences", JSON.stringify(preferences));
+    setStoredCardPreferences(preferences);
     onSave(preferences);
     onClose();
   };

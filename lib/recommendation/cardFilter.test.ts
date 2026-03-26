@@ -1,108 +1,92 @@
+import { describe, it, expect } from "vitest";
 import { filterByPreferences, isCardOwned } from "./cardFilter";
-import { CreditCardData } from "./types";
-import { createTestRunner } from "./testUtils";
+import { makeCard } from "./testFixtures";
 
-const { test, report } = createTestRunner();
+describe("cardFilter", () => {
 
-function makeCard(overrides: Partial<CreditCardData>): CreditCardData {
-  return {
-    id: "default",
-    name: "Default",
-    institution_name: "Bank",
-    annual_fee: 0,
-    tags: [],
-    rewards: {},
-    credits: [],
-    benefits: [],
-    image: { src: "", alt: "" },
-    ...overrides,
-  };
-}
+  const travelCard = makeCard({ id: "travel1", name: "Travel Card", tags: ["travel"] });
+  const cashbackCard = makeCard({ id: "cb1", name: "Cashback Card", tags: ["cashback", "no_annual_fee"] });
+  const allRounder = makeCard({ id: "all1", name: "All Rounder", tags: ["travel", "cashback", "no_annual_fee"] });
+  const businessCard = makeCard({ id: "biz1", name: "Business Card", tags: ["business"] });
 
-const travelCard = makeCard({ id: "travel1", name: "Travel Card", tags: ["travel"] });
-const cashbackCard = makeCard({ id: "cb1", name: "Cashback Card", tags: ["cashback", "no_annual_fee"] });
-const allRounder = makeCard({ id: "all1", name: "All Rounder", tags: ["travel", "cashback", "no_annual_fee"] });
-const businessCard = makeCard({ id: "biz1", name: "Business Card", tags: ["business"] });
+  const allCards = [travelCard, cashbackCard, allRounder, businessCard];
 
-const allCards = [travelCard, cashbackCard, allRounder, businessCard];
+  it("no preferences (all false) returns all cards", () => {
+    const [result, msg] = filterByPreferences(allCards, { travel: false, cashback: false });
+    expect(result).toHaveLength(allCards.length);
+    expect(msg).toBeUndefined();
+  });
 
-test("no preferences (all false) returns all cards", () => {
-  const [result, msg] = filterByPreferences(allCards, { travel: false, cashback: false });
-  if (result.length !== allCards.length) throw new Error(`Expected ${allCards.length}, got ${result.length}`);
-  if (msg !== undefined) throw new Error(`Expected no message, got: ${msg}`);
+  it("empty preferences object returns all cards", () => {
+    const [result] = filterByPreferences(allCards, {});
+    expect(result).toHaveLength(allCards.length);
+  });
+
+  it("strict match: travel + cashback returns only allRounder", () => {
+    const [result, msg] = filterByPreferences(allCards, { travel: true, cashback: true });
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("all1");
+    expect(msg).toBeUndefined();
+  });
+
+  it("strict match fails, partial match returns cards with any tag", () => {
+    const [result, msg] = filterByPreferences(allCards, { travel: true, business: true });
+    expect(result).toHaveLength(3);
+    expect(msg).toBeUndefined();
+  });
+
+  it("no matches at all returns all cards with message", () => {
+    const [result, msg] = filterByPreferences(allCards, { premium: true });
+    expect(result).toHaveLength(allCards.length);
+    expect(msg).toBeDefined();
+    expect(msg).toContain("no matches");
+  });
+
+  it("single preference filters correctly", () => {
+    const [result] = filterByPreferences(allCards, { no_annual_fee: true });
+    expect(result).toHaveLength(2);
+    const ids = result.map((c) => c.id).sort();
+    expect(ids).toEqual(["all1", "cb1"]);
+  });
+
+  it("matches by ID", () => {
+    const card = makeCard({ id: "amex_platinum", name: "Platinum Card" });
+    const owned = [{ id: "amex_platinum" }];
+    expect(isCardOwned(card, owned)).toBe(true);
+  });
+
+  it("matches by normalized name (case-insensitive)", () => {
+    const card = makeCard({ id: "c1", name: "Freedom Unlimited" });
+    const owned = [{ name: "freedom unlimited" }];
+    expect(isCardOwned(card, owned)).toBe(true);
+  });
+
+  it("strips trademark symbols for matching", () => {
+    const card = makeCard({ id: "c1", name: "Platinum Card®" });
+    const owned = [{ name: "Platinum Card" }];
+    expect(isCardOwned(card, owned)).toBe(true);
+  });
+
+  it("strips TM symbol for matching", () => {
+    const card = makeCard({ id: "c1", name: "SavorOne™" });
+    const owned = [{ name: "SavorOne" }];
+    expect(isCardOwned(card, owned)).toBe(true);
+  });
+
+  it("returns false for empty owned list", () => {
+    const card = makeCard({ id: "c1", name: "Some Card" });
+    expect(isCardOwned(card, [])).toBe(false);
+  });
+
+  it("returns false for null owned list", () => {
+    const card = makeCard({ id: "c1", name: "Some Card" });
+    // @ts-expect-error testing null
+    expect(isCardOwned(card, null)).toBe(false);
+  });
+
+  it("returns false when no match", () => {
+    const card = makeCard({ id: "c1", name: "Card X" });
+    const owned = [{ id: "c2", name: "Card Y" }];
+    expect(isCardOwned(card, owned)).toBe(false);
+  });
 });
-
-test("empty preferences object returns all cards", () => {
-  const [result] = filterByPreferences(allCards, {});
-  if (result.length !== allCards.length) throw new Error(`Expected all cards`);
-});
-
-test("strict match: travel + cashback returns only allRounder", () => {
-  const [result, msg] = filterByPreferences(allCards, { travel: true, cashback: true });
-  if (result.length !== 1) throw new Error(`Expected 1 strict match, got ${result.length}`);
-  if (result[0].id !== "all1") throw new Error(`Expected all1, got ${result[0].id}`);
-  if (msg !== undefined) throw new Error(`Expected no message`);
-});
-
-test("strict match fails, partial match returns cards with any tag", () => {
-  const [result, msg] = filterByPreferences(allCards, { travel: true, business: true });
-  if (result.length !== 3) throw new Error(`Expected 3 partial matches, got ${result.length}`);
-  if (msg !== undefined) throw new Error(`Expected no message on partial`);
-});
-
-test("no matches at all returns all cards with message", () => {
-  const [result, msg] = filterByPreferences(allCards, { premium: true });
-  if (result.length !== allCards.length) throw new Error(`Expected fallback to all cards`);
-  if (!msg) throw new Error("Expected fallback message");
-  if (!msg.includes("no matches")) throw new Error(`Unexpected message: ${msg}`);
-});
-
-test("single preference filters correctly", () => {
-  const [result] = filterByPreferences(allCards, { no_annual_fee: true });
-  if (result.length !== 2) throw new Error(`Expected 2, got ${result.length}`);
-  const ids = result.map((c) => c.id).sort();
-  if (ids[0] !== "all1" || ids[1] !== "cb1") throw new Error(`Wrong cards: ${ids}`);
-});
-
-test("matches by ID", () => {
-  const card = makeCard({ id: "amex_platinum", name: "Platinum Card" });
-  const owned = [{ id: "amex_platinum" }];
-  if (!isCardOwned(card, owned)) throw new Error("Should match by ID");
-});
-
-test("matches by normalized name (case-insensitive)", () => {
-  const card = makeCard({ id: "c1", name: "Freedom Unlimited" });
-  const owned = [{ name: "freedom unlimited" }];
-  if (!isCardOwned(card, owned)) throw new Error("Should match case-insensitively");
-});
-
-test("strips trademark symbols for matching", () => {
-  const card = makeCard({ id: "c1", name: "Platinum Card®" });
-  const owned = [{ name: "Platinum Card" }];
-  if (!isCardOwned(card, owned)) throw new Error("Should strip ® for matching");
-});
-
-test("strips TM symbol for matching", () => {
-  const card = makeCard({ id: "c1", name: "SavorOne™" });
-  const owned = [{ name: "SavorOne" }];
-  if (!isCardOwned(card, owned)) throw new Error("Should strip ™ for matching");
-});
-
-test("returns false for empty owned list", () => {
-  const card = makeCard({ id: "c1", name: "Some Card" });
-  if (isCardOwned(card, [])) throw new Error("Should return false for empty owned");
-});
-
-test("returns false for null owned list", () => {
-  const card = makeCard({ id: "c1", name: "Some Card" });
-  // @ts-expect-error testing null
-  if (isCardOwned(card, null)) throw new Error("Should return false for null");
-});
-
-test("returns false when no match", () => {
-  const card = makeCard({ id: "c1", name: "Card X" });
-  const owned = [{ id: "c2", name: "Card Y" }];
-  if (isCardOwned(card, owned)) throw new Error("Should not match different card");
-});
-
-report("cardFilter.test.ts");

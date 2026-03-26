@@ -1,8 +1,12 @@
 /**
- * Test suite for Multi-Card Recommendation Engine
- * Run with: npm run test:engine
+ * @deprecated Legacy integration test — relies on gitignored data/manualcc.json
+ * and a custom test harness with fragile setTimeout-based async handling.
  *
- * This test file directly loads credit card data from JSON to avoid API dependencies
+ * Unit tests now live in lib/recommendation/*.test.ts (Vitest).
+ * Run those with: npm test
+ *
+ * This file is kept for manual smoke-testing against real card data.
+ * Run with: npm run test:engine
  */
 
 import fs from "fs";

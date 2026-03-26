@@ -2,10 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import { CardPreferences, Transaction } from "@/lib/types";
-import {
-  CreditCardWithValue,
-  getMultiCardRecommendations,
-} from "@/lib/recommendation";
+import type { CreditCardWithValue, RecommendationResult } from "@/lib/recommendation";
 import { showToast } from "@/lib/ui/toastUtils";
 import { DEFAULT_CARD_PREFERENCES } from "@/lib/constants";
 
@@ -31,12 +28,20 @@ export function useRecommendations(
           0,
         );
 
-        const result = await getMultiCardRecommendations(
-          transactions,
-          preferences,
-          ownedCards,
-          ownedCardsTotalAnnualValue,
-        );
+        const response = await fetch("/api/recommendations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            transactions,
+            preferences,
+            ownedCards,
+            ownedCardsAnnualValue: ownedCardsTotalAnnualValue,
+          }),
+        });
+
+        if (!response.ok) throw new Error("Failed to fetch recommendations");
+
+        const result: RecommendationResult = await response.json();
 
         if (result.message) {
           showToast.info(result.message);

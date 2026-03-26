@@ -24,7 +24,7 @@ import { useAnalysisData } from "./hooks/useAnalysisData";
 import { useRecommendations } from "./hooks/useRecommendations";
 
 export default function AnalysisPage() {
-  const { cardPreferences, setCardPreferences } = useApp();
+  const { cardPreferences, updatePreferences } = useApp();
   const { connections, transactions, analysis, ownedCards, loading, error } =
     useAnalysisData();
   const { recommendations, loadingRecommendations, calculateRecommendations } =
@@ -74,7 +74,7 @@ export default function AnalysisPage() {
   }
 
   const handleSavePreferences = async (preferences: CardPreferences) => {
-    setCardPreferences(preferences);
+    updatePreferences(preferences);
     setIsCardPreferencesOpen(false);
     await calculateRecommendations({ ...preferences });
   };

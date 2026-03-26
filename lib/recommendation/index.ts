@@ -18,6 +18,8 @@
 import { loadCreditCardData } from "../data/creditCardData";
 import {
   CreditCardData,
+  CreditCardWithValue,
+  OwnedCardRef,
   RecommendationResult,
   SpendingAllocation,
   Transaction,
@@ -28,10 +30,9 @@ import {
 } from "./cardValueCalculator";
 import { evaluateCardCombination } from "./spendingAllocator";
 import { filterByPreferences, isCardOwned } from "./cardFilter";
-import { calculateTransactionRewards } from "./rewardsCalculator";
-import { calculateCreditsValue } from "./creditsCalculator";
-import { calculateBenefitsValue } from "./benefitsCalculator";
 import { mapCardNameToOfficialCard } from "../data/cardMatcher";
+import { generateCombinations, getCardId } from "./utils";
+import { MESSAGES } from "./constants";
 
 export {
   calculateCardAnnualValue,
@@ -53,36 +54,16 @@ export type {
   CreditCardData,
   CreditCardWithValue,
   RecommendationResult,
+  RewardCategory,
   Reward,
   Credit,
   Benefit,
   SpendingAllocation,
   SpendingCategory,
   CardValueResult,
-  MultiCardRecommendation,
+  OwnedCardRef,
 } from "./types";
-
-function generateCombinations<T>(arr: T[], size: number): T[][] {
-  if (size === 0) return [[]];
-  if (size > arr.length) return [];
-
-  const combinations: T[][] = [];
-
-  function backtrack(start: number, current: T[]) {
-    if (current.length === size) {
-      combinations.push([...current]);
-      return;
-    }
-    for (let i = start; i < arr.length; i++) {
-      current.push(arr[i]);
-      backtrack(i + 1, current);
-      current.pop();
-    }
-  }
-
-  backtrack(0, []);
-  return combinations;
-}
+export { rewardCategories } from "./types";
 
 /**
  * Get recommended credit cards based on transactions (single-card ranking).
@@ -109,17 +90,97 @@ export async function getRecommendedCards(
 }
 
 /**
+ * Brute-force search for the best 2-3 card combination by total annual value.
+ * Falls back to a single card if no multi-card combo exists.
+ */
+function findBestCombination(
+  cards: CreditCardData[],
+  transactions: Transaction[],
+): { combo: CreditCardData[]; allocation: SpendingAllocation[] } | null {
+  let bestCombo: CreditCardData[] = [];
+  let bestValue = -Infinity;
+  let bestAllocation: SpendingAllocation[] = [];
+
+  for (let comboSize = 2; comboSize <= 3; comboSize++) {
+    const combinations = generateCombinations(cards, comboSize);
+    for (const combo of combinations) {
+      const evaluation = evaluateCardCombination(combo, transactions);
+      if (evaluation.totalAnnualValue > bestValue) {
+        bestValue = evaluation.totalAnnualValue;
+        bestCombo = combo;
+        bestAllocation = evaluation.allocation;
+      }
+    }
+  }
+
+  if (bestCombo.length === 0 && cards.length > 0) {
+    const singleCardEval = evaluateCardCombination([cards[0]], transactions);
+    bestCombo = [cards[0]];
+    bestAllocation = singleCardEval.allocation;
+  }
+
+  if (bestCombo.length === 0) return null;
+  return { combo: bestCombo, allocation: bestAllocation };
+}
+
+/**
+ * Build per-card value results from a combination and its spending allocation.
+ */
+function buildCombinationResults(
+  combo: CreditCardData[],
+  allocation: SpendingAllocation[],
+): CreditCardWithValue[] {
+  const results = combo.map((card) => {
+    const cardAllocations = allocation.filter(
+      (alloc) => alloc.cardId === getCardId(card),
+    );
+    const estimatedRewards = cardAllocations.reduce(
+      (sum, alloc) => sum + alloc.rewardValue,
+      0,
+    );
+    const value = calculateCardAnnualValueFromRewards(card, estimatedRewards);
+    return { ...card, ...value, allocation: cardAllocations };
+  });
+
+  results.sort((a, b) => b.annualValue - a.annualValue);
+  return results;
+}
+
+/**
+ * Calculate the total annual value of the user's currently owned cards.
+ * Uses pre-computed value if available, otherwise resolves each card.
+ */
+async function computeOwnedCardsValue(
+  ownedCards: OwnedCardRef[],
+  ownedCardsAnnualValue: number | undefined,
+  allCards: CreditCardData[],
+  transactions: Transaction[],
+): Promise<number> {
+  if (ownedCardsAnnualValue !== undefined) return ownedCardsAnnualValue;
+
+  let total = 0;
+  for (const ownedCard of ownedCards) {
+    const officialCard = await mapCardNameToOfficialCard(
+      ownedCard.name || "",
+      ownedCard.institution_name,
+      allCards,
+    );
+    if (officialCard) {
+      const value = calculateCardAnnualValue(officialCard, transactions);
+      total += value.annualValue;
+    }
+  }
+  return total;
+}
+
+/**
  * Get multi-card recommendations (2-3 cards) that maximize total annual value.
  * Pass `providedCards` to skip the DB/API load (useful for tests).
  */
 export async function getMultiCardRecommendations(
   transactions: Transaction[],
   preferences: Record<string, boolean>,
-  ownedCards: Array<{
-    id?: string;
-    name?: string;
-    institution_name?: string;
-  }> = [],
+  ownedCards: OwnedCardRef[] = [],
   ownedCardsAnnualValue?: number,
   providedCards?: CreditCardData[],
 ): Promise<RecommendationResult> {
@@ -136,91 +197,33 @@ export async function getMultiCardRecommendations(
   if (availableCards.length === 0) {
     return {
       cards: [],
-      message: "All recommended cards are already owned. Your cards are optimized!",
+      message: MESSAGES.ALL_OWNED,
     };
   }
 
-  let bestCombination: CreditCardData[] = [];
-  let bestValue = -Infinity;
-  let bestAllocation: SpendingAllocation[] = [];
-
-  for (let comboSize = 2; comboSize <= 3; comboSize++) {
-    const combinations = generateCombinations(availableCards, comboSize);
-    for (const combo of combinations) {
-      const evaluation = evaluateCardCombination(combo, transactions);
-      if (evaluation.totalAnnualValue > bestValue) {
-        bestValue = evaluation.totalAnnualValue;
-        bestCombination = combo;
-        bestAllocation = evaluation.allocation;
-      }
-    }
+  const best = findBestCombination(availableCards, transactions);
+  if (!best) {
+    return { cards: [], message: MESSAGES.NO_COMBOS };
   }
 
-  if (bestCombination.length === 0 && availableCards.length > 0) {
-    const singleCardEval = evaluateCardCombination(
-      [availableCards[0]],
-      transactions,
-    );
-    bestCombination = [availableCards[0]];
-    bestValue = singleCardEval.totalAnnualValue;
-    bestAllocation = singleCardEval.allocation;
-  }
-
-  if (bestCombination.length === 0) {
-    return { cards: [], message: "No suitable card combinations found." };
-  }
-
-  const recommendedCards = bestCombination.map((card) => {
-    const cardAllocations = bestAllocation.filter(
-      (alloc) => alloc.cardId === (card.id || card.name),
-    );
-    const estimatedRewards = cardAllocations.reduce(
-      (sum, alloc) => sum + alloc.rewardValue,
-      0,
-    );
-    const value = calculateCardAnnualValueFromRewards(card, estimatedRewards);
-    return { ...card, ...value, allocation: cardAllocations };
-  });
-
-  recommendedCards.sort((a, b) => b.annualValue - a.annualValue);
-
-  const recommendedTotalAnnualValue = recommendedCards.reduce(
-    (sum, card) => sum + card.annualValue,
-    0,
-  );
+  const recommendedCards = buildCombinationResults(best.combo, best.allocation);
 
   if (ownedCards.length > 0) {
-    let ownedCardsTotalAnnualValue = 0;
+    const recommendedTotal = recommendedCards.reduce(
+      (sum, card) => sum + card.annualValue,
+      0,
+    );
+    const ownedTotal = await computeOwnedCardsValue(
+      ownedCards,
+      ownedCardsAnnualValue,
+      creditCards,
+      transactions,
+    );
 
-    if (ownedCardsAnnualValue !== undefined) {
-      ownedCardsTotalAnnualValue = ownedCardsAnnualValue;
-    } else {
-      for (const ownedCard of ownedCards) {
-        const officialCard = await mapCardNameToOfficialCard(
-          ownedCard.name || "",
-          ownedCard.institution_name,
-          creditCards,
-        );
-        if (officialCard) {
-          const txRewards = calculateTransactionRewards(
-            officialCard,
-            transactions,
-          );
-          const creditsVal = calculateCreditsValue(officialCard.credits || []);
-          const benefitsVal = calculateBenefitsValue(
-            officialCard.benefits || [],
-          );
-          const totalRewards = txRewards + creditsVal + benefitsVal;
-          ownedCardsTotalAnnualValue +=
-            totalRewards - (officialCard.annual_fee || 0);
-        }
-      }
-    }
-
-    if (recommendedTotalAnnualValue < ownedCardsTotalAnnualValue) {
+    if (recommendedTotal < ownedTotal) {
       return {
         cards: [],
-        message: "Your current cards already provide the best value. No better recommendations found.",
+        message: MESSAGES.OWNED_BETTER,
       };
     }
   }

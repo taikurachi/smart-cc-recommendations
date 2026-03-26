@@ -1,6 +1,7 @@
 import { User, Transaction } from "../types";
 import { showToast } from "../ui/toastUtils";
 import { TRANSACTION_MONTHS_DEFAULT } from "../constants";
+import { setStoredUserId } from "../clientStorage";
 
 export async function createLinkToken(
   user: User | null,
@@ -20,7 +21,7 @@ export async function createLinkToken(
       setUser(userData.user);
       currentUserId = userData.user.id;
       if (currentUserId) {
-        localStorage.setItem("userId", currentUserId);
+        setStoredUserId(currentUserId);
       }
     }
 

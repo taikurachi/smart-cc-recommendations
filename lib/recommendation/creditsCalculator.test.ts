@@ -1,42 +1,40 @@
+import { describe, it, expect } from "vitest";
 import { calculateCreditsValue } from "./creditsCalculator";
 import { Credit } from "./types";
-import { createTestRunner, eq } from "./testUtils";
 
-const { test, report } = createTestRunner();
+describe("creditsCalculator", () => {
+  it("empty array returns 0", () => {
+    expect(calculateCreditsValue([])).toBeCloseTo(0, 3);
+  });
 
-test("empty array returns 0", () => {
-  eq(calculateCreditsValue([]), 0);
+  it("single credit with usage_ease 1.0 returns full value", () => {
+    const credits: Credit[] = [{ name: "uber", value: 200, usage_ease: 1.0 }];
+    expect(calculateCreditsValue(credits)).toBeCloseTo(200, 3);
+  });
+
+  it("usage_ease 0 returns 0", () => {
+    const credits: Credit[] = [{ name: "saks", value: 100, usage_ease: 0 }];
+    expect(calculateCreditsValue(credits)).toBeCloseTo(0, 3);
+  });
+
+  it("fractional usage_ease scales correctly", () => {
+    const credits: Credit[] = [{ name: "hotel", value: 600, usage_ease: 0.4 }];
+    expect(calculateCreditsValue(credits)).toBeCloseTo(240, 3);
+  });
+
+  it("multiple credits sum correctly", () => {
+    const credits: Credit[] = [
+      { name: "uber", value: 200, usage_ease: 0.9 },
+      { name: "hotel", value: 600, usage_ease: 0.4 },
+      { name: "airline-fee", value: 200, usage_ease: 0.5 },
+    ];
+    expect(calculateCreditsValue(credits)).toBeCloseTo(520, 3);
+  });
+
+  it("handles null/undefined gracefully", () => {
+    // @ts-expect-error testing null input
+    expect(calculateCreditsValue(null)).toBeCloseTo(0, 3);
+    // @ts-expect-error testing undefined input
+    expect(calculateCreditsValue(undefined)).toBeCloseTo(0, 3);
+  });
 });
-
-test("single credit with usage_ease 1.0 returns full value", () => {
-  const credits: Credit[] = [{ name: "uber", value: 200, usage_ease: 1.0 }];
-  eq(calculateCreditsValue(credits), 200);
-});
-
-test("usage_ease 0 returns 0", () => {
-  const credits: Credit[] = [{ name: "saks", value: 100, usage_ease: 0 }];
-  eq(calculateCreditsValue(credits), 0);
-});
-
-test("fractional usage_ease scales correctly", () => {
-  const credits: Credit[] = [{ name: "hotel", value: 600, usage_ease: 0.4 }];
-  eq(calculateCreditsValue(credits), 240);
-});
-
-test("multiple credits sum correctly", () => {
-  const credits: Credit[] = [
-    { name: "uber", value: 200, usage_ease: 0.9 },
-    { name: "hotel", value: 600, usage_ease: 0.4 },
-    { name: "airline-fee", value: 200, usage_ease: 0.5 },
-  ];
-  eq(calculateCreditsValue(credits), 520);
-});
-
-test("handles null/undefined gracefully", () => {
-  // @ts-expect-error testing null input
-  eq(calculateCreditsValue(null), 0);
-  // @ts-expect-error testing undefined input
-  eq(calculateCreditsValue(undefined), 0);
-});
-
-report("creditsCalculator.test.ts");

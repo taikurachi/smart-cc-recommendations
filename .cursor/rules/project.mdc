@@ -15,7 +15,7 @@ A Next.js 15 app that analyzes user spending via Plaid and recommends optimal cr
 - **Styling**: Tailwind CSS v4 (CSS-first config in `globals.css`, no `tailwind.config`)
 - **Animations**: Motion (Framer Motion) via `motion/react`
 - **Icons**: `lucide-react`
-- **Testing**: Hand-rolled runner in `lib/recommendation/testUtils.ts` (migration to Vitest planned)
+- **Testing**: Vitest for unit tests (`npm test`); integration test still uses `npx tsx` runner
 
 ## Architecture
 
@@ -77,6 +77,7 @@ The engine lives in `lib/recommendation/` and follows this pipeline:
 ## Required Environment Variables
 
 See `.env.example` for the full list. Key vars:
+
 - `DATABASE_URL` - Neon PostgreSQL connection string
 - `PLAID_CLIENT_ID`, `PLAID_SECRET` or `PLAID_SANDBOX_SECRET` - Plaid API credentials
 - `PLAID_ENV` - Plaid environment (`sandbox` or `production`)

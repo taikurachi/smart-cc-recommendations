@@ -1,5 +1,5 @@
-import { PersonalFinanceCategory } from "./types";
-import { RewardCategory } from "../creditRewardsTypes";
+import { PersonalFinanceCategory, RewardCategory } from "./types";
+import { DEFAULT_REWARD_CATEGORY } from "./constants";
 
 /**
  * Map a Plaid personal_finance_category to the single best-matching reward category.
@@ -7,32 +7,24 @@ import { RewardCategory } from "../creditRewardsTypes";
  * See: https://plaid.com/documents/transactions-personal-finance-category-taxonomy.csv
  */
 export function mapTransactionCategoryToRewardCategory(
-  pfc?: PersonalFinanceCategory
+  pfc?: PersonalFinanceCategory,
 ): RewardCategory {
-  if (!pfc) {
-    return "general";
-  }
+  if (!pfc) return DEFAULT_REWARD_CATEGORY;
 
   const { primary, detailed } = pfc;
 
   if (primary === "FOOD_AND_DRINK") {
-    if (detailed === "FOOD_AND_DRINK_GROCERIES") {
-      return "grocery";
-    }
+    if (detailed === "FOOD_AND_DRINK_GROCERIES") return "grocery";
     return "dining";
   }
 
   if (primary === "TRAVEL") {
-    if (detailed === "TRAVEL_LODGING") {
-      return "hotels";
-    }
+    if (detailed === "TRAVEL_LODGING") return "hotels";
     return "travel";
   }
 
   if (primary === "TRANSPORTATION") {
-    if (detailed === "TRANSPORTATION_GAS") {
-      return "gas";
-    }
+    if (detailed === "TRANSPORTATION_GAS") return "gas";
     if (
       detailed === "TRANSPORTATION_TAXIS_AND_RIDE_SHARES" ||
       detailed === "TRANSPORTATION_PUBLIC_TRANSIT" ||
@@ -41,23 +33,20 @@ export function mapTransactionCategoryToRewardCategory(
     ) {
       return "transit";
     }
-    return "general";
+    return DEFAULT_REWARD_CATEGORY;
   }
 
   if (primary === "GENERAL_MERCHANDISE") {
-    if (detailed === "GENERAL_MERCHANDISE_ONLINE_MARKETPLACES") {
+    if (detailed === "GENERAL_MERCHANDISE_ONLINE_MARKETPLACES")
       return "online-shopping";
-    }
-    if (detailed === "GENERAL_MERCHANDISE_PHARMACIES") {
-      return "drugstores";
-    }
+    if (detailed === "GENERAL_MERCHANDISE_PHARMACIES") return "drugstores";
     if (
       detailed === "GENERAL_MERCHANDISE_SUPERSTORES" ||
       detailed === "GENERAL_MERCHANDISE_WAREHOUSE_CLUBS_AND_SUPERCENTERS"
     ) {
       return "wholesale-clubs";
     }
-    return "general";
+    return DEFAULT_REWARD_CATEGORY;
   }
 
   if (primary === "ENTERTAINMENT") {
@@ -77,8 +66,8 @@ export function mapTransactionCategoryToRewardCategory(
     ) {
       return "streaming";
     }
-    return "general";
+    return DEFAULT_REWARD_CATEGORY;
   }
 
-  return "general";
+  return DEFAULT_REWARD_CATEGORY;
 }

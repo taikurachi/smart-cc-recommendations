@@ -6,6 +6,23 @@
 
 export type { Transaction, PersonalFinanceCategory } from "../types";
 
+export const rewardCategories = [
+  "travel",
+  "hotels",
+  "gas",
+  "grocery",
+  "drugstores",
+  "online-shopping",
+  "dining",
+  "wholesale-clubs",
+  "general",
+  "streaming",
+  "transit",
+  "entertainment",
+] as const;
+
+export type RewardCategory = (typeof rewardCategories)[number];
+
 export interface RewardCap {
   quarterly?: number;
   annual?: number;
@@ -68,13 +85,10 @@ export interface CardValueResult {
   annualValue: number;
 }
 
-export interface MultiCardRecommendation {
-  cards: CreditCardData[];
-  combinedAnnualValue: number;
-  combinedTotalRewards: number;
-  combinedAnnualFees: number;
-  allocation: SpendingAllocation[];
-  message?: string;
+export interface OwnedCardRef {
+  id?: string;
+  name?: string;
+  institution_name?: string;
 }
 
 export type CreditCardWithValue = CreditCardData & CardValueResult;
