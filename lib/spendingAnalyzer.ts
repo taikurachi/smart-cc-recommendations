@@ -1,21 +1,14 @@
 import { SpendingAnalysis, Transaction } from "./types";
+import { PAYMENT_PRIMARIES } from "./constants";
 
 export const analyzeSpending = (
   transactions: Transaction[]
 ): SpendingAnalysis => {
-  // Filter out positive amounts (credits/refunds/payments) and focus on spending
-  // Transactions are typically negative (spending) or positive (credits)
-  const paymentPrimaries = new Set([
-    "LOAN_PAYMENTS",
-    "TRANSFER_IN",
-    "TRANSFER_OUT",
-    "INCOME",
-  ]);
   const spendingTransactions = transactions.filter(
     (t) =>
       t.amount < 0 ||
       (t.amount > 0 &&
-        !paymentPrimaries.has(t.personal_finance_category?.primary ?? ""))
+        !PAYMENT_PRIMARIES.has(t.personal_finance_category?.primary ?? ""))
   );
 
   // Calculate total spending (use absolute values)

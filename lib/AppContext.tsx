@@ -39,7 +39,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     const savedPreferences = localStorage.getItem("cardPreferences");
     if (savedPreferences) {
-      setCardPreferences(JSON.parse(savedPreferences));
+      try {
+        setCardPreferences(JSON.parse(savedPreferences));
+      } catch {
+        localStorage.removeItem("cardPreferences");
+      }
     }
   };
 

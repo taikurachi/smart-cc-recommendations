@@ -29,6 +29,14 @@ export const TOAST_DURATION = {
   LONG: 7000,
 } as const;
 
+// Plaid transaction primaries that represent non-spending (payments, transfers, income)
+export const PAYMENT_PRIMARIES = new Set([
+  "LOAN_PAYMENTS",
+  "TRANSFER_IN",
+  "TRANSFER_OUT",
+  "INCOME",
+]);
+
 // Default Card Preferences (single source of truth)
 export const DEFAULT_CARD_PREFERENCES = {
   travel: false,

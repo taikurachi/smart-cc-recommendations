@@ -8,10 +8,9 @@ import { AnimatePresence, motion } from "motion/react";
 import { Check, Loader } from "lucide-react";
 import { User } from "@/lib/types";
 import {
-  handleCreateLinkToken,
-  handlePlaidSuccess,
-  handlePlaidExit,
-} from "@/lib/plaidHandlers";
+  createLinkToken,
+  exchangePublicToken,
+} from "@/lib/plaidOperations";
 import { useConfetti } from "../hooks/useConfetti";
 
 interface PlaidConnectionCardProps {
@@ -45,12 +44,7 @@ export default function PlaidConnectionCard({
   const { open } = usePlaidLink({
     token: linkToken,
     onSuccess: async (public_token) => {
-      await handlePlaidSuccess(
-        public_token,
-        user?.id,
-        () => {}, // setLoading not needed here
-        loadData
-      );
+      await exchangePublicToken(public_token, user?.id, loadData);
 
       // Set connection method to 'plaid'
       localStorage.setItem("connectionMethod", "plaid");
@@ -58,11 +52,9 @@ export default function PlaidConnectionCard({
       // Show success state and fire confetti
       setPlaidStateIndex(2);
       await fireConfetti(4000);
-
-      // router.push("/analysis");
     },
     onExit: (err) => {
-      handlePlaidExit(err);
+      if (err) console.error("Plaid Link exit error:", err);
     },
   });
 
@@ -97,7 +89,7 @@ export default function PlaidConnectionCard({
         <Button
           onClick={async () => {
             setButtonStateIndex((prev) => prev + 1);
-            const token = await handleCreateLinkToken(user, setUser);
+            const token = await createLinkToken(user, setUser);
             if (token) {
               setLinkToken(token);
               setButtonStateIndex((prev) => prev + 1);

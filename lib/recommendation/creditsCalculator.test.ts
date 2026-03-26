@@ -1,19 +1,8 @@
 import { calculateCreditsValue } from "./creditsCalculator";
 import { Credit } from "./types";
+import { createTestRunner, eq } from "./testUtils";
 
-interface TestResult { name: string; passed: boolean; error?: string }
-const tests: TestResult[] = [];
-
-function test(name: string, fn: () => void) {
-  try { fn(); tests.push({ name, passed: true }); }
-  catch (e: unknown) { tests.push({ name, passed: false, error: e instanceof Error ? e.message : String(e) }); }
-}
-
-function eq(actual: number, expected: number, label?: string) {
-  if (Math.abs(actual - expected) > 0.001) {
-    throw new Error(`${label || "Mismatch"}: got ${actual}, expected ${expected}`);
-  }
-}
+const { test, report } = createTestRunner();
 
 test("empty array returns 0", () => {
   eq(calculateCreditsValue([]), 0);
@@ -40,7 +29,6 @@ test("multiple credits sum correctly", () => {
     { name: "hotel", value: 600, usage_ease: 0.4 },
     { name: "airline-fee", value: 200, usage_ease: 0.5 },
   ];
-  // 200*0.9 + 600*0.4 + 200*0.5 = 180 + 240 + 100 = 520
   eq(calculateCreditsValue(credits), 520);
 });
 
@@ -51,12 +39,4 @@ test("handles null/undefined gracefully", () => {
   eq(calculateCreditsValue(undefined), 0);
 });
 
-// --- Report ---
-console.log("\n--- creditsCalculator.test.ts ---\n");
-let passed = 0, failed = 0;
-tests.forEach((t) => {
-  if (t.passed) { passed++; console.log(`  ✅ ${t.name}`); }
-  else { failed++; console.log(`  ❌ ${t.name}: ${t.error}`); }
-});
-console.log(`\n  Total: ${tests.length} | Passed: ${passed} | Failed: ${failed}\n`);
-if (failed > 0) process.exit(1);
+report("creditsCalculator.test.ts");

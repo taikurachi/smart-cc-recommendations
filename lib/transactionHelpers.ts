@@ -141,12 +141,5 @@ export function removeDuplicateTransactions(
     }
   }
 
-  const duplicateCount = transactions.length - deduplicated.length;
-  if (duplicateCount > 0) {
-    console.log(
-      `Removed ${duplicateCount} duplicate transaction(s) based on transaction_id`
-    );
-  }
-
   return deduplicated;
 }

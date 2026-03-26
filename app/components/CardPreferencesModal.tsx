@@ -111,7 +111,11 @@ export default function CardPreferencesModal({
         // Load from localStorage
         const saved = localStorage.getItem("cardPreferences");
         if (saved) {
-          setPreferences(JSON.parse(saved));
+          try {
+            setPreferences(JSON.parse(saved));
+          } catch {
+            localStorage.removeItem("cardPreferences");
+          }
         }
       }
     }
