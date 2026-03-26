@@ -38,7 +38,7 @@ async function main() {
   try {
     switch (command) {
       case "stats": {
-        const stats = storage.getStats();
+        const stats = await storage.getStats();
         console.log("📊 Storage Statistics:");
         console.log(`   Users: ${stats.totalUsers}`);
         console.log(`   Total Connections: ${stats.totalConnections}`);
@@ -47,7 +47,7 @@ async function main() {
       }
 
       case "users": {
-        const users = storage.getUsers();
+        const users = await storage.getUsers();
         console.log(`👥 Users (${users.length}):`);
         users.forEach((user) => {
           console.log(
@@ -66,13 +66,13 @@ async function main() {
           process.exit(1);
         }
 
-        const user = storage.getUserById(userId);
+        const user = await storage.getUserById(userId);
         if (!user) {
           console.error("❌ User not found");
           process.exit(1);
         }
 
-        const connections = storage.getConnectionsByUserId(userId);
+        const connections = await storage.getConnectionsByUserId(userId);
 
         console.log("👤 User Details:");
         console.log(`   ID: ${user.id}`);
@@ -104,8 +104,8 @@ async function main() {
       case "connections": {
         const userId = args[1];
         const connections = userId
-          ? storage.getConnectionsByUserId(userId)
-          : storage.getPlaidConnections().filter((conn) => conn.is_active);
+          ? await storage.getConnectionsByUserId(userId)
+          : (await storage.getPlaidConnections()).filter((conn) => conn.is_active);
 
         console.log(
           `🏦 ${userId ? "User" : "All"} Connections (${connections.length}):`
@@ -128,7 +128,7 @@ async function main() {
 
       case "create-user": {
         const email = args[1];
-        const user = storage.createUser(email);
+        const user = await storage.createUser(email);
         console.log("✅ User created:");
         console.log(`   ID: ${user.id}`);
         console.log(`   Email: ${user.email || "Not set"}`);
@@ -142,7 +142,7 @@ async function main() {
           process.exit(1);
         }
 
-        const success = storage.deactivateConnection(itemId);
+        const success = await storage.deactivateConnection(itemId);
         if (success) {
           console.log("✅ Connection deactivated");
         } else {
@@ -155,7 +155,14 @@ async function main() {
       case "export": {
         const filename =
           args[1] || `backup-${new Date().toISOString().split("T")[0]}.json`;
-        storage.exportData(filename);
+        const allUsers = await storage.getUsers();
+        const allConnections = await storage.getPlaidConnections();
+        const fs = await import("fs");
+        fs.writeFileSync(
+          filename,
+          JSON.stringify({ users: allUsers, connections: allConnections }, null, 2),
+        );
+        console.log(`✅ Exported data to ${filename}`);
         break;
       }
 
