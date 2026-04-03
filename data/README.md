@@ -5,6 +5,7 @@ This directory contains sensitive user data and should **NEVER** be committed to
 ## 🚨 Security Notice
 
 The following files contain sensitive information:
+
 - `users.json` - User account data
 - `plaid_connections.json` - Plaid access tokens (HIGHLY SENSITIVE)
 - `cc.json` - Scraped credit card data
@@ -23,9 +24,10 @@ data/
 └── backup-*.json         # Backups (DO NOT COMMIT)
 ```
 
-## 🔧 Sample Data Formats
+## Sample Data Formats
 
 ### users.json
+
 ```json
 [
   {
@@ -38,12 +40,13 @@ data/
 ```
 
 ### plaid_connections.json
+
 ```json
 [
   {
     "id": "uuid-here",
     "user_id": "user-uuid-here",
-    "access_token": "access-sandbox-xxx", 
+    "access_token": "access-sandbox-xxx",
     "item_id": "item-xxx",
     "institution_name": "Chase",
     "institution_id": "ins_56",
