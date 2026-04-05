@@ -92,7 +92,10 @@ export interface OwnedCardRef {
   institution_name?: string;
 }
 
-export type CreditCardWithValue = CreditCardData & CardValueResult;
+export type CreditCardWithValue = CreditCardData &
+  CardValueResult & {
+    allocation?: SpendingAllocation[];
+  };
 
 export interface RecommendationResult {
   cards: CreditCardWithValue[];

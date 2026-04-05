@@ -18,6 +18,7 @@ import {
   SquarePlus,
 } from "lucide-react";
 import CreditCardComponent from "./components/CreditCard";
+import CardAnalysisTable from "./components/CardAnalysisTable";
 import { formatCurrency } from "@/lib/data/transactionHelpers";
 import Button from "../components/Button";
 import { useAnalysisData } from "./hooks/useAnalysisData";
@@ -205,6 +206,8 @@ export default function AnalysisPage() {
                   <CreditCardComponent cards={ownedCards} status="Old" />
                 )}
               </div>
+
+              <CardAnalysisTable cards={recommendations} />
             </div>
           ) : (
             <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 mt-8 text-center">
