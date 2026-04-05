@@ -1,4 +1,6 @@
 import { CategorySpending, Credit } from "./types";
+import type { BenefitMultipliers } from "../types";
+import { resolveMultiplier } from "./benefitDefaults";
 
 /**
  * Calculate the spending-aware value of a card's credits.
@@ -7,12 +9,13 @@ import { CategorySpending, Credit } from "./types";
  * its effective value is capped by actual annualized spending in that
  * category (you can't redeem more credit than you spend).
  *
- * Credits without a `category` or calls without `categorySpending`
- * fall back to the original `value * usage_ease` behavior.
+ * When `benefitMultipliers` is provided, the user's multiplier for the
+ * matching benefit category replaces the card-data `usage_ease`.
  */
 export function calculateCreditsValue(
   credits: Credit[],
   categorySpending?: CategorySpending,
+  benefitMultipliers?: BenefitMultipliers,
 ): number {
   if (!credits || credits.length === 0) return 0;
   return credits.reduce((sum, credit) => {
@@ -21,6 +24,11 @@ export function calculateCreditsValue(
       const spent = categorySpending[credit.category] ?? 0;
       effectiveValue = Math.min(credit.value, spent);
     }
-    return sum + effectiveValue * (credit.usage_ease || 0);
+    const usageEase = resolveMultiplier(
+      credit.name,
+      credit.usage_ease || 0,
+      benefitMultipliers,
+    );
+    return sum + effectiveValue * usageEase;
   }, 0);
 }

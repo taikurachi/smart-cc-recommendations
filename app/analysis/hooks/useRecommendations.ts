@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 
-import { CardPreferences, Transaction } from "@/lib/types";
+import { BenefitMultipliers, CardPreferences, Transaction } from "@/lib/types";
 import type { CreditCardWithValue, RecommendationResult } from "@/lib/recommendation";
 import { showToast } from "@/lib/ui/toastUtils";
 import { DEFAULT_CARD_PREFERENCES } from "@/lib/constants";
@@ -10,6 +10,7 @@ export function useRecommendations(
   transactions: Transaction[],
   ownedCards: CreditCardWithValue[],
   cardPreferences: CardPreferences | null,
+  benefitMultipliers: BenefitMultipliers,
   loading: boolean,
 ) {
   const [recommendations, setRecommendations] = useState<CreditCardWithValue[]>(
@@ -18,7 +19,10 @@ export function useRecommendations(
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
 
   const calculateRecommendations = useCallback(
-    async (preferences: Record<string, boolean>) => {
+    async (
+      preferences: Record<string, boolean>,
+      multipliers?: BenefitMultipliers,
+    ) => {
       if (transactions.length === 0) return;
 
       setLoadingRecommendations(true);
@@ -36,6 +40,7 @@ export function useRecommendations(
             preferences,
             ownedCards,
             ownedCardsAnnualValue: ownedCardsTotalAnnualValue,
+            benefitMultipliers: multipliers ?? benefitMultipliers,
           }),
         });
 
@@ -53,7 +58,7 @@ export function useRecommendations(
         setLoadingRecommendations(false);
       }
     },
-    [transactions, ownedCards],
+    [transactions, ownedCards, benefitMultipliers],
   );
 
   useEffect(() => {

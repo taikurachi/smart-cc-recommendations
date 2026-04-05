@@ -72,13 +72,22 @@ describe("benefitsCalculator", () => {
       expect(calculateBenefitsValue(benefits, spending)).toBeCloseTo(0, 3);
     });
 
-    it("keeps benefit when category has spending", () => {
+    it("keeps full benefit when category spending exceeds value", () => {
       const benefits: Benefit[] = [
         { name: "travel-lounge", value: 850, usage_ease: 0.6, category: "travel" },
       ];
       const spending: CategorySpending = { travel: 2000 };
-      // 850 * 0.6 = 510
+      // min(850, 2000) * 0.6 = 510
       expect(calculateBenefitsValue(benefits, spending)).toBeCloseTo(510, 3);
+    });
+
+    it("caps benefit value by category spending when spending is lower", () => {
+      const benefits: Benefit[] = [
+        { name: "trip-cancellation", value: 1500, usage_ease: 0.5, category: "travel" },
+      ];
+      const spending: CategorySpending = { travel: 500 };
+      // min(1500, 500) * 0.5 = 250
+      expect(calculateBenefitsValue(benefits, spending)).toBeCloseTo(250, 3);
     });
 
     it("benefits without category are always included", () => {
@@ -115,8 +124,73 @@ describe("benefitsCalculator", () => {
         { name: "lounge", value: 100, usage_ease: 1.0, category: "travel" },
       ];
       const spending: CategorySpending = { travel: 500 };
-      // intro-bonus excluded, lounge: 100 * 1.0 = 100
+      // intro-bonus excluded, lounge: min(100, 500) * 1.0 = 100
       expect(calculateBenefitsValue(benefits, spending)).toBeCloseTo(100, 3);
+    });
+
+    it("caps multiple categorized benefits independently", () => {
+      const benefits: Benefit[] = [
+        { name: "cell-phone-protection", value: 800, usage_ease: 0.6, category: "streaming" },
+        { name: "trip-cancellation", value: 1500, usage_ease: 0.5, category: "travel" },
+        { name: "purchase-protection", value: 50, usage_ease: 0.6 },
+      ];
+      const spending: CategorySpending = { streaming: 200, travel: 500 };
+      // cell-phone: min(800, 200) * 0.6 = 120
+      // trip: min(1500, 500) * 0.5 = 250
+      // purchase (no category): 50 * 0.6 = 30
+      expect(calculateBenefitsValue(benefits, spending)).toBeCloseTo(400, 3);
+    });
+  });
+
+  describe("benefitMultipliers overrides", () => {
+    it("overrides usage_ease with multiplier when category matches", () => {
+      const benefits: Benefit[] = [
+        { name: "cell-phone-protection", value: 800, usage_ease: 0.6 },
+      ];
+      const multipliers = { cell_phone_protection: 0 };
+      expect(calculateBenefitsValue(benefits, undefined, multipliers)).toBeCloseTo(0, 3);
+    });
+
+    it("uses original usage_ease when no multiplier matches", () => {
+      const benefits: Benefit[] = [
+        { name: "some-unknown-perk", value: 100, usage_ease: 0.5 },
+      ];
+      const multipliers = { cell_phone_protection: 0 };
+      expect(calculateBenefitsValue(benefits, undefined, multipliers)).toBeCloseTo(50, 3);
+    });
+
+    it("applies different multipliers to different benefit types", () => {
+      const benefits: Benefit[] = [
+        { name: "cell-phone-protection", value: 800, usage_ease: 0.6 },
+        { name: "purchase-protection", value: 500, usage_ease: 0.6 },
+        { name: "travel-lounge", value: 850, usage_ease: 0.6 },
+      ];
+      const multipliers = {
+        cell_phone_protection: 0,
+        purchase_protection: 0,
+        lounge_access: 0.8,
+      };
+      // cell-phone: 800 * 0 = 0
+      // purchase: 500 * 0 = 0
+      // lounge: 850 * 0.8 = 680
+      expect(calculateBenefitsValue(benefits, undefined, multipliers)).toBeCloseTo(680, 3);
+    });
+
+    it("combines spending cap with multiplier override", () => {
+      const benefits: Benefit[] = [
+        { name: "trip-cancellation-interruption-insurance", value: 1500, usage_ease: 0.5, category: "travel" },
+      ];
+      const spending: CategorySpending = { travel: 500 };
+      const multipliers = { trip_cancellation: 0.2 };
+      // min(1500, 500) * 0.2 = 100
+      expect(calculateBenefitsValue(benefits, spending, multipliers)).toBeCloseTo(100, 3);
+    });
+
+    it("backward compat: undefined multipliers uses original usage_ease", () => {
+      const benefits: Benefit[] = [
+        { name: "cell-phone-protection", value: 800, usage_ease: 0.6 },
+      ];
+      expect(calculateBenefitsValue(benefits, undefined, undefined)).toBeCloseTo(480, 3);
     });
   });
 });

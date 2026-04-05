@@ -7,17 +7,23 @@ import {
   useCallback,
   ReactNode,
 } from "react";
-import { User, Connection, CardPreferences } from "../types";
+import { User, Connection, CardPreferences, BenefitMultipliers } from "../types";
 import { loadUserData } from "../userOperations";
-import { getStoredCardPreferences } from "../clientStorage";
+import {
+  getStoredCardPreferences,
+  getStoredBenefitMultipliers,
+} from "../clientStorage";
+import { getDefaultBenefitMultipliers } from "../recommendation/benefitDefaults";
 
 interface AppContextType {
   user: User | null;
   connections: Connection[];
   loading: boolean;
   cardPreferences: CardPreferences | null;
+  benefitMultipliers: BenefitMultipliers;
   updateUser: (user: User | null) => void;
   updatePreferences: (prefs: CardPreferences) => void;
+  updateBenefitMultipliers: (multipliers: BenefitMultipliers) => void;
   loadData: () => Promise<void>;
 }
 
@@ -29,11 +35,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [cardPreferences, setCardPreferences] =
     useState<CardPreferences | null>(null);
+  const [benefitMultipliers, setBenefitMultipliers] =
+    useState<BenefitMultipliers>(getDefaultBenefitMultipliers());
 
   const updateUser = useCallback((u: User | null) => setUser(u), []);
 
   const updatePreferences = useCallback(
     (prefs: CardPreferences) => setCardPreferences(prefs),
+    [],
+  );
+
+  const updateBenefitMultipliers = useCallback(
+    (multipliers: BenefitMultipliers) => setBenefitMultipliers(multipliers),
     [],
   );
 
@@ -47,6 +60,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const savedPreferences = getStoredCardPreferences();
       if (savedPreferences) {
         setCardPreferences(savedPreferences);
+      }
+
+      const savedMultipliers = getStoredBenefitMultipliers();
+      if (savedMultipliers) {
+        setBenefitMultipliers({
+          ...getDefaultBenefitMultipliers(),
+          ...savedMultipliers,
+        });
       }
     } finally {
       setLoading(false);
@@ -64,8 +85,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         connections,
         loading,
         cardPreferences,
+        benefitMultipliers,
         updateUser,
         updatePreferences,
+        updateBenefitMultipliers,
         loadData,
       }}
     >

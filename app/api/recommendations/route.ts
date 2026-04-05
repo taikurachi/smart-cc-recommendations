@@ -4,7 +4,13 @@ import { withErrorHandler } from "@/lib/api/withErrorHandler";
 
 export const POST = withErrorHandler(async (request: NextRequest) => {
   const body = await request.json();
-  const { transactions, preferences, ownedCards, ownedCardsAnnualValue } = body;
+  const {
+    transactions,
+    preferences,
+    ownedCards,
+    ownedCardsAnnualValue,
+    benefitMultipliers,
+  } = body;
 
   if (!transactions || !Array.isArray(transactions)) {
     return NextResponse.json(
@@ -18,6 +24,8 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     preferences ?? {},
     ownedCards ?? [],
     ownedCardsAnnualValue,
+    undefined,
+    benefitMultipliers,
   );
 
   return NextResponse.json(result);

@@ -1,9 +1,10 @@
-import type { CardPreferences } from "./types";
+import type { CardPreferences, BenefitMultipliers } from "./types";
 
 const KEYS = {
   USER_ID: "userId",
   CARD_PREFERENCES: "cardPreferences",
   CONNECTION_METHOD: "connectionMethod",
+  BENEFIT_MULTIPLIERS: "benefitMultipliers",
 } as const;
 
 export function getStoredUserId(): string | null {
@@ -31,4 +32,21 @@ export function setStoredCardPreferences(prefs: CardPreferences): void {
 
 export function setStoredConnectionMethod(method: string): void {
   localStorage.setItem(KEYS.CONNECTION_METHOD, method);
+}
+
+export function getStoredBenefitMultipliers(): BenefitMultipliers | null {
+  const saved = localStorage.getItem(KEYS.BENEFIT_MULTIPLIERS);
+  if (!saved) return null;
+  try {
+    return JSON.parse(saved) as BenefitMultipliers;
+  } catch {
+    localStorage.removeItem(KEYS.BENEFIT_MULTIPLIERS);
+    return null;
+  }
+}
+
+export function setStoredBenefitMultipliers(
+  multipliers: BenefitMultipliers,
+): void {
+  localStorage.setItem(KEYS.BENEFIT_MULTIPLIERS, JSON.stringify(multipliers));
 }

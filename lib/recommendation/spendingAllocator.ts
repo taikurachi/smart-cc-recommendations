@@ -5,6 +5,7 @@ import {
   SpendingAllocation,
   Transaction,
 } from "./types";
+import type { BenefitMultipliers } from "../types";
 import {
   applyCap,
   computeRewardValue,
@@ -116,6 +117,7 @@ export function allocateSpendingToCards(
 export function evaluateCardCombination(
   cards: CreditCardData[],
   transactions: Transaction[],
+  benefitMultipliers?: BenefitMultipliers,
 ): {
   totalAnnualValue: number;
   totalRewards: number;
@@ -135,10 +137,15 @@ export function evaluateCardCombination(
   let totalBenefits = 0;
 
   cards.forEach((card) => {
-    totalCredits += calculateCreditsValue(card.credits || [], categorySpending);
+    totalCredits += calculateCreditsValue(
+      card.credits || [],
+      categorySpending,
+      benefitMultipliers,
+    );
     totalBenefits += calculateBenefitsValue(
       card.benefits || [],
       categorySpending,
+      benefitMultipliers,
     );
   });
 

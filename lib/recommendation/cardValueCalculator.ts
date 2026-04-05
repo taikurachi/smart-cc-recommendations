@@ -4,6 +4,7 @@ import {
   CreditCardData,
   Transaction,
 } from "./types";
+import type { BenefitMultipliers } from "../types";
 import { calculateTransactionRewards } from "./rewardsCalculator";
 import { calculateCreditsValue } from "./creditsCalculator";
 import {
@@ -16,14 +17,17 @@ function buildCardValueResult(
   card: CreditCardData,
   estimatedRewards: number,
   categorySpending?: CategorySpending,
+  benefitMultipliers?: BenefitMultipliers,
 ): CardValueResult {
   const creditsValue = calculateCreditsValue(
     card.credits || [],
     categorySpending,
+    benefitMultipliers,
   );
   const benefitsValue = calculateBenefitsValue(
     card.benefits || [],
     categorySpending,
+    benefitMultipliers,
   );
   const introBonusValue = calculateIntroBonusValue(card.benefits || []);
   const totalRewards = estimatedRewards + creditsValue + benefitsValue;
@@ -48,10 +52,16 @@ function buildCardValueResult(
 export function calculateCardAnnualValue(
   card: CreditCardData,
   transactions: Transaction[],
+  benefitMultipliers?: BenefitMultipliers,
 ): CardValueResult {
   const estimatedRewards = calculateTransactionRewards(card, transactions);
   const categorySpending = computeAnnualCategorySpending(transactions);
-  return buildCardValueResult(card, estimatedRewards, categorySpending);
+  return buildCardValueResult(
+    card,
+    estimatedRewards,
+    categorySpending,
+    benefitMultipliers,
+  );
 }
 
 /**
@@ -63,6 +73,12 @@ export function calculateCardAnnualValueFromRewards(
   card: CreditCardData,
   estimatedRewards: number,
   categorySpending?: CategorySpending,
+  benefitMultipliers?: BenefitMultipliers,
 ): CardValueResult {
-  return buildCardValueResult(card, estimatedRewards, categorySpending);
+  return buildCardValueResult(
+    card,
+    estimatedRewards,
+    categorySpending,
+    benefitMultipliers,
+  );
 }

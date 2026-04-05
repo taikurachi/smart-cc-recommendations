@@ -4,7 +4,8 @@ import Link from "next/link";
 
 import { useApp } from "@/lib/ui/AppContext";
 import CardPreferencesModal from "../components/CardPreferencesModal";
-import { CardPreferences } from "@/lib/types";
+import AdjustRecommendationsModal from "../components/AdjustRecommendationsModal";
+import { BenefitMultipliers, CardPreferences } from "@/lib/types";
 
 import {
   AlertTriangle,
@@ -15,6 +16,7 @@ import {
   CopyPlus,
   DollarSign,
   ListFilterPlus,
+  SlidersHorizontal,
   SquarePlus,
 } from "lucide-react";
 import CreditCardComponent from "./components/CreditCard";
@@ -25,13 +27,25 @@ import { useAnalysisData } from "./hooks/useAnalysisData";
 import { useRecommendations } from "./hooks/useRecommendations";
 
 export default function AnalysisPage() {
-  const { cardPreferences, updatePreferences } = useApp();
+  const {
+    cardPreferences,
+    updatePreferences,
+    benefitMultipliers,
+    updateBenefitMultipliers,
+  } = useApp();
   const { connections, transactions, analysis, ownedCards, loading, error } =
     useAnalysisData();
   const { recommendations, loadingRecommendations, calculateRecommendations } =
-    useRecommendations(transactions, ownedCards, cardPreferences, loading);
+    useRecommendations(
+      transactions,
+      ownedCards,
+      cardPreferences,
+      benefitMultipliers,
+      loading,
+    );
 
   const [isCardPreferencesOpen, setIsCardPreferencesOpen] = useState(false);
+  const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false);
   const [recommendationFilterModalOn, setRecommendationFilterModalOn] =
     useState(false);
 
@@ -80,6 +94,19 @@ export default function AnalysisPage() {
     await calculateRecommendations({ ...preferences });
   };
 
+  const handleSaveMultipliers = async (multipliers: BenefitMultipliers) => {
+    updateBenefitMultipliers(multipliers);
+    setIsAdjustModalOpen(false);
+    const prefsToUse = cardPreferences || {
+      travel: false,
+      cashback: false,
+      no_annual_fee: false,
+      low_interest: false,
+      beginner_friendly: false,
+    };
+    await calculateRecommendations({ ...prefsToUse }, multipliers);
+  };
+
   return (
     <div className="p-8 max-w-6xl mx-auto">
       <CardPreferencesModal
@@ -87,6 +114,12 @@ export default function AnalysisPage() {
         onClose={() => setIsCardPreferencesOpen(false)}
         onSave={handleSavePreferences}
         initialPreferences={cardPreferences || undefined}
+      />
+      <AdjustRecommendationsModal
+        isOpen={isAdjustModalOpen}
+        onClose={() => setIsAdjustModalOpen(false)}
+        onSave={handleSaveMultipliers}
+        initialMultipliers={benefitMultipliers}
       />
 
       <div className="mb-8">
@@ -183,6 +216,13 @@ export default function AnalysisPage() {
                 >
                   <ListFilterPlus className="rounded-lg" size={20} />
                   <span>Preferences</span>
+                </Button>
+                <Button
+                  color="gray-light"
+                  onClick={() => setIsAdjustModalOpen((prev) => !prev)}
+                >
+                  <SlidersHorizontal className="rounded-lg" size={20} />
+                  <span>Adjust Recommendations</span>
                 </Button>
                 {recommendationFilterModalOn && (
                   <div className="absolute top-full flex flex-col gap-4 text-[14px] mt-1 left-0 bg-gray-light p-3 shadow-lg rounded-lg">

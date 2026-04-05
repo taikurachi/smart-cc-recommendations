@@ -25,6 +25,7 @@ import {
   SpendingAllocation,
   Transaction,
 } from "./types";
+import type { BenefitMultipliers } from "../types";
 import {
   calculateCardAnnualValue,
   calculateCardAnnualValueFromRewards,
@@ -84,6 +85,7 @@ export async function getRecommendedCards(
   transactions: Transaction[],
   preferences: Record<string, boolean>,
   providedCards?: CreditCardData[],
+  benefitMultipliers?: BenefitMultipliers,
 ): Promise<RecommendationResult> {
   const creditCards = providedCards ?? (await loadCreditCardData());
   const [cardsToProcess, message] = filterByPreferences(
@@ -92,7 +94,11 @@ export async function getRecommendedCards(
   );
 
   const recommendedCards = cardsToProcess.map((card) => {
-    const value = calculateCardAnnualValue(card, transactions);
+    const value = calculateCardAnnualValue(
+      card,
+      transactions,
+      benefitMultipliers,
+    );
     return { ...card, ...value };
   });
 
@@ -107,6 +113,7 @@ export async function getRecommendedCards(
 function findBestCombination(
   cards: CreditCardData[],
   transactions: Transaction[],
+  benefitMultipliers?: BenefitMultipliers,
 ): {
   combo: CreditCardData[];
   allocation: SpendingAllocation[];
@@ -120,7 +127,11 @@ function findBestCombination(
   for (let comboSize = 2; comboSize <= 3; comboSize++) {
     const combinations = generateCombinations(cards, comboSize);
     for (const combo of combinations) {
-      const evaluation = evaluateCardCombination(combo, transactions);
+      const evaluation = evaluateCardCombination(
+        combo,
+        transactions,
+        benefitMultipliers,
+      );
       if (evaluation.totalAnnualValue > bestValue) {
         bestValue = evaluation.totalAnnualValue;
         bestCombo = combo;
@@ -133,7 +144,11 @@ function findBestCombination(
   if (bestCombo.length === 0 && cards.length > 0) {
     let bestSingleValue = -Infinity;
     for (const card of cards) {
-      const evaluation = evaluateCardCombination([card], transactions);
+      const evaluation = evaluateCardCombination(
+        [card],
+        transactions,
+        benefitMultipliers,
+      );
       if (evaluation.totalAnnualValue > bestSingleValue) {
         bestSingleValue = evaluation.totalAnnualValue;
         bestCombo = [card];
@@ -158,6 +173,7 @@ function buildCombinationResults(
   combo: CreditCardData[],
   allocation: SpendingAllocation[],
   categorySpending: CategorySpending,
+  benefitMultipliers?: BenefitMultipliers,
 ): CreditCardWithValue[] {
   const results = combo.map((card) => {
     const cardAllocations = allocation.filter(
@@ -171,6 +187,7 @@ function buildCombinationResults(
       card,
       estimatedRewards,
       categorySpending,
+      benefitMultipliers,
     );
     return { ...card, ...value, allocation: cardAllocations };
   });
@@ -188,6 +205,7 @@ async function computeOwnedCardsValue(
   ownedCardsAnnualValue: number | undefined,
   allCards: CreditCardData[],
   transactions: Transaction[],
+  benefitMultipliers?: BenefitMultipliers,
 ): Promise<number> {
   if (ownedCardsAnnualValue !== undefined) return ownedCardsAnnualValue;
 
@@ -205,7 +223,11 @@ async function computeOwnedCardsValue(
 
   if (resolvedCards.length === 0) return 0;
 
-  const evaluation = evaluateCardCombination(resolvedCards, transactions);
+  const evaluation = evaluateCardCombination(
+    resolvedCards,
+    transactions,
+    benefitMultipliers,
+  );
   return evaluation.totalAnnualValue;
 }
 
@@ -219,6 +241,7 @@ export async function getMultiCardRecommendations(
   ownedCards: OwnedCardRef[] = [],
   ownedCardsAnnualValue?: number,
   providedCards?: CreditCardData[],
+  benefitMultipliers?: BenefitMultipliers,
 ): Promise<RecommendationResult> {
   const creditCards = providedCards ?? (await loadCreditCardData());
   const [filteredCards, filterMessage] = filterByPreferences(
@@ -237,7 +260,11 @@ export async function getMultiCardRecommendations(
     };
   }
 
-  const best = findBestCombination(availableCards, transactions);
+  const best = findBestCombination(
+    availableCards,
+    transactions,
+    benefitMultipliers,
+  );
   if (!best) {
     return { cards: [], message: MESSAGES.NO_COMBOS };
   }
@@ -246,6 +273,7 @@ export async function getMultiCardRecommendations(
     best.combo,
     best.allocation,
     best.categorySpending,
+    benefitMultipliers,
   );
 
   if (ownedCards.length > 0) {
@@ -258,6 +286,7 @@ export async function getMultiCardRecommendations(
       ownedCardsAnnualValue,
       creditCards,
       transactions,
+      benefitMultipliers,
     );
 
     if (recommendedTotal < ownedTotal) {

@@ -73,6 +73,8 @@ export interface CardPreferences {
   beginner_friendly: boolean;
 }
 
+export type BenefitMultipliers = Record<string, number>;
+
 export interface SpendingAnalysis {
   totalSpending: number;
   annualizedSpending: number;

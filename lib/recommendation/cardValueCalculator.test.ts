@@ -116,6 +116,33 @@ describe("cardValueCalculator", () => {
     expect(result.annualValue).toBeCloseTo(30 + 0 + 25 - 95, 3);
   });
 
+  it("spending-aware: benefits capped by category spending, not just gated", () => {
+    const travelTx: Transaction[] = [
+      {
+        transaction_id: "t2",
+        account_id: "acc1",
+        amount: 500,
+        date: "2025-03-01",
+        name: "Airline Ticket",
+        personal_finance_category: { primary: "TRAVEL", detailed: "TRAVEL_FLIGHTS", confidence_level: "VERY_HIGH" },
+      },
+    ];
+    const card = makeCard({
+      annual_fee: 0,
+      rewards: { travel: { rate: 0.05, unit: "cash" } },
+      benefits: [
+        { name: "trip-cancellation", value: 1500, usage_ease: 0.5, category: "travel" },
+      ],
+    });
+
+    const result = calculateCardAnnualValue(card, travelTx);
+    // rewards: 500 * 0.05 = 25
+    // benefits: min(1500, 500) * 0.5 = 250 (capped by $500 travel spending)
+    expect(result.estimatedRewards).toBeCloseTo(25, 3);
+    expect(result.benefitsValue).toBeCloseTo(250, 3);
+    expect(result.annualValue).toBeCloseTo(275, 3);
+  });
+
   it("fromRewards with categorySpending caps credits correctly", () => {
     const card = makeCard({
       annual_fee: 0,
@@ -125,5 +152,31 @@ describe("cardValueCalculator", () => {
     // credit: min(200, 120) * 1.0 = 120
     expect(result.creditsValue).toBeCloseTo(120, 3);
     expect(result.annualValue).toBeCloseTo(170, 3);
+  });
+
+  it("benefitMultipliers override usage_ease through calculateCardAnnualValue", () => {
+    const card = makeCard({
+      annual_fee: 0,
+      benefits: [
+        { name: "cell-phone-protection", value: 800, usage_ease: 0.6 },
+        { name: "travel-lounge", value: 850, usage_ease: 0.6 },
+      ],
+    });
+    const multipliers = { cell_phone_protection: 0, lounge_access: 0.5 };
+    const result = calculateCardAnnualValue(card, [], multipliers);
+    // cell-phone: 800 * 0 = 0, lounge: 850 * 0.5 = 425
+    expect(result.benefitsValue).toBeCloseTo(425, 3);
+    expect(result.annualValue).toBeCloseTo(425, 3);
+  });
+
+  it("benefitMultipliers override credits through fromRewards", () => {
+    const card = makeCard({
+      annual_fee: 0,
+      credits: [{ name: "uber", value: 200, usage_ease: 0.9 }],
+    });
+    const multipliers = { uber_credits: 0.5 };
+    const result = calculateCardAnnualValueFromRewards(card, 0, undefined, multipliers);
+    // uber: 200 * 0.5 = 100 (overridden from 0.9)
+    expect(result.creditsValue).toBeCloseTo(100, 3);
   });
 });
