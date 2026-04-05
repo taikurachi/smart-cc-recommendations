@@ -39,13 +39,17 @@ export interface Credit {
   name: string;
   value: number;
   usage_ease: number;
+  category?: RewardCategory;
 }
 
 export interface Benefit {
   name: string;
   value: number;
   usage_ease: number;
+  category?: RewardCategory;
 }
+
+export type CategorySpending = Record<string, number>;
 
 export interface CreditCardData {
   id: string;

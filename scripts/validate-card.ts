@@ -122,6 +122,9 @@ export function validateCard(card: any): ValidationError[] {
       if (typeof credit?.usage_ease !== "number" || credit.usage_ease < 0 || credit.usage_ease > 1) {
         errors.push({ field: `credits[${i}].usage_ease`, message: `Must be 0-1, got ${credit?.usage_ease}` });
       }
+      if (credit?.category !== undefined && !VALID_REWARD_CATEGORIES.has(credit.category)) {
+        errors.push({ field: `credits[${i}].category`, message: `Unknown category "${credit.category}". Valid: ${[...VALID_REWARD_CATEGORIES].join(", ")}` });
+      }
     });
   }
 
@@ -138,6 +141,9 @@ export function validateCard(card: any): ValidationError[] {
       }
       if (typeof benefit?.usage_ease !== "number" || benefit.usage_ease < 0 || benefit.usage_ease > 1) {
         errors.push({ field: `benefits[${i}].usage_ease`, message: `Must be 0-1, got ${benefit?.usage_ease}` });
+      }
+      if (benefit?.category !== undefined && !VALID_REWARD_CATEGORIES.has(benefit.category)) {
+        errors.push({ field: `benefits[${i}].category`, message: `Unknown category "${benefit.category}". Valid: ${[...VALID_REWARD_CATEGORIES].join(", ")}` });
       }
     });
   }

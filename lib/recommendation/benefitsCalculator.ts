@@ -1,15 +1,33 @@
-import { Benefit } from "./types";
+import { Benefit, CategorySpending } from "./types";
 import { INTRO_BONUS_KEY } from "./constants";
 
 /**
- * Calculate the usage-ease-adjusted value of a card's benefits,
+ * Calculate the spending-aware value of a card's benefits,
  * excluding the one-time intro bonus.
+ *
+ * When `categorySpending` is provided and a benefit has a `category`,
+ * the benefit is valued only if the user has actual spending in that
+ * category (you don't benefit from travel insurance if you don't travel).
+ *
+ * Benefits without a `category` or calls without `categorySpending`
+ * fall back to the original `value * usage_ease` behavior.
  */
-export function calculateBenefitsValue(benefits: Benefit[]): number {
+export function calculateBenefitsValue(
+  benefits: Benefit[],
+  categorySpending?: CategorySpending,
+): number {
   if (!benefits || benefits.length === 0) return 0;
   return benefits
     .filter((b) => b.name !== INTRO_BONUS_KEY)
-    .reduce((sum, b) => sum + b.value * (b.usage_ease || 0), 0);
+    .reduce((sum, b) => {
+      const hasRelevantSpending =
+        !b.category ||
+        !categorySpending ||
+        (categorySpending[b.category] ?? 0) > 0;
+      return (
+        sum + b.value * (b.usage_ease || 0) * (hasRelevantSpending ? 1 : 0)
+      );
+    }, 0);
 }
 
 /**

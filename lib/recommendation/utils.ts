@@ -1,5 +1,6 @@
-import { CreditCardData, Transaction } from "./types";
+import { CategorySpending, CreditCardData, Transaction } from "./types";
 import { NON_SPENDING_PRIMARIES } from "./constants";
+import { mapTransactionCategoryToRewardCategory } from "./categoryMapper";
 
 /**
  * Stable identity for a card — prefers `id`, falls back to `name`.
@@ -39,6 +40,31 @@ export function getAnnualizationFactor(transactions: Transaction[]): number {
   if (spanDays < 30) return 1;
 
   return 365 / spanDays;
+}
+
+/**
+ * Compute annualized spending per reward category from transactions.
+ * Filters to spending-only transactions, maps each to its reward category,
+ * sums per category, then scales by the annualization factor.
+ */
+export function computeAnnualCategorySpending(
+  transactions: Transaction[],
+): CategorySpending {
+  const spendingTxs = transactions.filter(isSpendingTransaction);
+  const annualizationFactor = getAnnualizationFactor(spendingTxs);
+  const spending: CategorySpending = {};
+
+  spendingTxs.forEach((t) => {
+    const cat = mapTransactionCategoryToRewardCategory(
+      t.personal_finance_category,
+    );
+    spending[cat] = (spending[cat] || 0) + Math.abs(t.amount);
+  });
+
+  for (const cat of Object.keys(spending)) {
+    spending[cat] *= annualizationFactor;
+  }
+  return spending;
 }
 
 /**

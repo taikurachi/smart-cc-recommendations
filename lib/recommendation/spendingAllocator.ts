@@ -1,10 +1,10 @@
 import {
+  CategorySpending,
   CreditCardData,
   Reward,
   SpendingAllocation,
   Transaction,
 } from "./types";
-import { mapTransactionCategoryToRewardCategory } from "./categoryMapper";
 import {
   applyCap,
   computeRewardValue,
@@ -14,8 +14,7 @@ import { calculateCreditsValue } from "./creditsCalculator";
 import { calculateBenefitsValue } from "./benefitsCalculator";
 import {
   getCardId,
-  isSpendingTransaction,
-  getAnnualizationFactor,
+  computeAnnualCategorySpending,
 } from "./utils";
 
 /**
@@ -75,22 +74,7 @@ export function allocateSpendingToCards(
   transactions: Transaction[],
 ): SpendingAllocation[] {
   const allocation: SpendingAllocation[] = [];
-  const spendingTxs = transactions.filter(isSpendingTransaction);
-  const categorySpending: Record<string, number> = {};
-  const annualizationFactor = getAnnualizationFactor(spendingTxs);
-
-  spendingTxs.forEach((transaction) => {
-    const amount = Math.abs(transaction.amount);
-    const primaryCategory = mapTransactionCategoryToRewardCategory(
-      transaction.personal_finance_category,
-    );
-    categorySpending[primaryCategory] =
-      (categorySpending[primaryCategory] || 0) + amount;
-  });
-
-  for (const category of Object.keys(categorySpending)) {
-    categorySpending[category] *= annualizationFactor;
-  }
+  const categorySpending = computeAnnualCategorySpending(transactions);
 
   Object.entries(categorySpending).forEach(([category, totalSpending]) => {
     let remainingSpending = totalSpending;
@@ -126,7 +110,8 @@ export function allocateSpendingToCards(
 
 /**
  * Evaluates a combination of cards: allocates spending, then sums rewards +
- * credits + benefits across the set and subtracts combined annual fees.
+ * spending-aware credits + benefits across the set and subtracts combined
+ * annual fees.
  */
 export function evaluateCardCombination(
   cards: CreditCardData[],
@@ -136,7 +121,9 @@ export function evaluateCardCombination(
   totalRewards: number;
   totalFees: number;
   allocation: SpendingAllocation[];
+  categorySpending: CategorySpending;
 } {
+  const categorySpending = computeAnnualCategorySpending(transactions);
   const allocation = allocateSpendingToCards(cards, transactions);
 
   const totalRewardsFromAllocation = allocation.reduce(
@@ -148,8 +135,11 @@ export function evaluateCardCombination(
   let totalBenefits = 0;
 
   cards.forEach((card) => {
-    totalCredits += calculateCreditsValue(card.credits || []);
-    totalBenefits += calculateBenefitsValue(card.benefits || []);
+    totalCredits += calculateCreditsValue(card.credits || [], categorySpending);
+    totalBenefits += calculateBenefitsValue(
+      card.benefits || [],
+      categorySpending,
+    );
   });
 
   const totalFees = cards.reduce(
@@ -161,5 +151,11 @@ export function evaluateCardCombination(
     totalRewardsFromAllocation + totalCredits + totalBenefits;
   const totalAnnualValue = totalRewards - totalFees;
 
-  return { totalAnnualValue, totalRewards, totalFees, allocation };
+  return {
+    totalAnnualValue,
+    totalRewards,
+    totalFees,
+    allocation,
+    categorySpending,
+  };
 }

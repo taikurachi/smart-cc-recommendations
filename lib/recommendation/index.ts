@@ -17,6 +17,7 @@
 
 import { loadCreditCardData } from "../data/creditCardData";
 import {
+  CategorySpending,
   CreditCardData,
   CreditCardWithValue,
   OwnedCardRef,
@@ -31,7 +32,11 @@ import {
 import { evaluateCardCombination } from "./spendingAllocator";
 import { filterByPreferences, isCardOwned } from "./cardFilter";
 import { mapCardNameToOfficialCard } from "../data/cardMatcher";
-import { generateCombinations, getCardId } from "./utils";
+import {
+  generateCombinations,
+  getCardId,
+  computeAnnualCategorySpending,
+} from "./utils";
 import { MESSAGES } from "./constants";
 
 export {
@@ -50,8 +55,13 @@ export {
   evaluateCardCombination,
 } from "./spendingAllocator";
 export { filterByPreferences, isCardOwned } from "./cardFilter";
-export { isSpendingTransaction, getAnnualizationFactor } from "./utils";
+export {
+  isSpendingTransaction,
+  getAnnualizationFactor,
+  computeAnnualCategorySpending,
+} from "./utils";
 export type {
+  CategorySpending,
   CreditCardData,
   CreditCardWithValue,
   RecommendationResult,
@@ -97,10 +107,15 @@ export async function getRecommendedCards(
 function findBestCombination(
   cards: CreditCardData[],
   transactions: Transaction[],
-): { combo: CreditCardData[]; allocation: SpendingAllocation[] } | null {
+): {
+  combo: CreditCardData[];
+  allocation: SpendingAllocation[];
+  categorySpending: CategorySpending;
+} | null {
   let bestCombo: CreditCardData[] = [];
   let bestValue = -Infinity;
   let bestAllocation: SpendingAllocation[] = [];
+  let bestCategorySpending: CategorySpending = {};
 
   for (let comboSize = 2; comboSize <= 3; comboSize++) {
     const combinations = generateCombinations(cards, comboSize);
@@ -110,6 +125,7 @@ function findBestCombination(
         bestValue = evaluation.totalAnnualValue;
         bestCombo = combo;
         bestAllocation = evaluation.allocation;
+        bestCategorySpending = evaluation.categorySpending;
       }
     }
   }
@@ -122,12 +138,17 @@ function findBestCombination(
         bestSingleValue = evaluation.totalAnnualValue;
         bestCombo = [card];
         bestAllocation = evaluation.allocation;
+        bestCategorySpending = evaluation.categorySpending;
       }
     }
   }
 
   if (bestCombo.length === 0) return null;
-  return { combo: bestCombo, allocation: bestAllocation };
+  return {
+    combo: bestCombo,
+    allocation: bestAllocation,
+    categorySpending: bestCategorySpending,
+  };
 }
 
 /**
@@ -136,6 +157,7 @@ function findBestCombination(
 function buildCombinationResults(
   combo: CreditCardData[],
   allocation: SpendingAllocation[],
+  categorySpending: CategorySpending,
 ): CreditCardWithValue[] {
   const results = combo.map((card) => {
     const cardAllocations = allocation.filter(
@@ -145,7 +167,11 @@ function buildCombinationResults(
       (sum, alloc) => sum + alloc.rewardValue,
       0,
     );
-    const value = calculateCardAnnualValueFromRewards(card, estimatedRewards);
+    const value = calculateCardAnnualValueFromRewards(
+      card,
+      estimatedRewards,
+      categorySpending,
+    );
     return { ...card, ...value, allocation: cardAllocations };
   });
 
@@ -216,7 +242,11 @@ export async function getMultiCardRecommendations(
     return { cards: [], message: MESSAGES.NO_COMBOS };
   }
 
-  const recommendedCards = buildCombinationResults(best.combo, best.allocation);
+  const recommendedCards = buildCombinationResults(
+    best.combo,
+    best.allocation,
+    best.categorySpending,
+  );
 
   if (ownedCards.length > 0) {
     const recommendedTotal = recommendedCards.reduce(

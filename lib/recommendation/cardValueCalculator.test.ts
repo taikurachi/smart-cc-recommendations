@@ -94,4 +94,36 @@ describe("cardValueCalculator", () => {
     expect(result.totalRewards).toBeCloseTo(133, 3);
     expect(result.annualValue).toBeCloseTo(83, 3);
   });
+
+  it("spending-aware: credits capped and benefits gated by category spending", () => {
+    const card = makeCard({
+      annual_fee: 95,
+      rewards: { dining: { rate: 0.03, unit: "cash" } },
+      credits: [{ name: "travel-credit", value: 300, usage_ease: 1.0, category: "travel" }],
+      benefits: [
+        { name: "travel-lounge", value: 500, usage_ease: 0.6, category: "travel" },
+        { name: "purchase-protection", value: 50, usage_ease: 0.5 },
+      ],
+    });
+
+    const result = calculateCardAnnualValue(card, diningTx);
+    // rewards: 1000 * 0.03 = 30
+    // credits: min(300, 0) * 1.0 = 0 (no travel spending)
+    // benefits: travel-lounge zeroed (no travel), purchase-prot: 50 * 0.5 = 25
+    expect(result.estimatedRewards).toBeCloseTo(30, 3);
+    expect(result.creditsValue).toBeCloseTo(0, 3);
+    expect(result.benefitsValue).toBeCloseTo(25, 3);
+    expect(result.annualValue).toBeCloseTo(30 + 0 + 25 - 95, 3);
+  });
+
+  it("fromRewards with categorySpending caps credits correctly", () => {
+    const card = makeCard({
+      annual_fee: 0,
+      credits: [{ name: "dining-credit", value: 200, usage_ease: 1.0, category: "dining" }],
+    });
+    const result = calculateCardAnnualValueFromRewards(card, 50, { dining: 120 });
+    // credit: min(200, 120) * 1.0 = 120
+    expect(result.creditsValue).toBeCloseTo(120, 3);
+    expect(result.annualValue).toBeCloseTo(170, 3);
+  });
 });
