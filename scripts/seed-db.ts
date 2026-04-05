@@ -40,35 +40,44 @@ async function main() {
     const cards = Object.values(ccData) as any[];
 
     console.log(`  Seeding ${cards.length} credit cards...`);
-    let added = 0;
-    let skipped = 0;
+    let upserted = 0;
 
     for (const card of cards) {
       try {
+        const values = {
+          id: card.id,
+          name: card.name,
+          institution_name: card.institution_name,
+          annual_fee: card.annual_fee,
+          tags: card.tags,
+          rewards: card.rewards,
+          credits: card.credits || [],
+          benefits: card.benefits || [],
+          image: card.image || null,
+        };
         await db
           .insert(schema.creditCards)
-          .values({
-            id: card.id,
-            name: card.name,
-            institution_name: card.institution_name,
-            annual_fee: card.annual_fee,
-            tags: card.tags,
-            rewards: card.rewards,
-            credits: card.credits || [],
-            benefits: card.benefits || [],
-            image: card.image || null,
-          })
-          .onConflictDoNothing();
-        added++;
+          .values(values)
+          .onConflictDoUpdate({
+            target: schema.creditCards.id,
+            set: {
+              name: values.name,
+              institution_name: values.institution_name,
+              annual_fee: values.annual_fee,
+              tags: values.tags,
+              rewards: values.rewards,
+              credits: values.credits,
+              benefits: values.benefits,
+              image: values.image,
+              updated_at: new Date(),
+            },
+          });
+        upserted++;
       } catch (e: any) {
-        if (e.message?.includes("duplicate") || e.message?.includes("conflict")) {
-          skipped++;
-        } else {
-          console.error(`    Error inserting ${card.id}: ${e.message}`);
-        }
+        console.error(`    Error upserting ${card.id}: ${e.message}`);
       }
     }
-    console.log(`    Added: ${added} | Skipped: ${skipped}`);
+    console.log(`    Upserted: ${upserted}`);
   } else {
     console.log("  No manualcc.json found, skipping credit cards.");
   }
