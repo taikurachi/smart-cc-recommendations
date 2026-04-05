@@ -67,6 +67,7 @@ The engine lives in `lib/recommendation/` and follows this pipeline:
 
 ## Conventions
 
+- Always create a git commit with a descriptive message after making code changes
 - Import from `@/lib/recommendation` (barrel), not individual sub-modules
 - Types: app-level in `lib/types.ts`, recommendation-specific in `lib/recommendation/types.ts`
 - API routes return `{ error: string }` on failure with appropriate HTTP status
