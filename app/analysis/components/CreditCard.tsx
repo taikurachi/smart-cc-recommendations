@@ -34,6 +34,15 @@ export default function CreditCardComponent({
     0,
   );
 
+  const selectCard = (index: number) => {
+    setCurrentCardIndex(index);
+    setExpandedCards((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(index);
+      return newSet;
+    });
+  };
+
   const toggleCard = (index: number) => {
     setExpandedCards((prev) => {
       const newSet = new Set(prev);
@@ -68,13 +77,13 @@ export default function CreditCardComponent({
           <div style={{ height: "200px", width: "300px" }} aria-hidden="true" />
           {cards.map((card, index) => (
             <Image
-              onClick={() => setCurrentCardIndex(index)}
+              onClick={() => selectCard(index)}
               key={card.name}
-              className="rounded-lg absolute cursor-pointer top-0"
+              className="rounded-lg absolute cursor-pointer top-0 transition-all duration-300"
               style={{
                 left: `${index * 40}px`,
-                opacity: Math.max(0.3, 1 - index * 0.2),
-                zIndex: cards.length - index,
+                opacity: index === currentCardIndex ? 1 : Math.max(0.3, 1 - index * 0.2),
+                zIndex: index === currentCardIndex ? cards.length + 1 : cards.length - index,
               }}
               src={card.image?.src || "/default-credit.svg"}
               alt={card.image?.alt || "Default value"}
