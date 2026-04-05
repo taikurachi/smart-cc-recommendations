@@ -18,6 +18,16 @@ const nextConfig: NextConfig = {
         hostname: "www.nerdwallet.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "www.usbank.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "www.bankofamerica.com",
+        pathname: "/**",
+      },
     ],
   },
 };
