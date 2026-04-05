@@ -18,7 +18,7 @@ function formatRate(rate: number): string {
   return `${(rate * 100).toFixed(1)}%`;
 }
 
-function CardBreakdown({ card }: { card: CreditCardWithValue }) {
+function CardBreakdown({ card, isEstimated }: { card: CreditCardWithValue; isEstimated: boolean }) {
   const allocations = (card.allocation ?? [])
     .filter((a) => a.rewardValue > 0)
     .sort((a, b) => b.rewardValue - a.rewardValue);
@@ -52,7 +52,7 @@ function CardBreakdown({ card }: { card: CreditCardWithValue }) {
                   colSpan={3}
                   className="pt-3 pb-1 font-semibold text-xs uppercase tracking-wide opacity-50"
                 >
-                  Rewards by Category
+                  {isEstimated ? "Est. Annual Rewards by Category" : "Rewards by Category"}
                 </td>
               </tr>
               {allocations.map((alloc) => (
@@ -62,7 +62,8 @@ function CardBreakdown({ card }: { card: CreditCardWithValue }) {
                   </td>
                   <td className="py-1.5 text-right opacity-60">
                     {formatRate(alloc.rewardRate)} on{" "}
-                    {formatDollar(alloc.amount)}
+                    {isEstimated ? "~" : ""}{formatDollar(alloc.amount)}
+                    {isEstimated ? "/yr" : ""}
                   </td>
                   <td className="py-1.5 text-right amount">
                     {formatDollar(alloc.rewardValue)}
@@ -160,7 +161,9 @@ function CardBreakdown({ card }: { card: CreditCardWithValue }) {
             </td>
           </tr>
           <tr>
-            <td className="pt-3 font-bold text-base">Annual Value</td>
+            <td className="pt-3 font-bold text-base">
+              {isEstimated ? "Est. Annual Value" : "Annual Value"}
+            </td>
             <td />
             <td className="pt-3 text-right font-bold text-base text-green amount">
               {formatDollar(card.annualValue)}
@@ -174,10 +177,13 @@ function CardBreakdown({ card }: { card: CreditCardWithValue }) {
 
 interface CardAnalysisTableProps {
   cards: CreditCardWithValue[];
+  dataSpanMonths?: number;
 }
 
-export default function CardAnalysisTable({ cards }: CardAnalysisTableProps) {
+export default function CardAnalysisTable({ cards, dataSpanMonths }: CardAnalysisTableProps) {
   if (cards.length === 0) return null;
+
+  const isEstimated = dataSpanMonths !== undefined && dataSpanMonths < 12;
 
   return (
     <div className="mt-8">
@@ -186,7 +192,7 @@ export default function CardAnalysisTable({ cards }: CardAnalysisTableProps) {
       </h3>
       <div className="grid gap-6" style={{ gridTemplateColumns: `repeat(${Math.min(cards.length, 3)}, 1fr)` }}>
         {cards.map((card) => (
-          <CardBreakdown key={card.id} card={card} />
+          <CardBreakdown key={card.id} card={card} isEstimated={isEstimated} />
         ))}
       </div>
     </div>

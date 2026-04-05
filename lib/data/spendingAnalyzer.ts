@@ -1,31 +1,33 @@
 import { SpendingAnalysis, Transaction } from "../types";
-import { PAYMENT_PRIMARIES } from "../constants";
+import {
+  isSpendingTransaction,
+  getAnnualizationFactor,
+} from "../recommendation/utils";
 
 export const analyzeSpending = (
   transactions: Transaction[],
 ): SpendingAnalysis => {
-  const spendingTransactions = transactions.filter(
-    (t) =>
-      t.amount < 0 ||
-      (t.amount > 0 &&
-        !PAYMENT_PRIMARIES.has(t.personal_finance_category?.primary ?? "")),
-  );
+  const spendingTransactions = transactions.filter(isSpendingTransaction);
 
   const totalSpending = spendingTransactions.reduce(
     (sum, t) => sum + Math.abs(t.amount),
     0,
   );
 
+  const annualizationFactor = getAnnualizationFactor(spendingTransactions);
+  const annualizedSpending = totalSpending * annualizationFactor;
+
   const dates = spendingTransactions.map((t) => new Date(t.date));
-  const earliestDate = new Date(Math.min(...dates.map((d) => d.getTime())));
-  const latestDate = new Date(Math.max(...dates.map((d) => d.getTime())));
-  const monthsDiff = Math.max(
+  const timestamps = dates.map((d) => d.getTime()).filter((t) => !isNaN(t));
+  const earliestDate = new Date(Math.min(...timestamps));
+  const latestDate = new Date(Math.max(...timestamps));
+  const dataSpanMonths = Math.max(
     1,
     (latestDate.getFullYear() - earliestDate.getFullYear()) * 12 +
       (latestDate.getMonth() - earliestDate.getMonth()) +
       1,
   );
-  const monthlyAverage = totalSpending / monthsDiff;
+  const monthlyAverage = totalSpending / dataSpanMonths;
 
   const categoryTotals: { [key: string]: { amount: number; count: number } } =
     {};
@@ -73,6 +75,8 @@ export const analyzeSpending = (
 
   return {
     totalSpending,
+    annualizedSpending,
+    dataSpanMonths,
     monthlyAverage,
     topCategory,
     categoryBreakdown: categoryBreakdown.slice(0, 8),

@@ -75,6 +75,8 @@ export interface CardPreferences {
 
 export interface SpendingAnalysis {
   totalSpending: number;
+  annualizedSpending: number;
+  dataSpanMonths: number;
   monthlyAverage: number;
   topCategory: {
     category: string;

@@ -108,15 +108,23 @@ export default function AnalysisPage() {
           <div className="grid md:grid-cols-3 gap-6 mb-8">
             <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-6">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm text-blue-800">Total Spending</h3>
+                <h3 className="text-sm text-blue-800">
+                  {analysis.dataSpanMonths >= 12
+                    ? "Annual Spending"
+                    : "Est. Annual Spending"}
+                </h3>
                 <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
                   <DollarSign className="w-4 h-4 text-white" />
                 </div>
               </div>
               <p className="text-2xl font-bold text-blue-900">
-                {formatCurrency(analysis.totalSpending)}
+                {formatCurrency(analysis.annualizedSpending)}
               </p>
-              <p className="text-xs text-blue-700 mt-1">Last 12 months</p>
+              <p className="text-xs text-blue-700 mt-1">
+                {analysis.dataSpanMonths >= 12
+                  ? "Last 12 months"
+                  : `Based on ${analysis.dataSpanMonths} month${analysis.dataSpanMonths !== 1 ? "s" : ""} of data`}
+              </p>
             </div>
 
             <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-xl p-6">
@@ -207,7 +215,7 @@ export default function AnalysisPage() {
                 )}
               </div>
 
-              <CardAnalysisTable cards={recommendations} />
+              <CardAnalysisTable cards={recommendations} dataSpanMonths={analysis?.dataSpanMonths} />
             </div>
           ) : (
             <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 mt-8 text-center">
