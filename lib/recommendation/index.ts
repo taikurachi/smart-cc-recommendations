@@ -36,7 +36,6 @@ import { mapCardNameToOfficialCard } from "../data/cardMatcher";
 import {
   generateCombinations,
   getCardId,
-  computeAnnualCategorySpending,
 } from "./utils";
 import { MESSAGES } from "./constants";
 
@@ -173,6 +172,7 @@ function buildCombinationResults(
   combo: CreditCardData[],
   allocation: SpendingAllocation[],
   categorySpending: CategorySpending,
+  transactions: Transaction[],
   benefitMultipliers?: BenefitMultipliers,
 ): CreditCardWithValue[] {
   const results = combo.map((card) => {
@@ -188,6 +188,7 @@ function buildCombinationResults(
       estimatedRewards,
       categorySpending,
       benefitMultipliers,
+      transactions,
     );
     return { ...card, ...value, allocation: cardAllocations };
   });
@@ -273,6 +274,7 @@ export async function getMultiCardRecommendations(
     best.combo,
     best.allocation,
     best.categorySpending,
+    transactions,
     benefitMultipliers,
   );
 

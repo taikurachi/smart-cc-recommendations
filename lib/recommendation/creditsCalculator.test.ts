@@ -1,8 +1,23 @@
 import { describe, it, expect } from "vitest";
 import { calculateCreditsValue } from "./creditsCalculator";
-import { Credit, CategorySpending } from "./types";
+import { Credit, CategorySpending, Transaction } from "./types";
 
 describe("creditsCalculator", () => {
+  const uberTx: Transaction[] = [
+    {
+      transaction_id: "t1",
+      account_id: "acc1",
+      amount: 18,
+      date: "2025-01-01",
+      name: "Uber Trip",
+      personal_finance_category: {
+        primary: "TRANSPORTATION",
+        detailed: "TRANSPORTATION_TAXIS_AND_RIDE_SHARES",
+        confidence_level: "VERY_HIGH",
+      },
+    },
+  ];
+
   it("empty array returns 0", () => {
     expect(calculateCreditsValue([])).toBeCloseTo(0, 3);
   });
@@ -10,6 +25,43 @@ describe("creditsCalculator", () => {
   it("single credit with usage_ease 1.0 returns full value", () => {
     const credits: Credit[] = [{ name: "uber", value: 200, usage_ease: 1.0 }];
     expect(calculateCreditsValue(credits)).toBeCloseTo(200, 3);
+  });
+
+  it("merchant credits use matched transactions instead of static usage_ease", () => {
+    const credits: Credit[] = [{ name: "uber credit", value: 200, usage_ease: 0.2 }];
+    expect(calculateCreditsValue(credits, undefined, undefined, uberTx)).toBeCloseTo(18, 3);
+  });
+
+  it("merchant credits return 0 when there are no matching transactions", () => {
+    const credits: Credit[] = [{ name: "lululemon credit", value: 100, usage_ease: 1.0 }];
+    expect(calculateCreditsValue(credits, undefined, undefined, [])).toBeCloseTo(0, 3);
+  });
+
+  it("explicit match keywords support dynamic matching without relying on the credit name", () => {
+    const credits: Credit[] = [
+      {
+        name: "premium retail perk",
+        value: 100,
+        usage_ease: 0.1,
+        match: { keywords: ["dunkin"] },
+      },
+    ];
+    const txs: Transaction[] = [
+      {
+        transaction_id: "t2",
+        account_id: "acc1",
+        amount: 14,
+        date: "2025-01-01",
+        name: "Dunkin Store 1234",
+        personal_finance_category: {
+          primary: "FOOD_AND_DRINK",
+          detailed: "FOOD_AND_DRINK_COFFEE",
+          confidence_level: "VERY_HIGH",
+        },
+      },
+    ];
+
+    expect(calculateCreditsValue(credits, undefined, undefined, txs)).toBeCloseTo(14, 3);
   });
 
   it("usage_ease 0 returns 0", () => {

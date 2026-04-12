@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import { enrichCreditMatchMetadata } from "../lib/recommendation/creditMatchMetadata";
 
 /**
  * Deterministic normalization for GPT-researched credit card data.
@@ -128,11 +129,13 @@ function normalizeCard(card: any): any {
   }
 
   if (Array.isArray(result.credits)) {
-    result.credits = result.credits.map((c: any) => ({
-      ...c,
-      value: typeof c.value === "number" ? c.value : 0,
-      usage_ease: typeof c.usage_ease === "number" ? c.usage_ease : 0.5,
-    }));
+    result.credits = result.credits.map((c: any) =>
+      enrichCreditMatchMetadata({
+        ...c,
+        value: typeof c.value === "number" ? c.value : 0,
+        usage_ease: typeof c.usage_ease === "number" ? c.usage_ease : 0.5,
+      }),
+    );
   }
 
   if (Array.isArray(result.benefits)) {

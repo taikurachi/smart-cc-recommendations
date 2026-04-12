@@ -18,11 +18,13 @@ function buildCardValueResult(
   estimatedRewards: number,
   categorySpending?: CategorySpending,
   benefitMultipliers?: BenefitMultipliers,
+  transactions: Transaction[] = [],
 ): CardValueResult {
   const creditsValue = calculateCreditsValue(
     card.credits || [],
     categorySpending,
     benefitMultipliers,
+    transactions,
   );
   const benefitsValue = calculateBenefitsValue(
     card.benefits || [],
@@ -61,6 +63,7 @@ export function calculateCardAnnualValue(
     estimatedRewards,
     categorySpending,
     benefitMultipliers,
+    transactions,
   );
 }
 
@@ -74,11 +77,13 @@ export function calculateCardAnnualValueFromRewards(
   estimatedRewards: number,
   categorySpending?: CategorySpending,
   benefitMultipliers?: BenefitMultipliers,
+  transactions: Transaction[] = [],
 ): CardValueResult {
   return buildCardValueResult(
     card,
     estimatedRewards,
     categorySpending,
     benefitMultipliers,
+    transactions,
   );
 }

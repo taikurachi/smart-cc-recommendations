@@ -1,6 +1,7 @@
-import { CategorySpending, Credit } from "./types";
+import { CategorySpending, Credit, Transaction } from "./types";
 import type { BenefitMultipliers } from "../types";
 import { resolveMultiplier } from "./benefitDefaults";
+import { getAnnualizedMatchedSpendForCredit } from "./creditMatcher";
 
 /**
  * Calculate the spending-aware value of a card's credits.
@@ -16,9 +17,16 @@ export function calculateCreditsValue(
   credits: Credit[],
   categorySpending?: CategorySpending,
   benefitMultipliers?: BenefitMultipliers,
+  transactions: Transaction[] = [],
 ): number {
   if (!credits || credits.length === 0) return 0;
   return credits.reduce((sum, credit) => {
+    const matchedSpend = getAnnualizedMatchedSpendForCredit(credit, transactions);
+    if (matchedSpend !== null) {
+      const usageEase = resolveMultiplier(credit.name, 1, benefitMultipliers);
+      return sum + Math.min(credit.value, matchedSpend) * usageEase;
+    }
+
     let effectiveValue = credit.value;
     if (credit.category && categorySpending) {
       const spent = categorySpending[credit.category] ?? 0;
