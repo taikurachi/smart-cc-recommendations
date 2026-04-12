@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import { inferCreditKind } from "../lib/recommendation/types";
 
 /**
  * Deterministic normalization for GPT-researched credit card data.
@@ -132,6 +133,11 @@ function normalizeCard(card: any): any {
       ...c,
       value: typeof c.value === "number" ? c.value : 0,
       usage_ease: typeof c.usage_ease === "number" ? c.usage_ease : 0.5,
+      kind: inferCreditKind({
+        name: typeof c.name === "string" ? c.name : "",
+        category: c.category,
+        match: c.match,
+      }),
     }));
   }
 

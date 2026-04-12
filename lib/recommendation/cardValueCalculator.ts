@@ -6,7 +6,10 @@ import {
 } from "./types";
 import type { BenefitMultipliers } from "../types";
 import { calculateTransactionRewards } from "./rewardsCalculator";
-import { calculateCreditsValue } from "./creditsCalculator";
+import {
+  calculateCreditBreakdowns,
+  calculateCreditsValue,
+} from "./creditsCalculator";
 import {
   calculateBenefitsValue,
   calculateIntroBonusValue,
@@ -20,6 +23,12 @@ function buildCardValueResult(
   benefitMultipliers?: BenefitMultipliers,
   transactions: Transaction[] = [],
 ): CardValueResult {
+  const creditBreakdowns = calculateCreditBreakdowns(
+    card.credits || [],
+    categorySpending,
+    benefitMultipliers,
+    transactions,
+  );
   const creditsValue = calculateCreditsValue(
     card.credits || [],
     categorySpending,
@@ -37,6 +46,7 @@ function buildCardValueResult(
   return {
     estimatedRewards,
     creditsValue,
+    creditBreakdowns,
     benefitsValue,
     introBonusValue,
     totalRewards,

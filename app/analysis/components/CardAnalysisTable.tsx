@@ -1,6 +1,9 @@
 "use client";
 
-import { CreditCardWithValue } from "@/lib/recommendation/types";
+import {
+  CreditCardWithValue,
+  CreditValueBreakdown,
+} from "@/lib/recommendation/types";
 import { INTRO_BONUS_KEY } from "@/lib/recommendation/constants";
 
 function formatCategory(category: string): string {
@@ -18,13 +21,25 @@ function formatRate(rate: number): string {
   return `${(rate * 100).toFixed(1)}%`;
 }
 
+function formatCreditDetails(credit: CreditValueBreakdown): string {
+  if (credit.matchedSpend !== null) {
+    return `Matched ${formatDollar(credit.matchedSpend)} spend, counted ${formatDollar(credit.countedValue)}`;
+  }
+
+  if (credit.categorySpend !== null) {
+    return `${formatCategory(credit.category || "eligible")} spend ${formatDollar(credit.categorySpend)}, counted ${formatDollar(credit.countedValue)}`;
+  }
+
+  return `${formatDollar(credit.value)} × ${Math.round(credit.usageEase * 100)}% usability`;
+}
+
 function CardBreakdown({ card, isEstimated }: { card: CreditCardWithValue; isEstimated: boolean }) {
   const allocations = (card.allocation ?? [])
     .filter((a) => a.rewardValue > 0)
     .sort((a, b) => b.rewardValue - a.rewardValue);
 
-  const credits = (card.credits ?? []).filter(
-    (c) => c.value > 0 && c.usage_ease > 0,
+  const credits = (card.creditBreakdowns ?? []).filter(
+    (c) => c.countedValue > 0 || c.value > 0,
   );
 
   const benefits = (card.benefits ?? []).filter(
@@ -94,11 +109,10 @@ function CardBreakdown({ card, isEstimated }: { card: CreditCardWithValue; isEst
                 <tr key={credit.name} className="border-b border-gray-200">
                   <td className="py-1.5 pl-3">{formatCategory(credit.name)}</td>
                   <td className="py-1.5 text-right opacity-60">
-                    {formatDollar(credit.value)} &times;{" "}
-                    {Math.round(credit.usage_ease * 100)}% usability
+                    {formatCreditDetails(credit)}
                   </td>
                   <td className="py-1.5 text-right amount">
-                    {formatDollar(credit.value * credit.usage_ease)}
+                    {formatDollar(credit.countedValue)}
                   </td>
                 </tr>
               ))}

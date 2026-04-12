@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { calculateCreditsValue } from "./creditsCalculator";
+import {
+  calculateCreditBreakdowns,
+  calculateCreditsValue,
+} from "./creditsCalculator";
 import { Credit, CategorySpending, Transaction } from "./types";
 
 describe("creditsCalculator", () => {
@@ -30,6 +33,24 @@ describe("creditsCalculator", () => {
   it("merchant credits use matched transactions instead of static usage_ease", () => {
     const credits: Credit[] = [{ name: "uber credit", value: 200, usage_ease: 0.2 }];
     expect(calculateCreditsValue(credits, undefined, undefined, uberTx)).toBeCloseTo(18, 3);
+  });
+
+  it("returns matched-spend breakdowns for merchant credits", () => {
+    const credits: Credit[] = [{ name: "uber credit", value: 200, usage_ease: 0.2 }];
+    const [breakdown] = calculateCreditBreakdowns(
+      credits,
+      undefined,
+      undefined,
+      uberTx,
+    );
+
+    expect(breakdown).toMatchObject({
+      name: "uber credit",
+      matchedSpend: 18,
+      eligibleAmount: 18,
+      countedValue: 18,
+      source: "merchant_match",
+    });
   });
 
   it("merchant credits return 0 when there are no matching transactions", () => {
@@ -98,6 +119,22 @@ describe("creditsCalculator", () => {
       const spending: CategorySpending = { dining: 150 };
       // min(200, 150) * 1.0 = 150
       expect(calculateCreditsValue(credits, spending)).toBeCloseTo(150, 3);
+    });
+
+    it("returns category-spend breakdowns when a credit is capped by spend", () => {
+      const credits: Credit[] = [
+        { name: "dining-credit", value: 200, usage_ease: 1.0, category: "dining" },
+      ];
+      const spending: CategorySpending = { dining: 150 };
+      const [breakdown] = calculateCreditBreakdowns(credits, spending);
+
+      expect(breakdown).toMatchObject({
+        name: "dining-credit",
+        categorySpend: 150,
+        eligibleAmount: 150,
+        countedValue: 150,
+        source: "category_spend",
+      });
     });
 
     it("does not cap when spending exceeds credit value", () => {

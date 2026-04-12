@@ -71,7 +71,11 @@ IMPORTANT RULES:
 - All reward rates must be expressed as DECIMALS: 5x points = 0.05, 3% cash back = 0.03, 1.5x = 0.015
 - The "unit" field is "points" if the card earns points/miles, "cash" if it earns cash back percentage
 - For "cap" on rewards: use "quarterly" for per-quarter spending caps, "annual" for per-year caps. The cap value is the DOLLAR amount of spending that earns the bonus rate. Omit "cap" entirely if there is no cap.
-- "credits" are statement credits the card offers (e.g., Uber credit, dining credit, airline incidental credit). Each has a dollar "value" per year and "usage_ease" from 0 to 1 (0 = very hard to use / niche, 1 = automatic / everyone uses it). If the card has no credits, use an empty array [].
+- "credits" are credit-like perks only. Every credit object MUST include "kind", which must be one of:
+  - "statement_credit" for merchant/subscription statement credits that can be matched to transactions (e.g., Uber credit, dining credit, streaming credit)
+  - "travel_credit" for travel-specific credits that depend on eligible travel spend/bookings (e.g., airline incidental credit, portal travel credit, hotel credit)
+  - "non_transactional" for perks that should NOT be transaction-matched and probably belong in benefits unless the issuer clearly frames them as a credit
+- Each credit has a dollar "value" per year and "usage_ease" from 0 to 1 (0 = very hard to use / niche, 1 = automatic / everyone uses it). If the card has no credits, use an empty array [].
 - "benefits" are non-credit perks (e.g., lounge access, travel insurance, purchase protection). Each has an estimated annual dollar "value" and "usage_ease" from 0 to 1. ALWAYS include "intro-bonus" as a benefit if the card has a sign-up bonus -- set "value" to the cash-equivalent value in dollars (for points bonuses, value points at $0.01 each).
 - "tags" must be from this exact set: "travel", "cashback", "no_annual_fee", "beginner_friendly", "business", "low_interest". A card can have multiple tags. Use "no_annual_fee" only if annual_fee is 0.
 - "id" should be a snake_case identifier like "chase_sapphire_preferred" or "amex_gold_card"

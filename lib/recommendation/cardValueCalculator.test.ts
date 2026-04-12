@@ -30,6 +30,12 @@ describe("cardValueCalculator", () => {
     const result = calculateCardAnnualValue(card, diningTx);
     expect(result.estimatedRewards).toBeCloseTo(30, 3);
     expect(result.creditsValue).toBeCloseTo(180, 3);
+    expect(result.creditBreakdowns).toHaveLength(1);
+    expect(result.creditBreakdowns[0]).toMatchObject({
+      name: "office",
+      countedValue: 180,
+      source: "usage_ease",
+    });
     expect(result.benefitsValue).toBeCloseTo(50, 3);
     expect(result.introBonusValue).toBeCloseTo(400, 3);
     expect(result.totalRewards).toBeCloseTo(260, 3);
@@ -198,5 +204,11 @@ describe("cardValueCalculator", () => {
     );
     // matched spend: 40 * 0.5 override = 20
     expect(result.creditsValue).toBeCloseTo(20, 3);
+    expect(result.creditBreakdowns[0]).toMatchObject({
+      matchedSpend: 40,
+      countedValue: 20,
+      usageEase: 0.5,
+      source: "merchant_match",
+    });
   });
 });
