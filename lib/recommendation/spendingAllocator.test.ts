@@ -248,7 +248,9 @@ describe("spendingAllocator", () => {
       name: "Card 1",
       annual_fee: 95,
       rewards: { dining: { rate: 0.05, unit: "points" } },
-      credits: [{ name: "office", value: 200, usage_ease: 0.9 }],
+      credits: [
+        { name: "office", kind: "non_transactional", value: 200, usage_ease: 0.9 },
+      ],
       benefits: [{ name: "lounge", value: 100, usage_ease: 0.5 }],
     });
     const card2 = makeCard({

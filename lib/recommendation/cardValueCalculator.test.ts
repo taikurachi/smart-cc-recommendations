@@ -20,7 +20,9 @@ describe("cardValueCalculator", () => {
     const card = makeCard({
       annual_fee: 95,
       rewards: { dining: { rate: 0.03, unit: "cash" } },
-      credits: [{ name: "office", value: 200, usage_ease: 0.9 }],
+      credits: [
+        { name: "office", kind: "non_transactional", value: 200, usage_ease: 0.9 },
+      ],
       benefits: [
         { name: "travel-insurance", value: 100, usage_ease: 0.5 },
         { name: "intro-bonus", value: 500, usage_ease: 0.8 },
@@ -77,7 +79,9 @@ describe("cardValueCalculator", () => {
   it("empty transactions with credits/benefits still works", () => {
     const card = makeCard({
       annual_fee: 95,
-      credits: [{ name: "office", value: 200, usage_ease: 0.7 }],
+      credits: [
+        { name: "office", kind: "non_transactional", value: 200, usage_ease: 0.7 },
+      ],
       benefits: [{ name: "insurance", value: 150, usage_ease: 0.4 }],
     });
     const result = calculateCardAnnualValue(card, []);
@@ -90,7 +94,9 @@ describe("cardValueCalculator", () => {
   it("fromRewards uses pre-calculated rewards correctly", () => {
     const card = makeCard({
       annual_fee: 50,
-      credits: [{ name: "gas", value: 100, usage_ease: 0.5 }],
+      credits: [
+        { name: "gas", kind: "non_transactional", value: 100, usage_ease: 0.5 },
+      ],
       benefits: [{ name: "purchase-protection", value: 40, usage_ease: 0.2 }],
     });
     const result = calculateCardAnnualValueFromRewards(card, 75);
@@ -105,7 +111,15 @@ describe("cardValueCalculator", () => {
     const card = makeCard({
       annual_fee: 95,
       rewards: { dining: { rate: 0.03, unit: "cash" } },
-      credits: [{ name: "travel-credit", value: 300, usage_ease: 1.0, category: "travel" }],
+      credits: [
+        {
+          name: "travel-credit",
+          kind: "travel_credit",
+          value: 300,
+          usage_ease: 1.0,
+          category: "travel",
+        },
+      ],
       benefits: [
         { name: "travel-lounge", value: 500, usage_ease: 0.6, category: "travel" },
         { name: "purchase-protection", value: 50, usage_ease: 0.5 },
@@ -152,7 +166,15 @@ describe("cardValueCalculator", () => {
   it("fromRewards with categorySpending caps credits correctly", () => {
     const card = makeCard({
       annual_fee: 0,
-      credits: [{ name: "dining-credit", value: 200, usage_ease: 1.0, category: "dining" }],
+      credits: [
+        {
+          name: "dining-credit",
+          kind: "statement_credit",
+          value: 200,
+          usage_ease: 1.0,
+          category: "dining",
+        },
+      ],
     });
     const result = calculateCardAnnualValueFromRewards(card, 50, { dining: 120 });
     // credit: min(200, 120) * 1.0 = 120
@@ -178,7 +200,14 @@ describe("cardValueCalculator", () => {
   it("benefitMultipliers override credits through fromRewards", () => {
     const card = makeCard({
       annual_fee: 0,
-      credits: [{ name: "uber credit", value: 200, usage_ease: 0.9 }],
+      credits: [
+        {
+          name: "uber credit",
+          kind: "statement_credit",
+          value: 200,
+          usage_ease: 0.9,
+        },
+      ],
     });
     const multipliers = { uber_credits: 0.5 };
     const txs: Transaction[] = [

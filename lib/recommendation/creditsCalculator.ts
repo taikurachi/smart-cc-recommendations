@@ -14,6 +14,7 @@ import { getAnnualizedMatchedSpendForCredit } from "./creditMatcher";
  * When `categorySpending` is provided and a credit has a `category`,
  * its effective value is capped by actual annualized spending in that
  * category (you can't redeem more credit than you spend).
+ * Merchant-name matching is reserved for explicit statement credits.
  *
  * When `benefitMultipliers` is provided, the user's multiplier for the
  * matching benefit category replaces the card-data `usage_ease`.
