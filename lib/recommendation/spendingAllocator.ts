@@ -141,6 +141,7 @@ export function evaluateCardCombination(
       card.credits || [],
       categorySpending,
       benefitMultipliers,
+      transactions,
     );
     totalBenefits += calculateBenefitsValue(
       card.benefits || [],

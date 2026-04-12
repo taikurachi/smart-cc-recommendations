@@ -20,7 +20,7 @@ describe("cardValueCalculator", () => {
     const card = makeCard({
       annual_fee: 95,
       rewards: { dining: { rate: 0.03, unit: "cash" } },
-      credits: [{ name: "uber", value: 200, usage_ease: 0.9 }],
+      credits: [{ name: "office", value: 200, usage_ease: 0.9 }],
       benefits: [
         { name: "travel-insurance", value: 100, usage_ease: 0.5 },
         { name: "intro-bonus", value: 500, usage_ease: 0.8 },
@@ -172,11 +172,31 @@ describe("cardValueCalculator", () => {
   it("benefitMultipliers override credits through fromRewards", () => {
     const card = makeCard({
       annual_fee: 0,
-      credits: [{ name: "uber", value: 200, usage_ease: 0.9 }],
+      credits: [{ name: "uber credit", value: 200, usage_ease: 0.9 }],
     });
     const multipliers = { uber_credits: 0.5 };
-    const result = calculateCardAnnualValueFromRewards(card, 0, undefined, multipliers);
-    // uber: 200 * 0.5 = 100 (overridden from 0.9)
-    expect(result.creditsValue).toBeCloseTo(100, 3);
+    const txs: Transaction[] = [
+      {
+        transaction_id: "t3",
+        account_id: "acc1",
+        amount: 40,
+        date: "2025-01-01",
+        name: "Uber Trip",
+        personal_finance_category: {
+          primary: "TRANSPORTATION",
+          detailed: "TRANSPORTATION_TAXIS_AND_RIDE_SHARES",
+          confidence_level: "VERY_HIGH",
+        },
+      },
+    ];
+    const result = calculateCardAnnualValueFromRewards(
+      card,
+      0,
+      undefined,
+      multipliers,
+      txs,
+    );
+    // matched spend: 40 * 0.5 override = 20
+    expect(result.creditsValue).toBeCloseTo(20, 3);
   });
 });

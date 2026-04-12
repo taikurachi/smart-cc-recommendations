@@ -40,6 +40,9 @@ export interface Credit {
   value: number;
   usage_ease: number;
   category?: RewardCategory;
+  match?: {
+    keywords?: string[];
+  };
 }
 
 export interface Benefit {
