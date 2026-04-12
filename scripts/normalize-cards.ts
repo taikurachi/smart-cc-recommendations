@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import { inferCreditKind } from "../lib/recommendation/types";
+import { enrichCreditMatchMetadata } from "../lib/recommendation/creditMatchMetadata";
 
 /**
  * Deterministic normalization for GPT-researched credit card data.

@@ -133,6 +133,23 @@ export function validateCard(card: any): ValidationError[] {
       if (credit?.category !== undefined && !VALID_REWARD_CATEGORIES.has(credit.category)) {
         errors.push({ field: `credits[${i}].category`, message: `Unknown category "${credit.category}". Valid: ${[...VALID_REWARD_CATEGORIES].join(", ")}` });
       }
+      if (credit?.match !== undefined && (!credit.match || typeof credit.match !== "object" || Array.isArray(credit.match))) {
+        errors.push({ field: `credits[${i}].match`, message: "Must be an object" });
+      }
+      if (credit?.match?.keywords !== undefined) {
+        if (!Array.isArray(credit.match.keywords)) {
+          errors.push({ field: `credits[${i}].match.keywords`, message: "Must be an array of non-empty strings" });
+        } else {
+          credit.match.keywords.forEach((keyword: any, j: number) => {
+            if (typeof keyword !== "string" || keyword.trim() === "") {
+              errors.push({
+                field: `credits[${i}].match.keywords[${j}]`,
+                message: "Must be a non-empty string",
+              });
+            }
+          });
+        }
+      }
     });
   }
 
