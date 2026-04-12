@@ -49,6 +49,10 @@ export {
   calculateCreditsValue,
 } from "./creditsCalculator";
 export {
+  getAnnualizedMatchedSpendForCredit,
+  getMatchedSpendForCredit,
+} from "./creditMatcher";
+export {
   calculateBenefitsValue,
   calculateIntroBonusValue,
 } from "./benefitsCalculator";
