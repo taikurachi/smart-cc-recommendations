@@ -28,6 +28,12 @@ export interface RewardCap {
   annual?: number;
 }
 
+export interface CreditCap {
+  monthly?: number;
+  quarterly?: number;
+  annual?: number;
+}
+
 export interface Reward {
   rate: number;
   unit: "points" | "cash";
@@ -35,11 +41,21 @@ export interface Reward {
   pointsMultiplier?: number;
 }
 
+export const creditKinds = [
+  "statement_credit",
+  "travel_credit",
+  "non_transactional",
+] as const;
+
+export type CreditKind = (typeof creditKinds)[number];
+
 export interface Credit {
   name: string;
   value: number;
   usage_ease: number;
+  kind?: CreditKind;
   category?: RewardCategory;
+  cap?: CreditCap;
   match?: {
     keywords?: string[];
   };
@@ -87,10 +103,23 @@ export interface SpendingCategory {
 export interface CardValueResult {
   estimatedRewards: number;
   creditsValue: number;
+  creditBreakdowns: CreditValueBreakdown[];
   benefitsValue: number;
   introBonusValue: number;
   totalRewards: number;
   annualValue: number;
+}
+
+export interface CreditValueBreakdown {
+  name: string;
+  value: number;
+  usageEase: number;
+  category?: RewardCategory;
+  matchedSpend: number | null;
+  categorySpend: number | null;
+  eligibleAmount: number;
+  countedValue: number;
+  source: "merchant_match" | "category_spend" | "usage_ease";
 }
 
 export interface OwnedCardRef {
@@ -107,4 +136,71 @@ export type CreditCardWithValue = CreditCardData &
 export interface RecommendationResult {
   cards: CreditCardWithValue[];
   message?: string;
+}
+
+const TRAVEL_CREDIT_PATTERNS = [
+  "travel credit",
+  "travel-credit",
+  "airline fee credit",
+  "airline incidental credit",
+  "hotel credit",
+  "resort credit",
+  "flight credit",
+];
+
+const NON_TRANSACTIONAL_CREDIT_PATTERNS = [
+  "insurance",
+  "protection",
+  "warranty",
+  "lounge",
+  "elite status",
+  "status",
+  "concierge",
+  "tsa precheck",
+  "global entry",
+  "clear",
+  "anniversary",
+  "free night",
+];
+
+function normalizeCreditName(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+export function inferCreditKind(
+  credit: Pick<Credit, "name" | "category" | "match">,
+): CreditKind {
+  const normalizedName = normalizeCreditName(credit.name);
+
+  if (
+    NON_TRANSACTIONAL_CREDIT_PATTERNS.some((pattern) =>
+      normalizedName.includes(pattern),
+    )
+  ) {
+    return "non_transactional";
+  }
+
+  if (
+    TRAVEL_CREDIT_PATTERNS.some((pattern) => normalizedName.includes(pattern)) ||
+    credit.category === "travel" ||
+    credit.category === "hotels" ||
+    credit.category === "transit"
+  ) {
+    return "travel_credit";
+  }
+
+  if (
+    normalizedName.includes("credit") ||
+    normalizedName.includes("statement") ||
+    normalizedName.includes("reimbursement") ||
+    Boolean(credit.match?.keywords?.length)
+  ) {
+    return "statement_credit";
+  }
+
+  return "non_transactional";
+}
+
+export function getCreditKind(credit: Credit): CreditKind {
+  return credit.kind ?? inferCreditKind(credit);
 }

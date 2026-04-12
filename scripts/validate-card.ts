@@ -1,5 +1,6 @@
 import * as fs from "fs";
 import * as path from "path";
+import { creditKinds } from "../lib/recommendation/types";
 
 const VALID_TAGS = new Set([
   "travel",
@@ -26,6 +27,7 @@ const VALID_REWARD_CATEGORIES = new Set([
 ]);
 
 const VALID_UNITS = new Set(["points", "cash"]);
+const VALID_CREDIT_KINDS = new Set(creditKinds);
 
 export interface ValidationError {
   field: string;
@@ -121,6 +123,12 @@ export function validateCard(card: any): ValidationError[] {
       }
       if (typeof credit?.usage_ease !== "number" || credit.usage_ease < 0 || credit.usage_ease > 1) {
         errors.push({ field: `credits[${i}].usage_ease`, message: `Must be 0-1, got ${credit?.usage_ease}` });
+      }
+      if (!VALID_CREDIT_KINDS.has(credit?.kind)) {
+        errors.push({
+          field: `credits[${i}].kind`,
+          message: `Must be one of ${[...VALID_CREDIT_KINDS].join(", ")}, got ${credit?.kind}`,
+        });
       }
       if (credit?.category !== undefined && !VALID_REWARD_CATEGORIES.has(credit.category)) {
         errors.push({ field: `credits[${i}].category`, message: `Unknown category "${credit.category}". Valid: ${[...VALID_REWARD_CATEGORIES].join(", ")}` });

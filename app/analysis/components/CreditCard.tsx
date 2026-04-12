@@ -1,6 +1,9 @@
 "use client";
 
-import { CreditCardWithValue } from "@/lib/recommendation/types";
+import {
+  CreditCardWithValue,
+  CreditValueBreakdown,
+} from "@/lib/recommendation/types";
 import { Plus, ChevronDown, ChevronUp } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
@@ -9,6 +12,18 @@ import { motion } from "motion/react";
 interface CreditCardProps {
   cards: CreditCardWithValue[];
   status: string;
+}
+
+function formatCreditSummary(credit: CreditValueBreakdown): string {
+  if (credit.matchedSpend !== null) {
+    return `matched $${Math.ceil(credit.matchedSpend)} spend, counted $${Math.ceil(credit.countedValue)}`;
+  }
+
+  if (credit.categorySpend !== null) {
+    return `eligible from $${Math.ceil(credit.categorySpend)} category spend, counted $${Math.ceil(credit.countedValue)}`;
+  }
+
+  return `$${Math.ceil(credit.value)} at ${Math.round(credit.usageEase * 100)}% usability`;
 }
 
 export default function CreditCardComponent({
@@ -160,6 +175,23 @@ export default function CreditCardComponent({
                         </span>
                       </li>
                     ))}
+                  </ul>
+                )}
+                {isExpanded && (card.creditBreakdowns?.length ?? 0) > 0 && (
+                  <ul className="ml-10 mb-2">
+                    {card.creditBreakdowns
+                      .filter((credit) => credit.countedValue > 0)
+                      .map((credit) => (
+                        <li
+                          className="flex items-center justify-between text-xs opacity-30"
+                          key={credit.name}
+                        >
+                          <span>{credit.name}: {formatCreditSummary(credit)}</span>
+                          <span className="amount">
+                            ${Math.ceil(credit.countedValue)}
+                          </span>
+                        </li>
+                      ))}
                   </ul>
                 )}
               </div>

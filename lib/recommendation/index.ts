@@ -44,7 +44,10 @@ export {
   calculateCardAnnualValueFromRewards,
 } from "./cardValueCalculator";
 export { calculateTransactionRewards } from "./rewardsCalculator";
-export { calculateCreditsValue } from "./creditsCalculator";
+export {
+  calculateCreditBreakdowns,
+  calculateCreditsValue,
+} from "./creditsCalculator";
 export {
   calculateBenefitsValue,
   calculateIntroBonusValue,
@@ -68,6 +71,7 @@ export type {
   RewardCategory,
   Reward,
   Credit,
+  CreditValueBreakdown,
   Benefit,
   SpendingAllocation,
   SpendingCategory,

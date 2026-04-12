@@ -113,6 +113,10 @@ describe("getRecommendedCards", () => {
     const diningResult = result.cards.find((c) => c.id === "dining_card");
     expect(diningResult).toBeDefined();
     expect(diningResult!.creditsValue).toBeGreaterThan(0);
+    expect(diningResult!.creditBreakdowns[0]).toMatchObject({
+      name: "office",
+      countedValue: 180,
+    });
   });
 
   it("non-spending transactions do not inflate card rewards", async () => {
@@ -182,6 +186,7 @@ describe("getMultiCardRecommendations", () => {
     );
     expect(result.cards.length).toBeGreaterThanOrEqual(2);
     expect(result.cards.length).toBeLessThanOrEqual(3);
+    expect(result.cards.every((card) => Array.isArray(card.creditBreakdowns))).toBe(true);
   });
 
   it("excludes owned cards from recommendations", async () => {
